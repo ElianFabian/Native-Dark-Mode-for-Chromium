@@ -41,3 +41,13 @@ Automatic rules require HTTP/HTTPS site access, and image preservation uses the 
 ## Popup responsiveness
 
 Version 0.2.1 avoids waiting for background tabs before replying to popup changes and skips CSS operations when first enabling automatic image mode. The popup displays progress and restores controls after ten seconds if the browser has not replied. A timeout does not cancel a browser operation or undo a saved rule; reopen the popup to inspect the latest state. A stalled experimental image operation may still require refreshing the page or reloading the extension.
+
+## Launching without the debugging banner on Windows
+
+1. Save any pending work and fully exit Brave yourself.
+2. Double-click `Start Brave Without Debug Banner.cmd` in the project root.
+3. Enable a saved rule and check whether the banner stays hidden.
+
+The launcher starts the installed Brave with `--silent-debugger-extension-api`. It uses the usual browser profile, does not enable a remote debugging port, and does not change the global dark mode flag or installed shortcuts. It refuses to launch while a Brave process is already running and never terminates processes. The switch suppresses debugger-extension banners for all extensions in that browser launch, not just this extension. It does not remove debugger access or its permissions. Fully exit Brave and launch it normally to restore the default behavior.
+
+The extension cannot hide browser chrome itself. Chromium's [debugger implementation](https://github.com/chromium/chromium/blob/main/chrome/browser/extensions/api/debugger/debugger_api.cc) checks this launch switch before showing its warning. Its effect on the installed Brave version remains to be verified. Run the launcher with `/check` to validate executable discovery without launching Brave.
