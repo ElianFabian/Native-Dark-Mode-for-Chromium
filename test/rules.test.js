@@ -78,17 +78,21 @@ test('navigation to an unrelated site clears the filter', async () => {
   assert.equal((await controller.read(7)).enabled, false);
 });
 
-test('image preservation inserts and removes the same CSS without claiming rendering proof', async () => {
-  const { controller, manager, calls } = integration();
-  await manager.save({ url: 'example.com', scope: 'website', enabled: true, applyToImages: false });
+test('legacy image settings are ignored without losing saved website rules', async () => {
+  const { api, controller, manager, calls } = integration();
+  const legacy = { ...rule('example.com'), applyToImages: false };
+  await api.storage.local.set({ rules: [legacy] });
   await manager.apply(7);
-  assert.equal((await controller.read(7)).applyToImages, false);
-  const insertion = calls.find(call => call[0] === 'insertCSS');
-  assert.match(insertion[1].css, /color-scheme: only light/);
+  assert.equal((await controller.read(7)).enabled, true);
+  assert.equal(calls.some(call => ['insertCSS', 'removeCSS'].includes(call[0])), false);
   const [saved] = await manager.list();
-  await manager.update(saved.id, { applyToImages: true });
+  assert.equal(saved.host, 'example.com');
+  assert.equal('applyToImages' in saved, false);
+  await manager.update(saved.id, { enabled: false });
   await manager.apply(7);
-  assert.deepEqual(calls.at(-1), ['removeCSS', insertion[1]]);
+  assert.equal((await controller.read(7)).enabled, false);
+  assert.equal((await manager.list()).length, 1);
+  assert.equal('applyToImages' in (await api.storage.local.get('rules')).rules[0], false);
 });
 
 test('cancellation pauses automatic rules until explicit resume', async () => {
@@ -112,10 +116,10 @@ test('concurrent rule saves do not overwrite each other', async () => {
   assert.equal((await manager.list()).length, 2);
 });
 
-test('automatic image mode never waits for CSS scripting on first activation', async () => {
+test('native activation requires no CSS scripting even with a legacy input field', async () => {
   const { api, manager, controller } = integration();
   api.scripting.removeCSS = () => new Promise(() => {});
-  await manager.save({ url: 'example.com', enabled: true });
+  await manager.save({ url: 'example.com', enabled: true, applyToImages: false });
   await manager.applyFromPopup(7);
   assert.equal((await controller.read(7)).enabled, true);
 });

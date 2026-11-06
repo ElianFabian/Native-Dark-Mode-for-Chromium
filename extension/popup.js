@@ -10,7 +10,7 @@ function draft(enabled) {
   return {
     url: $('#address').value.trim(), scope: $('#scope').value,
     includeSubdomains: $('#subdomains').checked,
-    applyToImages: $('#images').checked, enabled
+    enabled
   };
 }
 
@@ -29,8 +29,6 @@ function updateButton() {
 }
 
 function loadSelection() {
-  const rule = selected();
-  if (rule) $('#images').checked = rule.applyToImages;
   updateButton();
 }
 
@@ -38,7 +36,7 @@ function render(value) {
   if (value.error) throw new Error(value.error);
   snapshot = value;
   const state = value.state;
-  $('#status').textContent = state.error || state.imageWarning || (state.enabled ? 'Native dark mode is active in this tab.' : 'Native dark mode is inactive in this tab.');
+  $('#status').textContent = state.error || (state.enabled ? 'Native dark mode is active in this tab.' : 'Native dark mode is inactive in this tab.');
   $('#diagnostic').textContent = JSON.stringify(value, null, 2);
   $('#rules').replaceChildren();
   if (!value.rules.length) $('#rules').textContent = 'No saved rules yet.';
@@ -57,19 +55,12 @@ function render(value) {
       $('#address').value = `https://${rule.host}${rule.path}`;
       $('#scope').value = rule.path === '/' ? 'website' : 'section';
       $('#subdomains').checked = rule.includeSubdomains;
-      $('#images').checked = rule.applyToImages;
       updateButton();
     });
     const remove = document.createElement('button');
     remove.textContent = 'Remove';
     remove.addEventListener('click', () => request({ type: 'remove', id: rule.id }));
-    const imageLabel = document.createElement('label');
-    const images = document.createElement('input');
-    images.type = 'checkbox';
-    images.checked = rule.applyToImages;
-    images.addEventListener('change', () => request({ type: 'update', id: rule.id, patch: { applyToImages: images.checked } }));
-    imageLabel.append(images, ' Apply to images (automatic; preservation is experimental)');
-    item.append(toggle, edit, remove, imageLabel);
+    item.append(toggle, edit, remove);
     $('#rules').append(item);
   }
   updateButton();
@@ -113,7 +104,6 @@ try {
     $('#address').value = `https://${rule.host}${rule.path}`;
     $('#scope').value = rule.path === '/' ? 'website' : 'section';
     $('#subdomains').checked = rule.includeSubdomains;
-    $('#images').checked = rule.applyToImages;
   }
   updateButton();
 } catch (error) {

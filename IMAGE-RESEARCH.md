@@ -2,6 +2,8 @@
 
 Investigated on November 6, 2026. Requirement: retain the native browser darkening engine and optionally leave image colors untouched. CSS replacement engines and brightness filters are outside scope.
 
+**Decision:** the user deferred this feature. Version 0.2.2 removes the experimental checkboxes and CSS behavior. The launch-time option below is recorded for future consideration only; existing launchers do not enable it.
+
 ## Findings
 
 1. **The CDP switch has no image setting.** `Emulation.setAutoDarkModeOverride` accepts only the optional `enabled` boolean. Its implementation changes the page's force-dark setting. It does not expose Blink runtime-feature controls.
@@ -9,7 +11,7 @@ Investigated on November 6, 2026. Requirement: retain the native browser darkeni
 3. **A launch-time route is supported by the source.** Chromium maps names passed through `--enable-blink-features` to runtime features. The candidate argument is `--enable-blink-features=AutoDarkModeSkipImages`. This does not itself enable dark mode. The extension could still choose the pages where native dark mode is enabled, while the image-exclusion preference would be global for that browser launch.
 4. **The installed Brave contains the feature name.** A read-only search of `Application/157.1.99.55/chrome.dll` found the ASCII string `AutoDarkModeSkipImages`. This supports availability in that build, but is not proof of correct visual behavior.
 5. **An independent native image toggle per website remains unverified.** No such parameter exists in the reviewed CDP command. The global Blink feature does not establish a per-tab API. Patching or rebuilding the browser would be a different project.
-6. **The CSS experiment is inconclusive as a general technique.** Chromium documents element-level exclusion through `color-scheme: only light`. The current extension targets image elements only, and the user reported no visible effect in Brave. That result does not establish whether the cause is image type, frame coverage, injection, or a browser rendering issue. It must not be marketed as reliable preservation. Images of different types, inline SVG, backgrounds, canvas and video need separate testing.
+6. **The CSS experiment is inconclusive as a general technique.** Chromium documents element-level exclusion through `color-scheme: only light`. Earlier extension versions targeted image elements only, and the user reported no visible effect in Brave. That result does not establish whether the cause is image type, frame coverage, injection, or a browser rendering issue. The experiment was removed in version 0.2.2. Images of different types, inline SVG, backgrounds, canvas and video would need separate testing if revisited.
 
 ## Attempted runtime verification
 
@@ -23,7 +25,7 @@ The next useful verification is a controlled fresh Brave launch with the candida
 
 - Native dark mode with a global native image-exclusion setting: **a source-backed candidate exists and is present by name in the installed binary; visual confirmation pending**.
 - Independent per-website image control through the existing extension/CDP command: **no reliable implementation established**.
-- The existing experimental checkbox is not evidence of supported per-website image preservation.
+- The removed experimental checkbox was not evidence of supported per-website image preservation.
 
 ## Primary sources
 

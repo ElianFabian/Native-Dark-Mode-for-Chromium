@@ -9,8 +9,7 @@ export function normalizeRule(input) {
   return {
     id: JSON.stringify([host, path, includeSubdomains]),
     host, path, includeSubdomains,
-    enabled: Boolean(input.enabled),
-    applyToImages: input.applyToImages !== false
+    enabled: Boolean(input.enabled)
   };
 }
 
@@ -35,7 +34,9 @@ export class RuleManager {
   }
 
   async list() {
-    return (await this.api.storage.local.get('rules')).rules ?? [];
+    const rules = (await this.api.storage.local.get('rules')).rules ?? [];
+    // Discard obsolete image preferences without losing website scopes or state.
+    return rules.map(({ applyToImages, ...rule }) => rule);
   }
 
   mutate(operation) {
@@ -56,8 +57,7 @@ export class RuleManager {
   update(id, patch) {
     return this.mutate(rules => rules.map(rule => rule.id === id ? {
       ...rule,
-      ...(typeof patch.enabled === 'boolean' ? { enabled: patch.enabled } : {}),
-      ...(typeof patch.applyToImages === 'boolean' ? { applyToImages: patch.applyToImages } : {})
+      ...(typeof patch.enabled === 'boolean' ? { enabled: patch.enabled } : {})
     } : rule));
   }
 
@@ -72,7 +72,7 @@ export class RuleManager {
     if (state.suspended && !resume) return state;
     // Avoid attaching to tabs without an enabled matching rule.
     if (!rule?.enabled && !state.enabled) return state;
-    return this.controller.set(tabId, Boolean(rule?.enabled), { applyToImages: rule?.applyToImages !== false, automatic: !resume });
+    return this.controller.set(tabId, Boolean(rule?.enabled), { automatic: !resume });
   }
 
   async applyAll(resumeTabId) {

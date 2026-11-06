@@ -26,12 +26,10 @@ Enable the native filter per tab, then per website and path section, without glo
 
 ## Image preference
 
-- Requested: choose whether dark mode affects images, ideally per website.
-- `Emulation.setAutoDarkModeOverride` only exposes `enabled`; this command has no separate image parameter. Current Chromium source contains an internal `AutoDarkModeSkipImages` feature, which does not establish that extensions can configure it per tab.
-- Version 0.2.0 exposes a clearly labeled experimental preservation preference using `color-scheme: only light` for image elements. Native mode uses heuristics; enabling it does not mean inverting every image. Visual effectiveness remains unverified.
-- Investigate whether element-level exclusion works in the installed browser without global flags. Explain any CSS-based alternative and verify fidelity. Do not attempt to undo native transformations through indiscriminate CSS inversion.
-- Extend fixtures with photographs, light/dark logos, transparency, background images and SVG. Record image, canvas and video results separately.
-- Preservation must retain original image appearance; adaptation needs defined behavior. Independent image control remains unverified.
+- **Deferred at the user's request.** Version 0.2.2 removes image checkboxes and experimental CSS behavior. Retain the native engine and existing website/section management.
+- `Emulation.setAutoDarkModeOverride` has no separate image parameter. No reliable dynamic native image toggle per website was established.
+- Record `--enable-blink-features=AutoDarkModeSkipImages` as a future native launch-time option only. It is global per browser launch and remains visually unverified. Do not enable it in the current launchers.
+- Preserve the investigation in `IMAGE-RESEARCH.md`. Revisit only if the user requests it or a suitable native per-website API becomes available.
 
 Technical references:
 
@@ -61,7 +59,7 @@ Technical references:
 | Banner cancellation and DevTools in Brave | Pending. |
 | Images, canvas, Shadow DOM and iframes | Pending visual validation. |
 | Website and section rules | Implemented; simulated matching, persistence, exclusions, navigation and cancellation tests pass. Brave UI tests pending. |
-| Image preference | Experimental CSS preservation has no visible effect in the user's Brave trial. Simulated insertion/removal passes but does not prove preservation. The user requires the native browser engine; CSS-engine replacement and brightness filters are excluded. Further native exclusion research is deferred while prioritizing banner suppression. |
+| Image preference | Removed from the interface and execution path in version 0.2.2. Legacy image fields are ignored without losing website rules; regression tests pass. Native startup option documented and deferred. |
 | Popup responsiveness | User screenshot shows disabled controls and inactive status alongside a debugger banner. Version 0.2.1 removes unnecessary CSS work for automatic images, decouples background tabs, and adds request timeout/progress. Simulated regressions pass; the actual Brave cause and fix remain unverified. |
 | Debugging banner | Added an optional Windows launcher with `--silent-debugger-extension-api`. Executable discovery checked without launching or closing Brave. Actual suppression in Brave pending a manual restart. This affects all debugger extensions in that browser launch. |
 | Regular Windows shortcut | Generated a local `.lnk` and installed a separate current-user Start Menu entry with the silent-debugger argument. Target and arguments verified. Browser restart and banner suppression remain unverified. No pre-existing browser shortcuts or associations changed. |

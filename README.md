@@ -1,6 +1,6 @@
 # Native Dark Mode — Brave prototype
 
-A Manifest V3 extension that sends `Emulation.setAutoDarkModeOverride` through `chrome.debugger`, with persistent rules for websites and path sections. No external daemon, remote debugging port, or global dark mode flag is required. Experimental image preservation adds a narrow CSS override to image elements.
+A Manifest V3 extension that sends `Emulation.setAutoDarkModeOverride` through `chrome.debugger`, with persistent rules for websites and path sections. No external daemon, remote debugging port, or global dark mode flag is required. Chromium handles image rendering automatically; the extension does not modify image styles.
 
 **Status:** prototype code. Visual compatibility with Brave has not been verified. The CDP command is experimental. See [PLAN.md](PLAN.md) for validation stages.
 
@@ -20,7 +20,7 @@ All project code, comments, interface text, tests and documentation must be writ
 4. Open `http://127.0.0.1:8765/test.html`, open the extension popup, choose **Entire website** or **Path section**, and click **Enable and save**.
 5. Observe the result, then try disabling, reloading, navigating, and dismissing the debugging banner. Record results in `PLAN.md`.
 
-Rules are saved in `storage.local` and restored on future visits, including after browser restarts. Disabling retains an inactive rule, which also excludes its scope from a broader enabled rule. The most specific matching path wins. The popup lists saved entries with enable/disable, edit, image preference and remove controls. Choose **Edit**, adjust the fields, and use **Save settings** to update the same scope. Saving a different scope adds another entry; remove the original explicitly if no longer needed.
+Rules are saved in `storage.local` and restored on future visits, including after browser restarts. Disabling retains an inactive rule, which also excludes its scope from a broader enabled rule. The most specific matching path wins. The popup lists saved entries with enable/disable, edit and remove controls. Choose **Edit**, adjust the fields, and use **Save settings** to update the same scope. Saving a different scope adds another entry; remove the original explicitly if no longer needed.
 
 Queries and fragments are ignored. A section matches its path and descendants, not similarly named neighboring paths. Subdomains require explicit opt-in. HTTP and HTTPS share rules, while nonstandard ports are distinct. Rules do not sync to other devices.
 
@@ -32,17 +32,17 @@ Opening DevTools may disconnect the session. If another debugger is already atta
 
 Run `npm run check` and `npm test` with Node.js installed. No additional packages are required. Simulated tests check connection handling; they do not verify rendering in Brave.
 
-## Image preference and permissions
+## Images: deferred feature
 
-**Apply dark mode to images (automatic)** leaves image decisions to Chromium. Unchecking it requests experimental preservation through `img { color-scheme: only light !important; }`, injected into accessible frames. A user trial in Brave reported no visible effect; preservation is not established. It does not cover background images, closed Shadow DOM or all SVG cases. Native CDP has no independent image parameter. Injection failures appear in diagnostics. The native browser engine remains a requirement; a CSS replacement or brightness filter is not planned.
+Version 0.2.2 removes the experimental image controls, CSS injection and the unused `scripting` permission. Existing website and section rules are retained; obsolete image preferences are ignored and removed when rules are next saved. Refresh previously open pages after reloading the extension to clear any styles injected by older versions. The native browser engine remains a requirement; a CSS replacement or brightness filter is not planned.
 
-See [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md) for the native `AutoDarkModeSkipImages` launch-time candidate, its global scope and verification limits. Current launchers do not enable it.
+The native `AutoDarkModeSkipImages` launch-time candidate is documented in [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md) for future consideration. It is deliberately deferred, not enabled in any launcher, and has no control in the extension. It is global per browser launch; a dynamic per-website native image toggle has not been established.
 
-Automatic rules require HTTP/HTTPS site access, and image preservation uses the `scripting` permission. The code only stores rules locally and makes no external network requests. Reload the extension in `brave://extensions` after updating and review any new permission prompt. Refresh test pages, then open the popup to test the new controls.
+Automatic rules require HTTP/HTTPS site access. The code only stores rules locally and makes no external network requests. Reload the extension in `brave://extensions` after updating, then refresh open test pages.
 
 ## Popup responsiveness
 
-Version 0.2.1 avoids waiting for background tabs before replying to popup changes and skips CSS operations when first enabling automatic image mode. The popup displays progress and restores controls after ten seconds if the browser has not replied. A timeout does not cancel a browser operation or undo a saved rule; reopen the popup to inspect the latest state. A stalled experimental image operation may still require refreshing the page or reloading the extension.
+The popup does not wait for background tabs before replying to changes. It displays progress and restores controls after ten seconds if the browser has not replied. A timeout does not cancel a browser operation or undo a saved rule; reopen the popup to inspect the latest state.
 
 ## Native launcher installers
 
