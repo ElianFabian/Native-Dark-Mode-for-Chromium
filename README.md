@@ -36,6 +36,8 @@ Run `npm run check` and `npm test` with Node.js installed. No additional package
 
 **Apply dark mode to images (automatic)** leaves image decisions to Chromium. Unchecking it requests experimental preservation through `img { color-scheme: only light !important; }`, injected into accessible frames. A user trial in Brave reported no visible effect; preservation is not established. It does not cover background images, closed Shadow DOM or all SVG cases. Native CDP has no independent image parameter. Injection failures appear in diagnostics. The native browser engine remains a requirement; a CSS replacement or brightness filter is not planned.
 
+See [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md) for the native `AutoDarkModeSkipImages` launch-time candidate, its global scope and verification limits. Current launchers do not enable it.
+
 Automatic rules require HTTP/HTTPS site access, and image preservation uses the `scripting` permission. The code only stores rules locally and makes no external network requests. Reload the extension in `brave://extensions` after updating and review any new permission prompt. Refresh test pages, then open the popup to test the new controls.
 
 ## Popup responsiveness
