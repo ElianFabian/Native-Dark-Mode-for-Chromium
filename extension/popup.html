@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Native Dark Mode</title>
+<link rel="stylesheet" href="popup.css">
+<main>
+  <h1>Native Dark Mode</h1>
+  <p id="site">Checking tab…</p>
+  <p id="status" role="status" aria-live="polite"></p>
+  <button id="toggle" disabled>Please wait…</button>
+  <p class="note">This tab only. The setting follows navigation until disabled or disconnected.</p>
+  <p class="note">Brave may show a debugging banner. Dismissing it or opening DevTools may disconnect dark mode.</p>
+  <details><summary>Diagnostics</summary><pre id="diagnostic"></pre></details>
+</main>
+<script src="popup.js" type="module"></script>
+</html>

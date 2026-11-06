@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Native dark mode test</title>
+<style>
+body { background: white; color: #171717; font: 18px/1.6 system-ui; max-width: 900px; margin: 40px auto; padding: 24px; }
+section { border: 1px solid #aaa; padding: 16px; margin: 16px 0; } a { color: #174bc8; }
+.colors { display: flex; } .colors span { padding: 20px; color: black; }
+canvas, img { border: 1px solid #888; } iframe { background: white; width: 100%; }
+</style>
+<h1>Native dark mode test</h1>
+<p>This document requests a white background. Enable the extension and observe the change without modifying its CSS.</p>
+<section><h2>Text and controls</h2><a href="test.html?navigation=1">Navigate within this site</a> · <a href="http://localhost:8765/test.html">Switch hostname to localhost</a><p><input placeholder="Sample text"><button>Test button</button></p></section>
+<section><h2>Colors and image</h2><div class="colors"><span style="background:#ff5555">Red</span><span style="background:#55ff55">Green</span><span style="background:#5555ff">Blue</span></div><p>Check whether the image color bands remain unchanged.</p><img width="240" height="80" alt="Red, green and blue bands" src="bands.svg"></section>
+<section><h2>Canvas</h2><canvas width="240" height="80"></canvas></section>
+<section><h2>Closed Shadow DOM</h2><div id="shadow"></div></section>
+<section><h2>Local iframe (does not validate out-of-process frames)</h2><iframe title="Local test" srcdoc="<body style='background:white;color:black;font:20px system-ui'>White background and black text inside an iframe</body>"></iframe></section>
+<script>
+const ctx = document.querySelector('canvas').getContext('2d');
+['#ff5555','#55ff55','#5555ff'].forEach((color,i) => { ctx.fillStyle=color; ctx.fillRect(i*80,0,80,80); });
+document.querySelector('#shadow').attachShadow({mode:'closed'}).innerHTML='<div style="background:white;color:black;padding:16px">Closed Shadow DOM content</div>';
+</script>
+</html>
