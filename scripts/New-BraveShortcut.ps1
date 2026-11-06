@@ -1,9 +1,22 @@
 [CmdletBinding()]
 param(
-    [string]$OutputDirectory = (Split-Path -Parent $PSScriptRoot)
+    [string]$OutputDirectory,
+    [switch]$StartMenu
 )
 
 $ErrorActionPreference = 'Stop'
+
+if ($StartMenu) {
+    if ($PSBoundParameters.ContainsKey('OutputDirectory')) {
+        throw 'Choose either -StartMenu or -OutputDirectory.'
+    }
+    $OutputDirectory = [Environment]::GetFolderPath('Programs')
+    if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
+        throw 'The current user Start Menu directory could not be located.'
+    }
+} elseif (-not $PSBoundParameters.ContainsKey('OutputDirectory')) {
+    $OutputDirectory = Split-Path -Parent $PSScriptRoot
+}
 
 $braveCandidates = @(
     (Join-Path $env:ProgramFiles 'BraveSoftware\Brave-Browser\Application\brave.exe')
