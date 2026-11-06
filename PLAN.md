@@ -22,13 +22,13 @@ Enable the native filter per tab, then per website and path section, without glo
 - Queries and fragments do not create separate scopes in the first version. Display the saved scope. HTTP and HTTPS share rules; a nonstandard port distinguishes a destination.
 - Test trailing slashes, adjacent paths, subdomains, domain changes, same-document navigation and exclusions inside enabled websites.
 - Acceptance example: enable `example.com`, exclude `example.com/photos/`, then enable `example.com/photos/articles/`.
-- These rules are not implemented and depend on native-filter validation.
+- Rules are implemented in version 0.2.0 at the user's explicit request. Native visual regression testing remains pending.
 
 ## Image preference
 
 - Requested: choose whether dark mode affects images, ideally per website.
 - `Emulation.setAutoDarkModeOverride` only exposes `enabled`; this command has no separate image parameter. Current Chromium source contains an internal `AutoDarkModeSkipImages` feature, which does not establish that extensions can configure it per tab.
-- Do not present a working image switch until a supported approach is demonstrated. Native mode uses heuristics; enabling it does not mean inverting every image.
+- Version 0.2.0 exposes a clearly labeled experimental preservation preference using `color-scheme: only light` for image elements. Native mode uses heuristics; enabling it does not mean inverting every image. Visual effectiveness remains unverified.
 - Investigate whether element-level exclusion works in the installed browser without global flags. Explain any CSS-based alternative and verify fidelity. Do not attempt to undo native transformations through indiscriminate CSS inversion.
 - Extend fixtures with photographs, light/dark logos, transparency, background images and SVG. Record image, canvas and video results separately.
 - Preservation must retain original image appearance; adaptation needs defined behavior. Independent image control remains unverified.
@@ -54,10 +54,11 @@ Technical references:
 
 | Check | Result |
 | --- | --- |
-| Syntax and controller tests | Passed: `npm run check` and `npm test`; 7 simulated tests. |
-| Extension loaded in Brave | Pending; UI automation stopped before installation. |
+| Syntax and controller/rule tests | Passed: `npm run check` and `npm test`; 15 simulated tests. |
+| Extension loaded in Brave | User screenshot shows the original prototype's debugger banner; version 0.2.0 has not been loaded by the agent. |
 | Native command accepted and rendering changed | Pending. |
 | Enable/disable and reload in Brave | Pending. |
 | Banner cancellation and DevTools in Brave | Pending. |
 | Images, canvas, Shadow DOM and iframes | Pending visual validation. |
-| Website and section rules | Not implemented; native validation required first. |
+| Website and section rules | Implemented; simulated matching, persistence, exclusions, navigation and cancellation tests pass. Brave UI tests pending. |
+| Image preference | Implemented as experimental CSS preservation for image elements; simulated insertion/removal test passes. Visual validation pending. |

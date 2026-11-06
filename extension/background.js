@@ -1,24 +1,37 @@
 import { DarkModeController } from './controller.js';
+import { RuleManager, matchingRule } from './rules.js';
 
 const controller = new DarkModeController(chrome);
+const manager = new RuleManager(chrome, controller);
 const report = error => console.warn('Native Dark Mode:', error);
+
+async function snapshot(tabId) {
+  const tab = await chrome.tabs.get(tabId);
+  const rules = await manager.list();
+  return { state: await controller.read(tabId), rules, matching: matchingRule(rules, tab.url ?? '') };
+}
 
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (sender.id !== chrome.runtime.id || !Number.isInteger(message?.tabId)) return;
-  let result;
-  if (message.type === 'status') result = controller.read(message.tabId);
-  else if (message.type === 'set' && typeof message.enabled === 'boolean') {
-    result = controller.set(message.tabId, message.enabled);
-  } else return;
-  result.then(reply, error => reply({ enabled: false, error: String(error.message ?? error) }));
+  const result = (async () => {
+    if (message.type === 'save') await manager.save(message.rule);
+    else if (message.type === 'update') await manager.update(message.id, message.patch ?? {});
+    else if (message.type === 'remove') await manager.remove(message.id);
+    else if (message.type !== 'status') throw new Error('Unknown request.');
+    if (message.type !== 'status') await manager.applyAll(message.tabId);
+    return snapshot(message.tabId);
+  })();
+  result.then(reply, error => reply({ error: String(error.message ?? error) }));
   return true;
 });
 
 chrome.tabs.onUpdated.addListener((tabId, change) => {
-  if (change.status === 'loading' || change.status === 'complete') {
-    void controller.navigation(tabId).catch(report);
+  if (change.url || change.status === 'loading' || change.status === 'complete') {
+    void manager.apply(tabId).catch(report);
   }
 });
+chrome.runtime.onStartup.addListener(() => { void manager.applyAll().catch(report); });
+chrome.runtime.onInstalled.addListener(() => { void manager.applyAll().catch(report); });
 chrome.debugger.onDetach.addListener((source, reason) => {
   if (source.tabId !== undefined) void controller.disconnected(source.tabId, reason).catch(report);
 });

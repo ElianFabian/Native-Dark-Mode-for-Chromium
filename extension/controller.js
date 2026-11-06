@@ -25,9 +25,10 @@ export class DarkModeController {
     return next;
   }
 
-  set(tabId, enabled) {
+  set(tabId, enabled, { applyToImages = true, automatic = false } = {}) {
     return this.enqueue(tabId, async () => {
       const old = await this.read(tabId);
+      if (automatic && old.suspended) return old;
       const target = { tabId };
       let attached = old.enabled;
       try {
@@ -41,11 +42,13 @@ export class DarkModeController {
             attached = true;
           }
           await this.api.debugger.sendCommand(target, 'Emulation.setAutoDarkModeOverride', { enabled: true });
-          return await this.write(tabId, { enabled: true });
+          const imageWarning = await this.updateImages(tabId, !applyToImages);
+          return await this.write(tabId, { enabled: true, applyToImages, imageWarning });
         }
         if (attached) {
           // Clear the override before releasing the connection.
           await this.api.debugger.sendCommand(target, 'Emulation.setAutoDarkModeOverride', {});
+          await this.updateImages(tabId, false);
           await this.write(tabId, { enabled: false });
           await this.api.debugger.detach(target);
         }
@@ -53,11 +56,23 @@ export class DarkModeController {
       } catch (error) {
         // Release our connection if the command fails.
         if (attached) {
+          await this.updateImages(tabId, false);
           try { await this.api.debugger.detach(target); } catch {}
         }
         return await this.write(tabId, { enabled: false, error: String(error.message ?? error) });
       }
     });
+  }
+
+  async updateImages(tabId, preserve) {
+    if (!this.api.scripting) return preserve ? 'Image preservation is unavailable.' : undefined;
+    const injection = { target: { tabId, allFrames: true }, css: 'img { color-scheme: only light !important; }', origin: 'USER' };
+    try {
+      await this.api.scripting.removeCSS(injection);
+      if (preserve) await this.api.scripting.insertCSS(injection);
+    } catch (error) {
+      return `Image preference could not be applied: ${error.message ?? error}`;
+    }
   }
 
   navigation(tabId) {
@@ -76,7 +91,8 @@ export class DarkModeController {
     // Do not reconnect: the user may have canceled or opened DevTools.
     return this.enqueue(tabId, async () => {
       if ((await this.read(tabId)).enabled) {
-        await this.write(tabId, { enabled: false, error: `Connection ended (${reason}). You can enable it again manually.` });
+        await this.updateImages(tabId, false);
+        await this.write(tabId, { enabled: false, suspended: true, error: `Connection ended (${reason}). Automatic activation is paused for this tab. Enable it manually to resume.` });
       }
     });
   }
