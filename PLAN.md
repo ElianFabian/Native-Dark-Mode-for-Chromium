@@ -54,7 +54,7 @@ Technical references:
 
 | Check | Result |
 | --- | --- |
-| Syntax and controller/rule tests | Passed: `npm run check` and `npm test`; 15 simulated tests. |
+| Syntax and controller/rule/request tests | Passed: `npm run check` and `npm test`; 19 simulated tests. |
 | Extension loaded in Brave | User screenshot shows the original prototype's debugger banner; version 0.2.0 has not been loaded by the agent. |
 | Native command accepted and rendering changed | Pending. |
 | Enable/disable and reload in Brave | Pending. |
@@ -62,3 +62,4 @@ Technical references:
 | Images, canvas, Shadow DOM and iframes | Pending visual validation. |
 | Website and section rules | Implemented; simulated matching, persistence, exclusions, navigation and cancellation tests pass. Brave UI tests pending. |
 | Image preference | Implemented as experimental CSS preservation for image elements; simulated insertion/removal test passes. Visual validation pending. |
+| Popup responsiveness | User screenshot shows disabled controls and inactive status alongside a debugger banner. Version 0.2.1 removes unnecessary CSS work for automatic images, decouples background tabs, and adds request timeout/progress. Simulated regressions pass; the actual Brave cause and fix remain unverified. |

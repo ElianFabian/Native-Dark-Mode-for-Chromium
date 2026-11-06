@@ -18,7 +18,7 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
     else if (message.type === 'update') await manager.update(message.id, message.patch ?? {});
     else if (message.type === 'remove') await manager.remove(message.id);
     else if (message.type !== 'status') throw new Error('Unknown request.');
-    if (message.type !== 'status') await manager.applyAll(message.tabId);
+    if (message.type !== 'status') await manager.applyFromPopup(message.tabId);
     return snapshot(message.tabId);
   })();
   result.then(reply, error => reply({ error: String(error.message ?? error) }));

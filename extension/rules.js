@@ -79,4 +79,13 @@ export class RuleManager {
     const tabs = await this.api.tabs.query({});
     await Promise.allSettled(tabs.map(tab => this.apply(tab.id, tab.id === resumeTabId)));
   }
+
+  async applyFromPopup(tabId) {
+    const result = await this.apply(tabId, true);
+    // A background or loading tab must not hold the current popup open.
+    void this.api.tabs.query({}).then(tabs => Promise.allSettled(
+      tabs.filter(tab => tab.id !== tabId).map(tab => this.apply(tab.id))
+    )).catch(error => console.warn('Background rule update:', error));
+    return result;
+  }
 }

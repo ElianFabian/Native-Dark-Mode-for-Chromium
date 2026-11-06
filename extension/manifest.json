@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Native Dark Mode — Prototype",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Per-tab prototype of Chromium native dark mode through CDP.",
   "minimum_chrome_version": "118",
   "permissions": ["debugger", "storage", "activeTab", "scripting"],

@@ -111,3 +111,21 @@ test('concurrent rule saves do not overwrite each other', async () => {
   ]);
   assert.equal((await manager.list()).length, 2);
 });
+
+test('automatic image mode never waits for CSS scripting on first activation', async () => {
+  const { api, manager, controller } = integration();
+  api.scripting.removeCSS = () => new Promise(() => {});
+  await manager.save({ url: 'example.com', enabled: true });
+  await manager.applyFromPopup(7);
+  assert.equal((await controller.read(7)).enabled, true);
+});
+
+test('a stalled background tab does not prevent the popup request from completing', async () => {
+  const { api, manager, controller } = integration();
+  const get = api.tabs.get;
+  api.tabs.get = id => id === 8 ? new Promise(() => {}) : get(id);
+  api.tabs.query = async () => [{ id: 7 }, { id: 8 }];
+  await manager.save({ url: 'example.com', enabled: true });
+  await manager.applyFromPopup(7);
+  assert.equal((await controller.read(7)).enabled, true);
+});

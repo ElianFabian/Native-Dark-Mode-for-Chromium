@@ -37,3 +37,7 @@ Run `npm run check` and `npm test` with Node.js installed. No additional package
 **Apply dark mode to images (automatic)** leaves image decisions to Chromium. Unchecking it requests experimental preservation through `img { color-scheme: only light !important; }`, injected into accessible frames. It does not cover background images, closed Shadow DOM or all SVG cases. This has not been visually validated in Brave and cannot guarantee unchanged images. Native CDP has no independent image parameter. Injection failures appear in diagnostics.
 
 Automatic rules require HTTP/HTTPS site access, and image preservation uses the `scripting` permission. The code only stores rules locally and makes no external network requests. Reload the extension in `brave://extensions` after updating and review any new permission prompt. Refresh test pages, then open the popup to test the new controls.
+
+## Popup responsiveness
+
+Version 0.2.1 avoids waiting for background tabs before replying to popup changes and skips CSS operations when first enabling automatic image mode. The popup displays progress and restores controls after ten seconds if the browser has not replied. A timeout does not cancel a browser operation or undo a saved rule; reopen the popup to inspect the latest state. A stalled experimental image operation may still require refreshing the page or reloading the extension.

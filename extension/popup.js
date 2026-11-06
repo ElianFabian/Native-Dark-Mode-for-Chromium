@@ -1,4 +1,5 @@
 import { normalizeRule } from './rules.js';
+import { requestWithTimeout } from './request.js';
 
 const $ = selector => document.querySelector(selector);
 let tab;
@@ -77,9 +78,10 @@ function render(value) {
 async function request(message) {
   if (busy) return;
   busy = true;
+  $('#status').textContent = 'Saving the rule and applying it to this tab…';
   document.querySelectorAll('button, input, select').forEach(element => { element.disabled = true; });
   try {
-    render(await chrome.runtime.sendMessage({ ...message, tabId: tab.id }));
+    render(await requestWithTimeout(chrome.runtime, { ...message, tabId: tab.id }));
   } catch (error) {
     $('#status').textContent = String(error.message ?? error);
   } finally {
@@ -104,7 +106,7 @@ try {
   if (!/^https?:\/\//i.test(tab.url ?? '')) throw new Error('Open an HTTP or HTTPS page to manage rules.');
   $('#site').textContent = new URL(tab.url).hostname;
   $('#address').value = tab.url;
-  render(await chrome.runtime.sendMessage({ type: 'status', tabId: tab.id }));
+  render(await requestWithTimeout(chrome.runtime, { type: 'status', tabId: tab.id }));
   // Start with the rule currently responsible for this URL, if any.
   if (snapshot.matching) {
     const rule = snapshot.matching;
