@@ -33,6 +33,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 :root {
   --positive-highlight-bg: #e4f4ea;
   --positive-highlight-border: #31744f;
+  --disabled-rule-bg: #e9ebef;
 }
 .rule-editor, .trash-panel, .domain-group, .domain-group summary {
   transition: background-color 180ms ease-out, border-color 180ms ease-out, box-shadow 180ms ease-out;
@@ -40,10 +41,12 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 :root[data-theme="dark"] {
   --positive-highlight-bg: #203d31;
   --positive-highlight-border: #8ac7a5;
+  --disabled-rule-bg: #292e38;
 }
 :root[data-high-contrast] {
   --positive-highlight-bg: var(--panel);
   --positive-highlight-border: var(--text);
+  --disabled-rule-bg: var(--panel);
 }
 .rule-editor.is-highlighted {
   background: var(--positive-highlight-bg);
@@ -154,6 +157,11 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .rule-address { font-size: 1rem; }
 .rule-added { color: var(--muted); font-size: .8125rem; }
 .rule { padding: 10px 0; }
+#rules .rule { padding-inline: .55rem; }
+#rules .rule[data-rule-disabled] {
+  border-radius: .4rem;
+  background: var(--disabled-rule-bg);
+}
 .rule-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 .rule-actions button { width: auto; min-height: 34px; padding: 5px 12px; margin: 0; border: 1px solid var(--border); }
 .rule-toggle { display: inline-grid; }

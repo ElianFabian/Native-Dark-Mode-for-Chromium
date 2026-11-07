@@ -343,6 +343,7 @@ async function revealRestoredRule(id) {
 }
 
 function renderRuleToggle(button, enabled, item = button.closest('.rule')) {
+  item.toggleAttribute('data-rule-disabled', !enabled);
   button.className = enabled ? 'rule-toggle rule-disable' : 'rule-toggle rule-enable';
   button.firstElementChild.textContent = t(enabled ? 'disable' : 'enable');
   button.dataset.alternateLabel = t(enabled ? 'enable' : 'disable');
