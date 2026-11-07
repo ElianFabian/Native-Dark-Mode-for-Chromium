@@ -33,7 +33,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 :root {
   --positive-highlight-bg: #e4f4ea;
   --positive-highlight-border: #31744f;
-  --disabled-rule-bg: #e9ebef;
+  --disabled-rule-bg: #dce2ea;
 }
 .rule-editor, .trash-panel, .domain-group, .domain-group summary {
   transition: background-color 180ms ease-out, border-color 180ms ease-out, box-shadow 180ms ease-out;
@@ -41,12 +41,15 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 :root[data-theme="dark"] {
   --positive-highlight-bg: #203d31;
   --positive-highlight-border: #8ac7a5;
-  --disabled-rule-bg: #292e38;
+  --disabled-rule-bg: #353e4c;
 }
 :root[data-high-contrast] {
   --positive-highlight-bg: var(--panel);
   --positive-highlight-border: var(--text);
-  --disabled-rule-bg: var(--panel);
+  --disabled-rule-bg: #d6d6d6;
+}
+:root[data-high-contrast][data-theme="dark"] {
+  --disabled-rule-bg: #303030;
 }
 .rule-editor.is-highlighted {
   background: var(--positive-highlight-bg);
@@ -158,6 +161,10 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
   outline-offset: -2px;
 }
 @media (forced-colors: active) {
+  #rules .rule[data-rule-disabled]:not(.is-highlighted) {
+    outline: 1px solid GrayText;
+    outline-offset: -2px;
+  }
   #rules .rule.is-highlighted { outline: 1px dashed Highlight; outline-offset: -2px; }
 }
 @media (prefers-reduced-motion: reduce) {
