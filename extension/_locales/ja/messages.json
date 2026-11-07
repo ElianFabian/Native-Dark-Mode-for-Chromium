@@ -314,6 +314,9 @@
   "sortByDate": {
     "message": "追加日"
   },
+  "sortAscending": {
+    "message": "昇順"
+  },
   "sortDescending": {
     "message": "降順"
   },

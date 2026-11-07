@@ -314,6 +314,9 @@
   "sortByDate": {
     "message": "Data di aggiunta"
   },
+  "sortAscending": {
+    "message": "Crescente"
+  },
   "sortDescending": {
     "message": "Decrescente"
   },

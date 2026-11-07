@@ -189,7 +189,7 @@ function ruleHeading(rule) {
 }
 
 function selectedSortOrder() {
-  const descending = $('#sort-descending').checked;
+  const descending = $('#sort-direction').hasAttribute('data-descending');
   if (readChoice($('#sort-rules')) === 'date') return descending ? 'newest' : 'oldest';
   return descending ? 'reverse-alphabetical' : 'alphabetical';
 }
@@ -516,7 +516,10 @@ async function saveListPreferences() {
   } catch (error) { $('#status').textContent = errorText(error); }
 }
 $('#sort-rules')?.addEventListener('change', saveListPreferences);
-$('#sort-descending')?.addEventListener('change', saveListPreferences);
+$('#sort-direction')?.addEventListener('click', event => {
+  event.currentTarget.toggleAttribute('data-descending');
+  void saveListPreferences();
+});
 $('#group-domains')?.addEventListener('change', saveListPreferences);
 $('#empty-trash')?.addEventListener('click', async () => {
   const ids = snapshot?.trash?.map(entry => entry.id) ?? [];
@@ -555,7 +558,7 @@ try {
     const { ruleListPreferences } = await chrome.storage.local.get('ruleListPreferences');
     const order = ruleListPreferences?.order;
     writeChoice($('#sort-rules'), order === 'newest' || order === 'oldest' ? 'date' : 'alphabetical');
-    $('#sort-descending').checked = order === 'newest' || order === 'reverse-alphabetical';
+    $('#sort-direction').toggleAttribute('data-descending', order === 'newest' || order === 'reverse-alphabetical');
     $('#group-domains').checked = Boolean(ruleListPreferences?.group);
   }
   if (!isManager) {

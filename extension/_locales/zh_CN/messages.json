@@ -314,6 +314,9 @@
   "sortByDate": {
     "message": "添加日期"
   },
+  "sortAscending": {
+    "message": "升序"
+  },
   "sortDescending": {
     "message": "降序"
   },

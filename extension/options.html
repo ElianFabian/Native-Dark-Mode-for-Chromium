@@ -106,7 +106,13 @@
               <label><input type="radio" name="sort-rules" value="date"><span data-i18n="sortByDate">Date added</span></label>
             </div>
           </fieldset>
-          <label><input id="sort-descending" type="checkbox"> <span data-i18n="sortDescending">Descending</span></label>
+          <button id="sort-direction" type="button">
+            <span class="sort-direction-icon" aria-hidden="true"></span>
+            <span class="sort-direction-labels" aria-live="polite">
+              <span class="sort-ascending-label" data-i18n="sortAscending">Ascending</span>
+              <span class="sort-descending-label" data-i18n="sortDescending">Descending</span>
+            </span>
+          </button>
           <label><input id="group-domains" type="checkbox"> <span data-i18n="groupDomains">Group by domain</span></label>
         </div>
         <p id="rule-count" class="note"></p>

@@ -314,6 +314,9 @@
   "sortByDate": {
     "message": "추가 날짜"
   },
+  "sortAscending": {
+    "message": "오름차순"
+  },
   "sortDescending": {
     "message": "내림차순"
   },
