@@ -281,6 +281,9 @@
   "importReplaceAll": {
     "message": "一覧全体を置き換える"
   },
+  "confirmReplaceAll": {
+    "message": "保存済みのルール一覧をこのバックアップのルールで置き換えますか？"
+  },
   "importRemovalImpact": {
     "message": "バックアップに含まれない既存ルールは完全に削除されます（{count} 件）。"
   },

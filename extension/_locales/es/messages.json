@@ -281,6 +281,9 @@
   "importReplaceAll": {
     "message": "Reemplazar toda la lista"
   },
+  "confirmReplaceAll": {
+    "message": "¿Reemplazar toda la lista de reglas guardadas por las de esta copia?"
+  },
   "importRemovalImpact": {
     "message": "Las reglas actuales que no estén en la copia se eliminarán definitivamente ({count})."
   },

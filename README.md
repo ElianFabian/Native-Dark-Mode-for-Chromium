@@ -27,11 +27,11 @@ Click either screenshot to open it at full resolution.
 
 ### Extension popup
 
-<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="100%" alt="Extension popup showing an Amazon regional rule, text size controls, and quick access to the rule manager"></a>
+<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="1200" style="max-width: 100%; height: auto;" alt="Extension popup showing an Amazon regional rule, text size controls, and quick access to the rule manager"></a>
 
 ### Rule manager
 
-<a href="docs/screenshots/rule-manager.png"><img src="docs/screenshots/rule-manager.png" width="100%" alt="Rule manager showing the editor, search and sorting controls, rule status and dates, JSON backups, and trash"></a>
+<a href="docs/screenshots/rule-manager.png"><img src="docs/screenshots/rule-manager.png" width="1200" style="max-width: 100%; height: auto;" alt="Rule manager showing the editor, search and sorting controls, rule status and dates, JSON backups, and trash"></a>
 
 ## Use the extension
 
@@ -55,7 +55,7 @@ More specific paths take priority. At the same path, a rule for a single domain 
 
 **Remove** moves a rule to **Trash**, below the editor. You can restore a rule with its settings or choose **Empty trash** and confirm permanent deletion. If a saved rule already occupies the same scope, the deleted copy stays in Trash when you try to restore it.
 
-The manager also offers **Export JSON** and **Import JSON**. The import dialog previews new and matching rules. By default it adds only new rules. You can also update matching rules or replace the entire list. The replacement option shows a scrollable list of the current rules it will delete. The JSON covers the main rule list. Trash and display preferences stay in local storage.
+The manager also offers **Export JSON** and **Import JSON**. The import dialog previews new and matching rules. By default it adds only new rules. You can also update matching rules or replace the entire list. The replacement option shows a scrollable list of the current rules it will delete and asks for confirmation. The JSON covers the main rule list. Trash and display preferences stay in local storage.
 
 The interface follows the browser language by default. The **Language** selector in the manager lets you choose English, Spanish, French, European Portuguese, Italian, Simplified Chinese, Japanese, Korean, or German.
 

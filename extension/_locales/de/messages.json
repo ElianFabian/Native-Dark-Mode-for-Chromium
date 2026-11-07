@@ -281,6 +281,9 @@
   "importReplaceAll": {
     "message": "Gesamte Liste ersetzen"
   },
+  "confirmReplaceAll": {
+    "message": "Die gesamte Liste der gespeicherten Regeln durch die Regeln aus dieser Sicherung ersetzen?"
+  },
   "importRemovalImpact": {
     "message": "Regeln, die in der Sicherung fehlen, werden endgültig gelöscht ({count})."
   },

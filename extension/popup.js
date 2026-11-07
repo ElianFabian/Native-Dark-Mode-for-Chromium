@@ -570,9 +570,15 @@ $('#import-preview')?.addEventListener('cancel', event => {
 
 $('#confirm-import')?.addEventListener('click', async () => {
   if (!pendingImport || busy) return;
+  const conflictPolicy = readChoice($('#conflict-policy'));
+  if (conflictPolicy === 'replace-all') {
+    const count = pendingImport.removedRules.length;
+    const warning = count ? `\n\n${t('importRemovalImpact', { count })}` : '';
+    if (!window.confirm(t('confirmReplaceAll') + warning)) return;
+  }
   const imported = await withBusy(async () => {
     const value = await backupRequest({ type: 'import', text: pendingImport.text,
-      confirmedRemovalIds: pendingImport.removedRules.map(rule => rule.id), conflictPolicy: readChoice($('#conflict-policy')) });
+      confirmedRemovalIds: pendingImport.removedRules.map(rule => rule.id), conflictPolicy });
     render(value);
     const { added, updated, skipped } = value.importSummary;
     pendingImport = undefined;

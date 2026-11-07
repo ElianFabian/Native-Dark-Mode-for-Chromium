@@ -281,6 +281,9 @@
   "importReplaceAll": {
     "message": "Substituir toda a lista"
   },
+  "confirmReplaceAll": {
+    "message": "Substituir toda a lista de regras guardadas pelas regras desta cópia de segurança?"
+  },
   "importRemovalImpact": {
     "message": "As regras ausentes da cópia serão eliminadas definitivamente ({count})."
   },

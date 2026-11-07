@@ -281,6 +281,9 @@
   "importReplaceAll": {
     "message": "Replace the entire list"
   },
+  "confirmReplaceAll": {
+    "message": "Replace the entire saved rule list with the rules from this backup?"
+  },
   "importRemovalImpact": {
     "message": "Current rules absent from the backup will be permanently deleted ({count})."
   },

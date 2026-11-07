@@ -27,11 +27,11 @@ Haz clic en una captura para abrirla a resolución completa.
 
 ### Panel de la extensión
 
-<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="100%" alt="Panel con una regla regional de Amazon, controles de tamaño del texto y acceso al gestor de reglas"></a>
+<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="1200" style="max-width: 100%; height: auto;" alt="Panel con una regla regional de Amazon, controles de tamaño del texto y acceso al gestor de reglas"></a>
 
 ### Gestor de reglas
 
-<a href="docs/screenshots/rule-manager.png"><img src="docs/screenshots/rule-manager.png" width="100%" alt="Gestor con editor, búsqueda, orden, estado y fecha de añadido, copias JSON y papelera"></a>
+<a href="docs/screenshots/rule-manager.png"><img src="docs/screenshots/rule-manager.png" width="1200" style="max-width: 100%; height: auto;" alt="Gestor con editor, búsqueda, orden, estado y fecha de añadido, copias JSON y papelera"></a>
 
 ## Usar la extensión
 
@@ -55,7 +55,7 @@ Las rutas más específicas tienen prioridad. Para la misma ruta, un dominio con
 
 **Eliminar** mueve la regla a la **Papelera**, debajo del editor. Puedes recuperarla con sus ajustes o elegir **Vaciar papelera** y confirmar el borrado definitivo. Si ya existe una regla para el mismo alcance, la copia eliminada se queda en la papelera al intentar restaurarla.
 
-Con **Exportar JSON** puedes guardar una copia de las reglas. **Importar JSON** muestra una vista previa y te permite añadir solo las reglas nuevas, añadirlas y actualizar las coincidencias, o reemplazar toda la lista. El reemplazo muestra una lista desplazable de las reglas que se eliminarán. La papelera y las preferencias de apariencia se guardan aparte.
+Con **Exportar JSON** puedes guardar una copia de las reglas. **Importar JSON** muestra una vista previa y te permite añadir solo las reglas nuevas, añadirlas y actualizar las coincidencias, o reemplazar toda la lista. El reemplazo muestra una lista desplazable de las reglas que se eliminarán y pide confirmación. La papelera y las preferencias de apariencia se guardan aparte.
 
 La interfaz sigue el idioma del navegador por defecto. En **Idioma** puedes elegir español, inglés, francés, portugués europeo, italiano, chino simplificado, japonés, coreano o alemán.
 

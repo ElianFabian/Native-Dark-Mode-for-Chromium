@@ -281,6 +281,9 @@
   "importReplaceAll": {
     "message": "Sostituisci l’intero elenco"
   },
+  "confirmReplaceAll": {
+    "message": "Sostituire l’intero elenco delle regole salvate con quelle di questo backup?"
+  },
   "importRemovalImpact": {
     "message": "Le regole assenti dal backup verranno eliminate definitivamente ({count})."
   },

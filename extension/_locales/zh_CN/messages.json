@@ -281,6 +281,9 @@
   "importReplaceAll": {
     "message": "替换整个列表"
   },
+  "confirmReplaceAll": {
+    "message": "要用此备份中的规则替换整个已保存的规则列表吗？"
+  },
   "importRemovalImpact": {
     "message": "备份中没有的现有规则将被永久删除（{count} 条）。"
   },
