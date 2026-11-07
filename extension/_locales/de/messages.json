@@ -325,5 +325,11 @@
   },
   "ruleAddedDate": {
     "message": "Hinzugefügt am {date}"
+  },
+  "expandAllGroups": {
+    "message": "Alle ausklappen"
+  },
+  "collapseAllGroups": {
+    "message": "Alle einklappen"
   }
 }

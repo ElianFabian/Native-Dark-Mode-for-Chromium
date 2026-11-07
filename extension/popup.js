@@ -147,6 +147,7 @@ function updateButton() {
     $('#import').disabled = busy || !snapshot;
     $('#confirm-import').disabled = busy || !pendingImport;
     $('#empty-trash').disabled = busy || !snapshot?.trash?.length;
+    updateGroupToggle();
   }
   try {
     const rule = normalizeRule(draft(false));
@@ -208,6 +209,15 @@ function selectedSortOrder() {
   return descending ? 'reverse-alphabetical' : 'alphabetical';
 }
 
+function updateGroupToggle() {
+  const button = $('#toggle-domain-groups');
+  const hasGroups = Boolean($('#rules .domain-group'));
+  button.hidden = !$('#group-domains').checked;
+  button.disabled = busy || !hasGroups;
+  const label = t(hasGroups && !$('#rules .domain-group:not([open])') ? 'collapseAllGroups' : 'expandAllGroups');
+  if (button.textContent !== label) button.textContent = label;
+}
+
 function showRule(rule) {
   $('#address').value = rule ? ruleAddress(rule) : '';
   writeChoice($('#scope'), rule && rule.path !== '/' ? 'section' : 'website');
@@ -259,6 +269,7 @@ function renderRules(previousEditedId) {
     }
     for (const rule of group) container.append(renderRule(rule, dateFormatter));
   }
+  updateGroupToggle();
 }
 
 function renderRule(rule, dateFormatter) {
@@ -575,6 +586,12 @@ $('#sort-direction')?.addEventListener('click', event => {
   void saveListPreferences();
 });
 $('#group-domains')?.addEventListener('change', saveListPreferences);
+$('#toggle-domain-groups')?.addEventListener('click', () => {
+  const open = Boolean($('#rules .domain-group:not([open])'));
+  for (const group of document.querySelectorAll('#rules .domain-group')) group.open = open;
+  updateGroupToggle();
+});
+$('#rules')?.addEventListener('toggle', updateGroupToggle, true);
 $('#empty-trash')?.addEventListener('click', async () => {
   const ids = snapshot?.trash?.map(entry => entry.id) ?? [];
   if (!ids.length || !window.confirm(t('confirmEmptyTrash'))) return;

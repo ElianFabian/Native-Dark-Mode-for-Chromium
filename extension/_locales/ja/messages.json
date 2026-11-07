@@ -325,5 +325,11 @@
   },
   "ruleAddedDate": {
     "message": "追加日 {date}"
+  },
+  "expandAllGroups": {
+    "message": "すべて展開"
+  },
+  "collapseAllGroups": {
+    "message": "すべて折りたたむ"
   }
 }

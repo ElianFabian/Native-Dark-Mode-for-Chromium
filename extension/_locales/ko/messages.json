@@ -325,5 +325,11 @@
   },
   "ruleAddedDate": {
     "message": "추가일 {date}"
+  },
+  "expandAllGroups": {
+    "message": "모두 펼치기"
+  },
+  "collapseAllGroups": {
+    "message": "모두 접기"
   }
 }

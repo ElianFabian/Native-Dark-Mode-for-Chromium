@@ -1,5 +1,10 @@
 body { width: auto; min-width: 0; }
-main { max-width: 78rem; margin: 0 auto; padding: 48px clamp(16px, 2.5vw, 48px) 32px; }
+main {
+  --manager-bottom-padding: 32px;
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: 48px clamp(16px, 2.5vw, 48px) var(--manager-bottom-padding);
+}
 header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; }
 h1 { margin: 0; font-size: 2.65rem; line-height: 1.15; overflow-wrap: anywhere; }
 header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
@@ -19,8 +24,10 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .editor-column {
   min-width: 0;
   position: sticky;
-  top: min(calc(var(--text-toolbar-height) + 24px), calc(100dvh - var(--editor-column-height, 0px) - 24px));
+  top: min(calc(var(--text-toolbar-height) + 24px), calc(100dvh - var(--editor-column-height, 0px) - var(--manager-bottom-padding)));
 }
+.rules-column { min-width: 0; }
+.rules-column > details { margin-block-start: .65rem; }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
 .panel h2 { margin-top: 0; }
 :root {
@@ -69,7 +76,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 #backup-status:empty, #regional-help:empty, #scope-hint:empty { margin: 0; }
 .list-controls { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: end; }
 .list-controls > * { min-width: 0; max-width: 100%; }
-#sort-direction {
+#sort-direction, #toggle-domain-groups {
   display: inline-flex;
   align-items: center;
   gap: .4rem;
@@ -79,7 +86,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
   background: var(--secondary);
   color: var(--text);
 }
-#sort-direction:enabled:hover { background: var(--secondary-hover); }
+#sort-direction:enabled:hover, #toggle-domain-groups:enabled:hover { background: var(--secondary-hover); }
 .sort-direction-icon {
   flex: none;
   inline-size: 1.25em;
@@ -160,7 +167,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .rule-actions .rule-remove { margin-inline-start: auto; background: transparent; color: var(--danger); font-weight: 500; }
 .rule-remove:enabled:hover { background: var(--danger-bg); text-decoration: underline; }
 @media (max-width: 650px) {
-  main { padding: 24px 16px 16px; }
+  main { --manager-bottom-padding: 16px; padding: 24px 16px var(--manager-bottom-padding); }
   header { align-items: stretch; flex-direction: column; gap: 4px; }
 }
 @container (max-width: 46em) {

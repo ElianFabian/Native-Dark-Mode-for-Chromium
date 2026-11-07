@@ -325,5 +325,11 @@
   },
   "ruleAddedDate": {
     "message": "添加于 {date}"
+  },
+  "expandAllGroups": {
+    "message": "全部展开"
+  },
+  "collapseAllGroups": {
+    "message": "全部折叠"
   }
 }

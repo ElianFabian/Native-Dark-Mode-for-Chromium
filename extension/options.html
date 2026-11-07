@@ -95,29 +95,33 @@
           <p id="trash-status" role="status"></p>
         </section>
       </div>
-      <section class="panel" aria-labelledby="rules-title">
-        <h2 id="rules-title" data-i18n="savedRules">Saved websites and sections</h2>
-        <label><span data-i18n="searchRules">Search rules</span><input id="search" type="text"></label>
-        <div class="list-controls">
-          <fieldset id="sort-rules" class="choice-group">
-            <legend data-i18n="sortRules">Sort rules</legend>
-            <div class="choices">
-              <label><input type="radio" name="sort-rules" value="alphabetical" checked><span data-i18n="alphabetical">Alphabetical</span></label>
-              <label><input type="radio" name="sort-rules" value="date"><span data-i18n="sortByDate">Date added</span></label>
-            </div>
-          </fieldset>
-          <button id="sort-direction" type="button">
-            <span class="sort-direction-icon" aria-hidden="true"></span>
-            <span class="sort-direction-labels" aria-live="polite">
-              <span class="sort-ascending-label" data-i18n="sortAscending">Ascending</span>
-              <span class="sort-descending-label" data-i18n="sortDescending">Descending</span>
-            </span>
-          </button>
-          <label><input id="group-domains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="groupDomains">Group by domain</span></label>
-        </div>
-        <p id="rule-count" class="note"></p>
-        <div id="rules"></div>
-      </section>
+      <div class="rules-column">
+        <section class="panel" aria-labelledby="rules-title">
+          <h2 id="rules-title" data-i18n="savedRules">Saved websites and sections</h2>
+          <label><span data-i18n="searchRules">Search rules</span><input id="search" type="text"></label>
+          <div class="list-controls">
+            <fieldset id="sort-rules" class="choice-group">
+              <legend data-i18n="sortRules">Sort rules</legend>
+              <div class="choices">
+                <label><input type="radio" name="sort-rules" value="alphabetical" checked><span data-i18n="alphabetical">Alphabetical</span></label>
+                <label><input type="radio" name="sort-rules" value="date"><span data-i18n="sortByDate">Date added</span></label>
+              </div>
+            </fieldset>
+            <button id="sort-direction" type="button">
+              <span class="sort-direction-icon" aria-hidden="true"></span>
+              <span class="sort-direction-labels" aria-live="polite">
+                <span class="sort-ascending-label" data-i18n="sortAscending">Ascending</span>
+                <span class="sort-descending-label" data-i18n="sortDescending">Descending</span>
+              </span>
+            </button>
+            <label><input id="group-domains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="groupDomains">Group by domain</span></label>
+            <button id="toggle-domain-groups" type="button" aria-controls="rules" hidden></button>
+          </div>
+          <p id="rule-count" class="note"></p>
+          <div id="rules"></div>
+        </section>
+        <details><summary data-i18n="diagnostics">Diagnostics</summary><pre id="diagnostic"></pre></details>
+      </div>
     </div>
   </div>
   <dialog id="import-preview" aria-labelledby="import-title">
@@ -138,7 +142,6 @@
       <button id="confirm-import" type="button" data-i18n="confirmImport">Import rules</button>
     </div>
   </dialog>
-  <details><summary data-i18n="diagnostics">Diagnostics</summary><pre id="diagnostic"></pre></details>
 </main>
 <script src="popup.js" type="module"></script>
 </html>

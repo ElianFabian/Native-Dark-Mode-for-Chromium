@@ -325,5 +325,11 @@
   },
   "ruleAddedDate": {
     "message": "Adicionada em {date}"
+  },
+  "expandAllGroups": {
+    "message": "Expandir todos"
+  },
+  "collapseAllGroups": {
+    "message": "Recolher todos"
   }
 }
