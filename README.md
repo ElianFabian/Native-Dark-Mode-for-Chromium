@@ -8,10 +8,15 @@ Many websites still have no dark theme. On others, dark mode starts off or the s
 
 This project started with a practical goal. Use the browser's own darkening engine where it renders a site well, then remember which sites and sections should use it. You can turn it on for an entire site and keep an exception for a particular hostname or section.
 
-<!-- Add screenshots after capturing them in Brave.
-![The extension popup applying native dark mode to a website](docs/screenshots/popup.png)
-![The rule manager with saved websites and sections](docs/screenshots/rule-manager.png)
--->
+## Screenshots
+
+### Extension popup
+
+![Extension popup showing an Amazon rule with subdomains and regional domains selected](docs/screenshots/popup.png)
+
+### Rule manager
+
+![Rule manager showing saved websites grouped by domain, with search, sorting, trash, and JSON backup controls](docs/screenshots/rule-manager.png)
 
 ## Install in Brave
 
@@ -84,4 +89,4 @@ For a repeatable screenshot or visual check, serve the local fixture and open it
 python -m http.server 8765 --bind 127.0.0.1 --directory fixtures
 ```
 
-Open `http://127.0.0.1:8765/test.html` to use the fixture. The screenshot links near the introduction are ready to enable after adding the image files.
+Open `http://127.0.0.1:8765/test.html` to use the fixture.
