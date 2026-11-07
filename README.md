@@ -28,7 +28,7 @@ With **Include subdomains** selected, an initial `www.` is treated as an alias o
 
 **Include regional domains** is available for the Amazon group `amazon.es`, `amazon.com` and `amazon.com.au`. It includes their `www` addresses, carries the same section path across the group and supports the separate subdomain option. At the same path, a rule for one domain takes priority over a regional rule. The popup shows the domains that will be covered. Changing the scope in the editor saves a separate rule.
 
-When a saved rule is selected, changing **Include subdomains** or **Include regional domains** saves immediately. This replaces the original scope and preserves its enabled state. If the new scope already has a rule, the change is rejected. For new rules, the checkboxes are saved when you choose **Save settings** or **Enable and save**.
+When a saved rule is selected, changing **Include subdomains** or **Include regional domains** saves immediately. This replaces the original scope and preserves its enabled state. When turning off subdomains leads to an existing exact rule within the same scope, including its `www` form, that rule keeps its settings and the broader rule is removed. Other scope conflicts require editing the existing rule from the saved list. For new rules, the checkboxes are saved when you choose **Save settings** or **Enable and save**.
 
 The extension pauses automatic activation for a tab after debugger disconnection. Use **Enable and save** to resume an enabled rule manually. Internal browser pages are unsupported. Preserving every color, handling every iframe, and preventing flashes are not guaranteed.
 

@@ -164,6 +164,16 @@ test('checkbox scope changes preserve state and reject collisions with saved rul
   assert.deepEqual(await manager.list(), before);
 });
 
+test('unchecking subdomains keeps an existing exact rule and removes the broader scope', async () => {
+  const { manager } = integration();
+  const [exact] = await manager.save({ url: 'www.example.com/articles', scope: 'section', enabled: false });
+  const [, broader] = await manager.save({ url: 'www.example.com/articles', scope: 'section', includeSubdomains: true, enabled: true });
+  const rules = await manager.replaceScope(broader.id, { url: 'www.example.com/articles', scope: 'section' });
+  assert.deepEqual(rules, [exact]);
+  assert.equal(matchingRule(rules, 'https://docs.example.com/articles'), undefined);
+  assert.equal(matchingRule(rules, 'https://www.example.com/articles').enabled, false);
+});
+
 test('native activation requires no CSS scripting even with a legacy input field', async () => {
   const { api, manager, controller } = integration();
   api.scripting.removeCSS = () => new Promise(() => {});

@@ -99,6 +99,11 @@ export class RuleManager {
       const current = rules.find(rule => rule.id === id);
       if (!current) throw new Error('The original rule changed. Reopen the popup to edit it.');
       if (target.id !== id && rules.some(rule => rule.id === target.id)) {
+        // Narrowing to a saved exact scope keeps its explicit settings.
+        if (current.includeSubdomains && !target.includeSubdomains &&
+            normalizeRule({ ...input, includeSubdomains: true }).id === current.id) {
+          return rules.filter(rule => rule.id !== id);
+        }
         throw new Error('A rule already exists for this scope. Edit it from the saved list.');
       }
       return rules.map(rule => rule.id === id ? { ...target, enabled: current.enabled } : rule);
