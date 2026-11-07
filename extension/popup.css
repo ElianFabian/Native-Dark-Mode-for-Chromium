@@ -387,6 +387,7 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
   color: var(--primary-text);
   font-weight: 700;
 }
+#ui-theme .choices label > span { font-weight: 650; }
 .choices input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
 .choices input:disabled + span { opacity: .55; cursor: default; }
 @media (forced-colors: active) {
