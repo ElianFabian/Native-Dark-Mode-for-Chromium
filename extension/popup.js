@@ -14,6 +14,7 @@ let busy = false;
 let pendingImport;
 let displayedRule;
 let editingId;
+const openDomains = new Set();
 const panelHighlightTimers = new WeakMap();
 let refreshAppearance;
 
@@ -202,13 +203,27 @@ function showRule(rule) {
   updateButton();
 }
 
-function renderRules() {
+function renderRules(previousEditedId) {
   const list = $('#rules');
   const rules = snapshot?.rules ?? [];
   const query = $('#search').value.trim().toLowerCase();
   const order = selectedSortOrder();
   const visible = orderRules(rules.filter(rule => matchesSearch(rule, query)), order, document.documentElement.lang);
-  const openDomains = new Set([...list.querySelectorAll('.domain-group[open]')].map(group => group.dataset.domain));
+  for (const group of list.querySelectorAll('.domain-group')) {
+    if (group.open) openDomains.add(group.dataset.domain);
+    else openDomains.delete(group.dataset.domain);
+  }
+  if (previousEditedId && previousEditedId !== editingId) {
+    const previousButton = list.querySelector(`[data-rule-id="${CSS.escape(previousEditedId)}"]`);
+    if (previousButton?.closest('.domain-group')?.open) {
+      for (const [domain, group] of groupRulesByDomain(rules, rules, 'newest')) {
+        if (group.some(rule => rule.id === editingId)) {
+          openDomains.add(domain);
+          break;
+        }
+      }
+    }
+  }
   list.replaceChildren();
   $('#rule-count').textContent = visible.length < rules.length
     ? t('ruleCount', { shown: visible.length, total: rules.length }) : '';
@@ -316,7 +331,7 @@ function renderTrash(entries) {
   }
 }
 
-function render(value, toggledButton) {
+function render(value, toggledButton, previousEditedId) {
   if (value.error) throw new Error(value.error);
   const previous = snapshot;
   snapshot = value;
@@ -335,7 +350,7 @@ function render(value, toggledButton) {
       return JSON.stringify(comparable) === JSON.stringify(old);
     });
   if (listUnchanged) renderRuleToggle(toggledButton, toggledRule.enabled);
-  else if (isManager) renderRules();
+  else if (isManager) renderRules(previousEditedId);
   if (isManager && (!toggledButton || JSON.stringify(previous.trash) !== JSON.stringify(value.trash))) {
     renderTrash(value.trash ?? []);
   }
@@ -368,7 +383,7 @@ async function request(message, { retainedButton, removedRow } = {}) {
     if (value.error) throw new Error(value.error);
     if (editingId && message.type === 'replace-scope') editingId = normalizeRule(message.rule).id;
     if (removedRow) await animateRuleRemoval(removedRow);
-    render(value, retainedButton);
+    render(value, retainedButton, message.type === 'replace-scope' ? message.id : undefined);
     if (message.type === 'exclude-inherited-host' && value.matching) showRule(value.matching);
     if (isManager && (message.type === 'save' || message.type === 'replace-scope')) $('#status').textContent = t('ruleSaved');
     if (isManager && message.type === 'remove') {
@@ -398,7 +413,7 @@ function saveCheckboxChange() {
       const value = await send({ type: 'replace-scope', id: previous.id, rule });
       if (value.error) throw new Error(value.error);
       if (editingId) editingId = normalizeRule(rule).id;
-      render(value);
+      render(value, undefined, previous.id);
       if (isManager) $('#status').textContent = t('ruleSaved');
     } catch (error) {
       $('#subdomains').checked = previous.includeSubdomains;
@@ -508,7 +523,7 @@ $('#save').addEventListener('click', () => request({
   type: editingId ? 'replace-scope' : 'save', id: editingId, rule: draft(selected()?.enabled ?? false)
 }));
 $('#cancel-edit')?.addEventListener('click', () => { editingId = undefined; showRule(); });
-$('#search')?.addEventListener('input', renderRules);
+$('#search')?.addEventListener('input', () => renderRules());
 async function saveListPreferences() {
   renderRules();
   try {
