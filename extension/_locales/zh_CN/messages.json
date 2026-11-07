@@ -322,5 +322,8 @@
   },
   "appearanceMenu": {
     "message": "外观"
+  },
+  "ruleAddedDate": {
+    "message": "添加于 {date}"
   }
 }

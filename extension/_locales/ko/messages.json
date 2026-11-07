@@ -322,5 +322,8 @@
   },
   "appearanceMenu": {
     "message": "모양"
+  },
+  "ruleAddedDate": {
+    "message": "추가일 {date}"
   }
 }

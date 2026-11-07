@@ -322,5 +322,8 @@
   },
   "appearanceMenu": {
     "message": "Darstellung"
+  },
+  "ruleAddedDate": {
+    "message": "Hinzugefügt am {date}"
   }
 }

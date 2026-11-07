@@ -160,7 +160,7 @@ input[type=checkbox] {
   margin: 0;
   accent-color: var(--primary);
 }
-input.contrast-switch {
+input.toggle-switch {
   appearance: none;
   position: relative;
   box-sizing: border-box;
@@ -172,7 +172,7 @@ input.contrast-switch {
   color: var(--text);
   cursor: pointer;
 }
-.contrast-switch::before {
+.toggle-switch::before {
   content: '';
   position: absolute;
   inset-block-start: 50%;
@@ -183,12 +183,12 @@ input.contrast-switch {
   border-radius: 50%;
   background: currentColor;
 }
-.contrast-switch:checked { border-color: var(--primary); background: var(--primary); color: var(--primary-text); }
-.contrast-switch:checked::before { inset-inline-start: auto; inset-inline-end: .16em; }
-.contrast-switch:disabled { opacity: .55; cursor: default; }
+.toggle-switch:checked { border-color: var(--primary); background: var(--primary); color: var(--primary-text); }
+.toggle-switch:checked::before { inset-inline-start: auto; inset-inline-end: .16em; }
+.toggle-switch:disabled { opacity: .55; cursor: default; }
 @media (forced-colors: active) {
-  input.contrast-switch { forced-color-adjust: none; border-color: CanvasText; background: Canvas; color: CanvasText; }
-  input.contrast-switch:checked { border-color: Highlight; background: Highlight; color: HighlightText; }
+  input.toggle-switch { forced-color-adjust: none; border-color: CanvasText; background: Canvas; color: CanvasText; }
+  input.toggle-switch:checked { border-color: Highlight; background: Highlight; color: HighlightText; }
 }
 
 @media (forced-colors: none) {

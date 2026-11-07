@@ -175,7 +175,7 @@ function matchesSearch(rule, query) {
   } catch { return false; }
 }
 
-function ruleHeading(rule) {
+function ruleHeading(rule, dateFormatter) {
   const heading = document.createElement('div');
   heading.className = 'rule-heading';
   const address = document.createElement('span');
@@ -191,6 +191,14 @@ function ruleHeading(rule) {
   state.className = 'rule-state';
   state.textContent = t(rule.enabled ? 'enabled' : 'disabled');
   heading.append(state);
+  const createdAt = new Date(rule.createdAt);
+  if (Number.isFinite(createdAt.getTime())) {
+    const added = document.createElement('time');
+    added.className = 'rule-added';
+    added.dateTime = createdAt.toISOString();
+    added.textContent = t('ruleAddedDate', { date: dateFormatter.format(createdAt) });
+    heading.append(added);
+  }
   return heading;
 }
 
@@ -236,6 +244,7 @@ function renderRules(previousEditedId) {
   const groups = $('#group-domains').checked
     ? groupRulesByDomain(visible, rules, order, document.documentElement.lang)
     : [[null, visible]];
+  const dateFormatter = new Intl.DateTimeFormat(document.documentElement.lang, { dateStyle: 'medium' });
   for (const [domain, group] of groups) {
     let container = list;
     if (domain) {
@@ -248,14 +257,14 @@ function renderRules(previousEditedId) {
       container.append(title);
       list.append(container);
     }
-    for (const rule of group) container.append(renderRule(rule));
+    for (const rule of group) container.append(renderRule(rule, dateFormatter));
   }
 }
 
-function renderRule(rule) {
+function renderRule(rule, dateFormatter) {
   const item = document.createElement('div');
   item.className = 'rule';
-  item.append(ruleHeading(rule));
+  item.append(ruleHeading(rule, dateFormatter));
   const actions = document.createElement('div');
   actions.className = 'rule-actions';
   const toggle = document.createElement('button');
@@ -338,10 +347,11 @@ function renderTrash(entries) {
     empty.textContent = t('trashEmpty');
     list.append(empty);
   }
+  const dateFormatter = new Intl.DateTimeFormat(document.documentElement.lang, { dateStyle: 'medium' });
   for (const { id, rule } of entries) {
     const item = document.createElement('div');
     item.className = 'rule';
-    item.append(ruleHeading(rule));
+    item.append(ruleHeading(rule, dateFormatter));
     const actions = document.createElement('div');
     actions.className = 'rule-actions';
     const restore = document.createElement('button');

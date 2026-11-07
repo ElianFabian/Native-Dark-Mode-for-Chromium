@@ -322,5 +322,8 @@
   },
   "appearanceMenu": {
     "message": "Appearance"
+  },
+  "ruleAddedDate": {
+    "message": "Added {date}"
   }
 }

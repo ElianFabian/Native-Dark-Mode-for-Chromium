@@ -322,5 +322,8 @@
   },
   "appearanceMenu": {
     "message": "Aspeto"
+  },
+  "ruleAddedDate": {
+    "message": "Adicionada em {date}"
   }
 }

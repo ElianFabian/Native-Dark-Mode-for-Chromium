@@ -145,6 +145,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 #cancel-import { background: var(--secondary); color: var(--text); }
 #confirm-import[data-destructive] { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
 .rule-address { font-size: 1rem; }
+.rule-added { color: var(--muted); font-size: .8125rem; }
 .rule { padding: 10px 0; }
 .rule-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 .rule-actions button { width: auto; min-height: 34px; padding: 5px 12px; margin: 0; border: 1px solid var(--border); }

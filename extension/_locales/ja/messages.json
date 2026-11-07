@@ -322,5 +322,8 @@
   },
   "appearanceMenu": {
     "message": "外観"
+  },
+  "ruleAddedDate": {
+    "message": "追加日 {date}"
   }
 }
