@@ -199,5 +199,11 @@
   },
   "ruleSaved": {
     "message": "ルールを保存しました。"
+  },
+  "excludeSubdomain": {
+    "message": "このサブドメインを除外"
+  },
+  "errorSubdomainChanged": {
+    "message": "このタブはサブドメインのルールを継承していません。ポップアップを開き直してください。"
   }
 }

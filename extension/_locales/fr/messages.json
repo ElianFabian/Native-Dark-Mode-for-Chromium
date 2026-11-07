@@ -199,5 +199,11 @@
   },
   "ruleSaved": {
     "message": "Règle enregistrée."
+  },
+  "excludeSubdomain": {
+    "message": "Exclure ce sous-domaine"
+  },
+  "errorSubdomainChanged": {
+    "message": "Cet onglet n’hérite plus d’une règle de sous-domaine. Rouvrez le panneau."
   }
 }

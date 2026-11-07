@@ -199,5 +199,11 @@
   },
   "ruleSaved": {
     "message": "Regel gespeichert."
+  },
+  "excludeSubdomain": {
+    "message": "Diese Subdomain ausschließen"
+  },
+  "errorSubdomainChanged": {
+    "message": "Der Tab erbt keine Subdomain-Regel mehr. Öffne das Popup erneut."
   }
 }

@@ -199,5 +199,11 @@
   },
   "ruleSaved": {
     "message": "Regla guardada."
+  },
+  "excludeSubdomain": {
+    "message": "Excluir este subdominio"
+  },
+  "errorSubdomainChanged": {
+    "message": "La pestaña ya no hereda una regla de subdominio. Vuelve a abrir el panel."
   }
 }

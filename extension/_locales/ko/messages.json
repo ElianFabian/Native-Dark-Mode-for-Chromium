@@ -199,5 +199,11 @@
   },
   "ruleSaved": {
     "message": "규칙이 저장되었습니다."
+  },
+  "excludeSubdomain": {
+    "message": "이 하위 도메인 제외"
+  },
+  "errorSubdomainChanged": {
+    "message": "이 탭은 더 이상 하위 도메인 규칙을 상속하지 않습니다. 팝업을 다시 여세요."
   }
 }

@@ -1,4 +1,4 @@
-import { normalizeRule, regionalDomainsForHost, ruleAddress } from './rules.js';
+import { normalizeRule, regionalDomainsForHost, ruleAddress, subdomainExclusion } from './rules.js';
 import { requestWithTimeout } from './request.js';
 import { MAX_BACKUP_BYTES } from './backup.js';
 import { LANGUAGES, initializeLanguage, setLanguage, translatePage, t, errorText } from './i18n.js';
@@ -48,6 +48,11 @@ function updateButton() {
   displayedRule = selected();
   $('#toggle').textContent = t(displayedRule?.enabled && !needsResume ? 'disableSave' : 'enableSave');
   const canEdit = isManager ? Boolean(snapshot) : Boolean(tab?.id);
+  if (!isManager) {
+    const exclusion = subdomainExclusion(snapshot?.matching, tab?.url);
+    $('#exclude-subdomain').hidden = !exclusion;
+    $('#exclude-subdomain').disabled = busy || !exclusion;
+  }
   $('#toggle').disabled = busy || !canEdit;
   $('#save').disabled = busy || !canEdit;
   if (isManager) {
@@ -98,10 +103,14 @@ function renderRules() {
     item.append(text);
     $('#rules').append(item);
     if (!isManager) continue;
+    const actions = document.createElement('div');
+    actions.className = 'rule-actions';
     const toggle = document.createElement('button');
+    toggle.className = rule.enabled ? 'rule-disable' : 'rule-enable';
     toggle.textContent = t(rule.enabled ? 'disable' : 'enable');
     toggle.addEventListener('click', () => request({ type: 'update', id: rule.id, patch: { enabled: !rule.enabled } }));
     const edit = document.createElement('button');
+    edit.className = 'rule-edit';
     edit.textContent = t('edit');
     edit.addEventListener('click', () => {
       editingId = rule.id;
@@ -109,9 +118,11 @@ function renderRules() {
       $('#address').focus();
     });
     const remove = document.createElement('button');
+    remove.className = 'rule-remove';
     remove.textContent = t('remove');
     remove.addEventListener('click', () => request({ type: 'remove', id: rule.id }));
-    item.append(toggle, edit, remove);
+    actions.append(toggle, edit, remove);
+    item.append(actions);
   }
 }
 
@@ -152,6 +163,7 @@ function request(message) {
     if (value.error) throw new Error(value.error);
     if (editingId && message.type === 'replace-scope') editingId = normalizeRule(message.rule).id;
     render(value);
+    if (message.type === 'exclude-subdomain' && value.matching) showRule(value.matching);
     if (isManager && (message.type === 'save' || message.type === 'replace-scope')) $('#status').textContent = t('ruleSaved');
   }, t('saving'));
 }
@@ -269,6 +281,7 @@ $('#manage')?.addEventListener('click', async () => {
   try { await chrome.runtime.openOptionsPage(); }
   catch (error) { $('#status').textContent = errorText(error); }
 });
+$('#exclude-subdomain')?.addEventListener('click', () => request({ type: 'exclude-subdomain', url: tab.url }));
 $('#address').addEventListener('input', loadSelection);
 $('#scope').addEventListener('change', loadSelection);
 $('#subdomains').addEventListener('change', saveCheckboxChange);

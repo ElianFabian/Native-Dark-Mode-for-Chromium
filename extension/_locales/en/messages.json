@@ -199,5 +199,11 @@
   },
   "ruleSaved": {
     "message": "Rule saved."
+  },
+  "excludeSubdomain": {
+    "message": "Exclude this subdomain"
+  },
+  "errorSubdomainChanged": {
+    "message": "The tab no longer inherits a subdomain rule. Reopen the popup."
   }
 }

@@ -199,5 +199,11 @@
   },
   "ruleSaved": {
     "message": "Regola salvata."
+  },
+  "excludeSubdomain": {
+    "message": "Escludi questo sottodominio"
+  },
+  "errorSubdomainChanged": {
+    "message": "La scheda non eredita più una regola per sottodomini. Riapri il pannello."
   }
 }

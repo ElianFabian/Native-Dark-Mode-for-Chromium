@@ -26,6 +26,8 @@ Queries and fragments are ignored. A section matches its path and descendants, n
 
 With **Include subdomains** selected, an initial `www.` is treated as an alias of the remaining hostname. For example, `www.android.com` is saved as `android.com` and covers `developer.android.com`. This also applies to previously saved rules that opted into subdomains. An explicit saved parent rule takes priority if the upgrade merges two equivalent scopes.
 
+When the current site inherits an enabled subdomain rule, the popup offers **Exclude this subdomain**. It saves an inactive rule for the current hostname at the inherited path. The parent rule still applies to siblings. To inherit the parent rule again, remove the exclusion in **Manage rules**.
+
 **Include regional domains** is available for the Amazon group `amazon.es`, `amazon.com` and `amazon.com.au`. It includes their `www` addresses, carries the same section path across the group and supports the separate subdomain option. At the same path, a rule for one domain takes priority over a regional rule. The editor shows the domains that will be covered.
 
 When a saved rule is selected, changing **Include subdomains** or **Include regional domains** saves immediately. This replaces the original scope and preserves its enabled state. If unchecking either option narrows the scope to a rule that already exists, that rule keeps its settings and the broader rule is removed. Other scope conflicts require editing the existing rule from the saved list. For new rules, the checkboxes are saved when you choose **Save settings** or **Enable and save**.

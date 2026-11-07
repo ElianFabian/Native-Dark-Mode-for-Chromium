@@ -13,5 +13,5 @@ input[type=text], select { box-sizing: border-box; width: 100%; padding: 8px; ma
 button { margin: 5px 0; }
 h2 { font-size: 16px; }
 .rule { border-top: 1px solid #404957; padding: 12px 0; overflow-wrap: anywhere; }
-.rule button { width: auto; margin-right: 8px; padding: 6px 10px; }
 #save { background: #303e56; color: white; }
+#exclude-subdomain { background: #30291e; color: #ffd88b; border: 1px solid #a98249; }

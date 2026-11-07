@@ -199,5 +199,11 @@
   },
   "ruleSaved": {
     "message": "Regra guardada."
+  },
+  "excludeSubdomain": {
+    "message": "Excluir este subdomínio"
+  },
+  "errorSubdomainChanged": {
+    "message": "O separador já não herda uma regra de subdomínio. Reabra o painel."
   }
 }

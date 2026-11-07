@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRule, matchingRule, RuleManager } from '../extension/rules.js';
+import { normalizeRule, matchingRule, subdomainExclusion, RuleManager } from '../extension/rules.js';
 import { DarkModeController } from '../extension/controller.js';
 
 const rule = (url, enabled = true, extra = {}) => normalizeRule({ url, enabled, scope: 'section', ...extra });
@@ -183,6 +183,21 @@ test('unchecking regional domains keeps an existing single-domain rule and its s
   assert.deepEqual(rules, [local]);
   assert.equal(matchingRule(rules, 'https://seller.amazon.com.au/deals').enabled, false);
   assert.equal(matchingRule(rules, 'https://www.amazon.com/deals'), undefined);
+});
+
+test('the subdomain action excludes the current host at the inherited section and keeps sibling rules', async () => {
+  const { manager, tab } = integration();
+  const [parent] = await manager.save({ url: 'www.amazon.es/deals', scope: 'section',
+    includeRegionalDomains: true, includeSubdomains: true, enabled: true });
+  tab.url = 'https://seller.amazon.com.au/deals/today';
+  await assert.rejects(manager.excludeSubdomain(7, 'https://seller.amazon.com/deals/today'), /no longer inherits/);
+  assert.equal(subdomainExclusion(parent, 'https://www.amazon.com.au/deals'), undefined);
+  const rules = await manager.excludeSubdomain(7, tab.url);
+  assert.deepEqual(rules[0], parent);
+  assert.equal(rules[1].path, '/deals');
+  assert.equal(matchingRule(rules, tab.url).enabled, false);
+  assert.equal(matchingRule(rules, 'https://other.amazon.com.au/deals').enabled, true);
+  await assert.rejects(manager.excludeSubdomain(7, tab.url), /no longer inherits/);
 });
 
 test('native activation requires no CSS scripting even with a legacy input field', async () => {

@@ -9,6 +9,16 @@ header label { min-width: 190px; }
 .backup-panel { margin: 20px 0; }
 .backup-panel button { width: auto; margin-right: 8px; }
 .rule { padding: 10px 0; }
+.rule-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.rule-actions button { width: auto; min-height: 34px; padding: 5px 12px; margin: 0; border: 1px solid transparent; }
+.rule-actions button:focus-visible { outline: 2px solid #c4d6ff; outline-offset: 2px; }
+.rule-enable:enabled:hover { background: #b6ceff; }
+.rule-actions .rule-disable { background: transparent; border-color: #a98249; color: #ffd88b; }
+.rule-disable:enabled:hover { background: #362d20; }
+.rule-edit { background: #303e56; color: #edf1f7; }
+.rule-edit:enabled:hover { background: #40506a; }
+.rule-actions .rule-remove { margin-inline-start: auto; background: transparent; color: #ffadad; font-weight: 500; }
+.rule-remove:enabled:hover { background: #45262e; text-decoration: underline; }
 @media (max-width: 650px) {
   main { padding: 16px; }
   header { align-items: stretch; flex-direction: column; gap: 4px; }
