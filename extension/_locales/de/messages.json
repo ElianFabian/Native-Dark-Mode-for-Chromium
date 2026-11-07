@@ -1,0 +1,182 @@
+{
+  "extensionName": {
+    "message": "Nativer Dunkelmodus — Prototyp"
+  },
+  "extensionDescription": {
+    "message": "Browser-Dunkelmodus mit gespeicherten Website- und Bereichsregeln."
+  },
+  "title": {
+    "message": "Nativer Dunkelmodus"
+  },
+  "language": {
+    "message": "Sprache"
+  },
+  "automatic": {
+    "message": "Automatisch (Browser)"
+  },
+  "address": {
+    "message": "URL der Website oder des Bereichs"
+  },
+  "scope": {
+    "message": "Geltungsbereich"
+  },
+  "website": {
+    "message": "Gesamte Website"
+  },
+  "section": {
+    "message": "Bereich nach Pfad"
+  },
+  "subdomains": {
+    "message": "Subdomains einschließen"
+  },
+  "save": {
+    "message": "Einstellungen speichern"
+  },
+  "rulesNote": {
+    "message": "Lokal gespeichert. Deaktivierte Regeln bleiben als Ausnahmen erhalten. Genauere Bereiche haben Vorrang. URL-Parameter und Fragmente werden ignoriert."
+  },
+  "savedRules": {
+    "message": "Gespeicherte Websites und Bereiche"
+  },
+  "backup": {
+    "message": "Sicherung und Wiederherstellung"
+  },
+  "export": {
+    "message": "JSON exportieren"
+  },
+  "import": {
+    "message": "JSON importieren"
+  },
+  "matchingRules": {
+    "message": "Übereinstimmende Website- und Bereichsregeln"
+  },
+  "keep": {
+    "message": "Meine Einstellungen beibehalten"
+  },
+  "replace": {
+    "message": "Einstellungen aus der Datei verwenden"
+  },
+  "importNote": {
+    "message": "Nicht enthaltene Regeln bleiben erhalten. Aktive Regeln können den Dunkelmodus in passenden offenen Tabs einschalten."
+  },
+  "confirmImport": {
+    "message": "Regeln importieren"
+  },
+  "cancel": {
+    "message": "Abbrechen"
+  },
+  "debugNote": {
+    "message": "Brave kann einen Debugging-Hinweis anzeigen. Schließen oder Öffnen von DevTools kann die Dunkelmodus-Verbindung trennen."
+  },
+  "diagnostics": {
+    "message": "Diagnose"
+  },
+  "importPreview": {
+    "message": "Importvorschau"
+  },
+  "disableSave": {
+    "message": "Deaktivieren und speichern"
+  },
+  "enableSave": {
+    "message": "Aktivieren und speichern"
+  },
+  "scopeFamily": {
+    "message": "Gespeicherter Bereich: {scope} und seine Subdomains. Führendes www wird ignoriert."
+  },
+  "scopeExact": {
+    "message": "Gespeicherter Bereich: {scope}, nur dieser Hostname."
+  },
+  "active": {
+    "message": "Der native Dunkelmodus ist in diesem Tab aktiv."
+  },
+  "inactive": {
+    "message": "Der native Dunkelmodus ist in diesem Tab inaktiv."
+  },
+  "noRules": {
+    "message": "Noch keine gespeicherten Regeln."
+  },
+  "enabled": {
+    "message": "Aktiv"
+  },
+  "disabled": {
+    "message": "Inaktiv"
+  },
+  "enable": {
+    "message": "Aktivieren"
+  },
+  "disable": {
+    "message": "Deaktivieren"
+  },
+  "edit": {
+    "message": "Bearbeiten"
+  },
+  "remove": {
+    "message": "Entfernen"
+  },
+  "saving": {
+    "message": "Regel wird gespeichert und angewendet…"
+  },
+  "exportPreparing": {
+    "message": "JSON-Export wird vorbereitet…"
+  },
+  "exportPrepared": {
+    "message": "Export vorbereitet: {count} Regeln. Prüfe die Browser-Downloads."
+  },
+  "validating": {
+    "message": "JSON-Datei wird geprüft…"
+  },
+  "fileValidated": {
+    "message": "Datei geprüft. Es wurden noch keine Einstellungen geändert."
+  },
+  "previewSummary": {
+    "message": "{added} neue und {matching} übereinstimmende Regeln."
+  },
+  "importCanceled": {
+    "message": "Import abgebrochen. Keine Einstellungen geändert."
+  },
+  "importing": {
+    "message": "Regeln werden importiert…"
+  },
+  "importSaved": {
+    "message": "Import gespeichert: {added} hinzugefügt, {updated} aktualisiert, {skipped} unverändert. Passende Tabs werden aktualisiert."
+  },
+  "changingLanguage": {
+    "message": "Sprache wird geändert…"
+  },
+  "errorJson": {
+    "message": "Die Datei enthält kein gültiges JSON."
+  },
+  "errorFormat": {
+    "message": "Nicht unterstütztes Sicherungsformat oder Version."
+  },
+  "errorSize": {
+    "message": "Wähle eine JSON-Sicherung mit höchstens 1 MiB."
+  },
+  "errorLimit": {
+    "message": "Die Konfiguration darf höchstens 1.000 Regeln enthalten."
+  },
+  "errorDuplicate": {
+    "message": "Die Sicherung enthält doppelte Geltungsbereiche."
+  },
+  "errorRule": {
+    "message": "Regel {count} ist ungültig. Prüfe Hostname, Pfad und Einstellungen."
+  },
+  "errorTimeout": {
+    "message": "Der Browser braucht zu lange. Die Regel könnte gespeichert sein. Öffne das Popup erneut zur Prüfung."
+  },
+  "errorPage": {
+    "message": "Öffne eine HTTP- oder HTTPS-Seite, um Regeln zu verwalten."
+  },
+  "errorDetached": {
+    "message": "Verbindung beendet ({reason}). Automatische Aktivierung für diesen Tab pausiert. Zum Fortsetzen manuell aktivieren."
+  },
+  "regionalDomains": {
+    "message": "Regionale Domains einschließen"
+  },
+  "scopeRegional": {
+    "message": "Gespeicherter Bereich {scope} einschließlich www-Varianten."
+  },
+  "scopeRegionalFamily": {
+    "message": "Gespeicherter Bereich {scope} und deren Subdomains."
+  }
+}

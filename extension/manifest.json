@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Native Dark Mode — Prototype",
-  "version": "0.2.2",
-  "description": "Per-tab prototype of Chromium native dark mode through CDP.",
+  "name": "__MSG_extensionName__",
+  "version": "0.3.0",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
   "minimum_chrome_version": "118",
   "permissions": ["debugger", "storage", "activeTab"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": { "service_worker": "background.js", "type": "module" },
-  "action": { "default_popup": "popup.html", "default_title": "Native Dark Mode" }
+  "action": { "default_popup": "popup.html", "default_title": "__MSG_title__" }
 }

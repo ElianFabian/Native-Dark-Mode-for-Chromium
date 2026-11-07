@@ -1,0 +1,182 @@
+{
+  "extensionName": {
+    "message": "기본 다크 모드 — 프로토타입"
+  },
+  "extensionDescription": {
+    "message": "사이트 및 섹션 규칙을 저장하는 브라우저 다크 모드."
+  },
+  "title": {
+    "message": "기본 다크 모드"
+  },
+  "language": {
+    "message": "언어"
+  },
+  "automatic": {
+    "message": "자동 (브라우저)"
+  },
+  "address": {
+    "message": "사이트 또는 섹션 URL"
+  },
+  "scope": {
+    "message": "적용 범위"
+  },
+  "website": {
+    "message": "전체 사이트"
+  },
+  "section": {
+    "message": "경로별 섹션"
+  },
+  "subdomains": {
+    "message": "하위 도메인 포함"
+  },
+  "save": {
+    "message": "설정 저장"
+  },
+  "rulesNote": {
+    "message": "이 기기에 저장됩니다. 비활성 규칙은 제외 항목으로 유지됩니다. 구체적인 섹션이 우선하며 쿼리와 프래그먼트는 무시합니다."
+  },
+  "savedRules": {
+    "message": "저장된 사이트 및 섹션"
+  },
+  "backup": {
+    "message": "백업 및 복원"
+  },
+  "export": {
+    "message": "JSON 내보내기"
+  },
+  "import": {
+    "message": "JSON 가져오기"
+  },
+  "matchingRules": {
+    "message": "일치하는 사이트 및 섹션 규칙"
+  },
+  "keep": {
+    "message": "기존 설정 유지"
+  },
+  "replace": {
+    "message": "파일의 설정 사용"
+  },
+  "importNote": {
+    "message": "파일에 없는 규칙은 유지됩니다. 활성 규칙은 일치하는 열린 탭에 다크 모드를 적용할 수 있습니다."
+  },
+  "confirmImport": {
+    "message": "규칙 가져오기"
+  },
+  "cancel": {
+    "message": "취소"
+  },
+  "debugNote": {
+    "message": "Brave에 디버깅 알림이 표시될 수 있습니다. 알림을 닫거나 DevTools를 열면 다크 모드 연결이 끊길 수 있습니다."
+  },
+  "diagnostics": {
+    "message": "진단"
+  },
+  "importPreview": {
+    "message": "가져오기 미리 보기"
+  },
+  "disableSave": {
+    "message": "비활성화 후 저장"
+  },
+  "enableSave": {
+    "message": "활성화 후 저장"
+  },
+  "scopeFamily": {
+    "message": "저장 범위: {scope} 및 하위 도메인. 앞의 www는 무시됩니다."
+  },
+  "scopeExact": {
+    "message": "저장 범위: {scope}, 이 호스트 이름만 적용."
+  },
+  "active": {
+    "message": "이 탭에서 기본 다크 모드가 활성화되어 있습니다."
+  },
+  "inactive": {
+    "message": "이 탭에서 기본 다크 모드가 비활성화되어 있습니다."
+  },
+  "noRules": {
+    "message": "저장된 규칙이 없습니다."
+  },
+  "enabled": {
+    "message": "활성"
+  },
+  "disabled": {
+    "message": "비활성"
+  },
+  "enable": {
+    "message": "활성화"
+  },
+  "disable": {
+    "message": "비활성화"
+  },
+  "edit": {
+    "message": "편집"
+  },
+  "remove": {
+    "message": "삭제"
+  },
+  "saving": {
+    "message": "규칙을 저장하고 적용하는 중…"
+  },
+  "exportPreparing": {
+    "message": "JSON 내보내기 준비 중…"
+  },
+  "exportPrepared": {
+    "message": "규칙 {count}개 내보내기 준비 완료. 브라우저 다운로드를 확인하세요."
+  },
+  "validating": {
+    "message": "JSON 파일 확인 중…"
+  },
+  "fileValidated": {
+    "message": "파일 확인 완료. 아직 설정이 변경되지 않았습니다."
+  },
+  "previewSummary": {
+    "message": "새 규칙 {added}개, 일치하는 규칙 {matching}개."
+  },
+  "importCanceled": {
+    "message": "가져오기가 취소되었습니다. 설정은 변경되지 않았습니다."
+  },
+  "importing": {
+    "message": "규칙 가져오는 중…"
+  },
+  "importSaved": {
+    "message": "가져오기 저장 완료: 추가 {added}개, 수정 {updated}개, 유지 {skipped}개. 일치하는 탭을 업데이트 중입니다."
+  },
+  "changingLanguage": {
+    "message": "인터페이스 언어 변경 중…"
+  },
+  "errorJson": {
+    "message": "올바른 JSON 파일이 아닙니다."
+  },
+  "errorFormat": {
+    "message": "지원하지 않는 백업 형식 또는 버전입니다."
+  },
+  "errorSize": {
+    "message": "1 MiB 이하의 JSON 백업을 선택하세요."
+  },
+  "errorLimit": {
+    "message": "설정에는 최대 1,000개의 규칙을 저장할 수 있습니다."
+  },
+  "errorDuplicate": {
+    "message": "백업에 중복된 범위가 있습니다."
+  },
+  "errorRule": {
+    "message": "규칙 {count}이(가) 잘못되었습니다. 호스트 이름, 경로, 설정을 확인하세요."
+  },
+  "errorTimeout": {
+    "message": "브라우저 응답이 지연되고 있습니다. 규칙이 이미 저장되었을 수 있으니 팝업을 다시 열어 확인하세요."
+  },
+  "errorPage": {
+    "message": "규칙을 관리하려면 HTTP 또는 HTTPS 페이지를 여세요."
+  },
+  "errorDetached": {
+    "message": "연결이 종료되었습니다 ({reason}). 이 탭의 자동 활성화가 일시 중지되었습니다. 수동으로 활성화하여 재개하세요."
+  },
+  "regionalDomains": {
+    "message": "지역별 도메인 포함"
+  },
+  "scopeRegional": {
+    "message": "저장 범위는 {scope}이며 www 변형도 포함합니다."
+  },
+  "scopeRegionalFamily": {
+    "message": "저장 범위는 {scope} 및 해당 하위 도메인입니다."
+  }
+}

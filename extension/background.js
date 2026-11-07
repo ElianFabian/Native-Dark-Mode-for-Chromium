@@ -1,5 +1,6 @@
 import { DarkModeController } from './controller.js';
 import { RuleManager, matchingRule } from './rules.js';
+import { createBackup, importBackup, mergeRules, parseBackup } from './backup.js';
 
 const controller = new DarkModeController(chrome);
 const manager = new RuleManager(chrome, controller);
@@ -14,6 +15,17 @@ async function snapshot(tabId) {
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (sender.id !== chrome.runtime.id || !Number.isInteger(message?.tabId)) return;
   const result = (async () => {
+    if (message.type === 'export') return { backup: createBackup(await manager.list()) };
+    if (message.type === 'preview-import') {
+      return { summary: mergeRules(await manager.list(), parseBackup(message.text), 'keep').summary };
+    }
+    if (message.type === 'import') {
+      const summary = await importBackup(manager, message.text, message.conflictPolicy);
+      // Imported settings respect tabs paused by the user. Do not wait for all
+      // debugger operations before acknowledging the saved configuration.
+      void manager.applyAll().catch(report);
+      return { ...await snapshot(message.tabId), importSummary: summary };
+    }
     if (message.type === 'save') await manager.save(message.rule);
     else if (message.type === 'update') await manager.update(message.id, message.patch ?? {});
     else if (message.type === 'remove') await manager.remove(message.id);

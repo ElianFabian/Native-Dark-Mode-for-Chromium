@@ -18,7 +18,8 @@ Enable the native filter per tab, then per website and path section, without glo
 - Confirmed scopes: entire websites and path sections.
 - `/articles/` matches `/articles` and descendants, but not `/articles-extra`. Paths are case-sensitive. Do not decode escaped separators when determining boundaries.
 - Rules can enable or exclude a scope. The most specific path wins. For equal paths, an exact hostname takes precedence over an inherited subdomain match. Reject duplicate scopes to avoid ambiguous precedence.
-- Including subdomains must be explicit. `example.com` must not match `otherexample.com`.
+- Including subdomains must be explicit. `example.com` must not match `otherexample.com`. With subdomains enabled, a leading `www.` is an alias for its parent hostname. Existing rules with this setting use the new behavior, with an explicit parent rule winning collisions.
+- Regional groups are opt-in and use explicit hostname lists. The first group covers `amazon.es`, `amazon.com` and `amazon.com.au`, including their `www` aliases. Sections and the subdomain preference carry across the group. A single-domain rule wins at an equal path.
 - Queries and fragments do not create separate scopes in the first version. Display the saved scope. HTTP and HTTPS share rules; a nonstandard port distinguishes a destination.
 - Test trailing slashes, adjacent paths, subdomains, domain changes, same-document navigation and exclusions inside enabled websites.
 - Acceptance example: enable `example.com`, exclude `example.com/photos/`, then enable `example.com/photos/articles/`.
@@ -52,13 +53,16 @@ Technical references:
 
 | Check | Result |
 | --- | --- |
-| Syntax and controller/rule/request tests | Passed: `npm run check` and `npm test`; 19 simulated tests. |
+| Syntax and extension tests | Passed `npm run check` and `npm test` with 29 tests. |
 | Extension loaded in Brave | User screenshot shows the original prototype's debugger banner; version 0.2.0 has not been loaded by the agent. |
 | Native command accepted and rendering changed | Pending. |
 | Enable/disable and reload in Brave | Pending. |
 | Banner cancellation and DevTools in Brave | Pending. |
 | Images, canvas, Shadow DOM and iframes | Pending visual validation. |
 | Website and section rules | Implemented; simulated matching, persistence, exclusions, navigation and cancellation tests pass. Brave UI tests pending. |
+| Regional scope and www alias | Tests cover Amazon regional matching, section boundaries, explicit exclusions and existing www rules. |
+| JSON backup | Tests cover round trips, validation, conflicts, failed writes and regional rules. Brave file chooser and download checks remain pending. |
+| Popup languages | Nine catalogs with automatic and manual selection. Tests verify catalog completeness, interpolation and language fallback. Brave popup checks remain pending. |
 | Image preference | Removed from the interface and execution path in version 0.2.2. Legacy image fields are ignored without losing website rules; regression tests pass. Native startup option documented and deferred. |
 | Popup responsiveness | User screenshot shows disabled controls and inactive status alongside a debugger banner. Version 0.2.1 removes unnecessary CSS work for automatic images, decouples background tabs, and adds request timeout/progress. Simulated regressions pass; the actual Brave cause and fix remain unverified. |
 | Debugging banner | Added an optional Windows launcher with `--silent-debugger-extension-api`. Executable discovery checked without launching or closing Brave. Actual suppression in Brave pending a manual restart. This affects all debugger extensions in that browser launch. |

@@ -10,7 +10,7 @@ A Manifest V3 extension that sends `Emulation.setAutoDarkModeOverride` through `
 - `fixtures/`: local rendering test page and image.
 - `test/`: controller tests using a simulated browser API.
 
-All project code, comments, interface text, tests and documentation must be written in English.
+Keep code identifiers, comments, tests and documentation in English. Interface translations live in `extension/_locales`.
 
 ## Local trial
 
@@ -24,9 +24,23 @@ Rules are saved in `storage.local` and restored on future visits, including afte
 
 Queries and fragments are ignored. A section matches its path and descendants, not similarly named neighboring paths. Subdomains require explicit opt-in. HTTP and HTTPS share rules, while nonstandard ports are distinct. Rules do not sync to other devices.
 
+With **Include subdomains** selected, an initial `www.` is treated as an alias of the remaining hostname. For example, `www.android.com` is saved as `android.com` and covers `developer.android.com`. This also applies to previously saved rules that opted into subdomains. An explicit saved parent rule takes priority if the upgrade merges two equivalent scopes.
+
+**Include regional domains** is available for the Amazon group `amazon.es`, `amazon.com` and `amazon.com.au`. It includes their `www` addresses, carries the same section path across the group and supports the separate subdomain option. At the same path, a rule for one domain takes priority over a regional rule. The popup shows the domains that will be covered. Changing the scope in the editor saves a separate rule.
+
 The extension pauses automatic activation for a tab after debugger disconnection. Use **Enable and save** to resume an enabled rule manually. Internal browser pages are unsupported. Preserving every color, handling every iframe, and preventing flashes are not guaranteed.
 
 Opening DevTools may disconnect the session. If another debugger is already attached, the prototype reports the error without trying to remove it.
+
+## Back up and restore rules
+
+Open the popup on an HTTP or HTTPS page and choose **Export JSON** under **Backup and restore**. The downloaded file contains enabled rules, exclusions, sections, subdomain settings and regional settings. It uses a versioned format and contains only rules.
+
+Choose **Import JSON**, select a backup, review the number of new and matching rules, and confirm. By default, matching scopes keep their existing settings. Select **Use settings from the file** to update those scopes. Rules absent from the file are kept. Invalid files leave the existing rules untouched. The import limit is 1 MiB and 1,000 rules. Imported enabled rules are applied to matching tabs, respecting paused tabs.
+
+## Interface languages
+
+The **Language** selector supports automatic detection and a saved manual choice. The popup is available in English, Spanish, French, European Portuguese, Italian, Simplified Chinese, Japanese, Korean and German. Automatic mode falls back to English for unsupported languages. The browser uses its own locale for the extension name displayed outside the popup. Browser diagnostics may retain their original wording.
 
 ## Code checks
 

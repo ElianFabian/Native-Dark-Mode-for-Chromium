@@ -1,0 +1,182 @@
+{
+  "extensionName": {
+    "message": "原生深色模式 — 原型"
+  },
+  "extensionDescription": {
+    "message": "浏览器原生深色模式，支持保存网站和分区规则。"
+  },
+  "title": {
+    "message": "原生深色模式"
+  },
+  "language": {
+    "message": "语言"
+  },
+  "automatic": {
+    "message": "自动（浏览器）"
+  },
+  "address": {
+    "message": "网站或分区网址"
+  },
+  "scope": {
+    "message": "范围"
+  },
+  "website": {
+    "message": "整个网站"
+  },
+  "section": {
+    "message": "路径分区"
+  },
+  "subdomains": {
+    "message": "包含子域名"
+  },
+  "save": {
+    "message": "保存设置"
+  },
+  "rulesNote": {
+    "message": "保存在本机。停用的规则作为排除项保留。更具体的分区优先，忽略查询参数和片段。"
+  },
+  "savedRules": {
+    "message": "已保存的网站和分区"
+  },
+  "backup": {
+    "message": "备份与恢复"
+  },
+  "export": {
+    "message": "导出 JSON"
+  },
+  "import": {
+    "message": "导入 JSON"
+  },
+  "matchingRules": {
+    "message": "相同的网站和分区规则"
+  },
+  "keep": {
+    "message": "保留现有设置"
+  },
+  "replace": {
+    "message": "使用文件中的设置"
+  },
+  "importNote": {
+    "message": "保留文件中未列出的规则。启用的规则可能会在匹配的已打开标签页中开启深色模式。"
+  },
+  "confirmImport": {
+    "message": "导入规则"
+  },
+  "cancel": {
+    "message": "取消"
+  },
+  "debugNote": {
+    "message": "Brave 可能显示调试提示。关闭提示或打开开发者工具可能会断开深色模式连接。"
+  },
+  "diagnostics": {
+    "message": "诊断"
+  },
+  "importPreview": {
+    "message": "导入预览"
+  },
+  "disableSave": {
+    "message": "停用并保存"
+  },
+  "enableSave": {
+    "message": "启用并保存"
+  },
+  "scopeFamily": {
+    "message": "保存范围：{scope} 及其子域名。忽略开头的 www。"
+  },
+  "scopeExact": {
+    "message": "保存范围：{scope}，仅限此主机名。"
+  },
+  "active": {
+    "message": "此标签页已启用原生深色模式。"
+  },
+  "inactive": {
+    "message": "此标签页未启用原生深色模式。"
+  },
+  "noRules": {
+    "message": "尚无已保存的规则。"
+  },
+  "enabled": {
+    "message": "已启用"
+  },
+  "disabled": {
+    "message": "已停用"
+  },
+  "enable": {
+    "message": "启用"
+  },
+  "disable": {
+    "message": "停用"
+  },
+  "edit": {
+    "message": "编辑"
+  },
+  "remove": {
+    "message": "删除"
+  },
+  "saving": {
+    "message": "正在保存并应用规则…"
+  },
+  "exportPreparing": {
+    "message": "正在准备 JSON 导出…"
+  },
+  "exportPrepared": {
+    "message": "已准备导出 {count} 条规则。请查看浏览器下载。"
+  },
+  "validating": {
+    "message": "正在验证 JSON 文件…"
+  },
+  "fileValidated": {
+    "message": "文件已验证，尚未更改任何设置。"
+  },
+  "previewSummary": {
+    "message": "{added} 条新规则，{matching} 条相同规则。"
+  },
+  "importCanceled": {
+    "message": "已取消导入，未更改设置。"
+  },
+  "importing": {
+    "message": "正在导入规则…"
+  },
+  "importSaved": {
+    "message": "导入已保存：新增 {added} 条，更新 {updated} 条，保留 {skipped} 条。正在更新匹配的标签页。"
+  },
+  "changingLanguage": {
+    "message": "正在切换界面语言…"
+  },
+  "errorJson": {
+    "message": "文件不是有效的 JSON。"
+  },
+  "errorFormat": {
+    "message": "不支持的备份格式或版本。"
+  },
+  "errorSize": {
+    "message": "请选择不超过 1 MiB 的 JSON 备份。"
+  },
+  "errorLimit": {
+    "message": "配置最多可包含 1000 条规则。"
+  },
+  "errorDuplicate": {
+    "message": "备份包含重复范围。"
+  },
+  "errorRule": {
+    "message": "规则 {count} 无效。请检查主机名、路径和设置。"
+  },
+  "errorTimeout": {
+    "message": "浏览器响应超时。规则可能已保存，请重新打开面板查看。"
+  },
+  "errorPage": {
+    "message": "请打开 HTTP 或 HTTPS 页面管理规则。"
+  },
+  "errorDetached": {
+    "message": "连接已断开（{reason}）。此标签页已暂停自动启用，请手动启用以恢复。"
+  },
+  "regionalDomains": {
+    "message": "包含地区域名"
+  },
+  "scopeRegional": {
+    "message": "保存范围为 {scope}，包括 www 变体。"
+  },
+  "scopeRegionalFamily": {
+    "message": "保存范围为 {scope} 及其子域名。"
+  }
+}

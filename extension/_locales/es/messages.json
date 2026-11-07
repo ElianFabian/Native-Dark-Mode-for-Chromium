@@ -1,0 +1,182 @@
+{
+  "extensionName": {
+    "message": "Modo oscuro nativo — Prototipo"
+  },
+  "extensionDescription": {
+    "message": "Modo oscuro del navegador con reglas por web y sección."
+  },
+  "title": {
+    "message": "Modo oscuro nativo"
+  },
+  "language": {
+    "message": "Idioma"
+  },
+  "automatic": {
+    "message": "Automático (navegador)"
+  },
+  "address": {
+    "message": "URL de la web o sección"
+  },
+  "scope": {
+    "message": "Alcance"
+  },
+  "website": {
+    "message": "Web completa"
+  },
+  "section": {
+    "message": "Sección por ruta"
+  },
+  "subdomains": {
+    "message": "Incluir subdominios"
+  },
+  "save": {
+    "message": "Guardar ajustes"
+  },
+  "rulesNote": {
+    "message": "Se guarda localmente. Las reglas desactivadas se conservan como exclusiones. Las secciones más específicas tienen prioridad. Se ignoran parámetros y fragmentos."
+  },
+  "savedRules": {
+    "message": "Webs y secciones guardadas"
+  },
+  "backup": {
+    "message": "Copia de seguridad y restauración"
+  },
+  "export": {
+    "message": "Exportar JSON"
+  },
+  "import": {
+    "message": "Importar JSON"
+  },
+  "matchingRules": {
+    "message": "Reglas de webs y secciones coincidentes"
+  },
+  "keep": {
+    "message": "Conservar mis ajustes actuales"
+  },
+  "replace": {
+    "message": "Usar los ajustes del archivo"
+  },
+  "importNote": {
+    "message": "Se conservan las reglas que no estén en el archivo. Las reglas activadas pueden aplicar modo oscuro en pestañas abiertas coincidentes."
+  },
+  "confirmImport": {
+    "message": "Importar reglas"
+  },
+  "cancel": {
+    "message": "Cancelar"
+  },
+  "debugNote": {
+    "message": "Brave puede mostrar un aviso de depuración. Cerrarlo o abrir DevTools puede desconectar el modo oscuro."
+  },
+  "diagnostics": {
+    "message": "Diagnóstico"
+  },
+  "importPreview": {
+    "message": "Vista previa de importación"
+  },
+  "disableSave": {
+    "message": "Desactivar y guardar"
+  },
+  "enableSave": {
+    "message": "Activar y guardar"
+  },
+  "scopeFamily": {
+    "message": "Alcance guardado: {scope} y sus subdominios. Se ignora www al principio."
+  },
+  "scopeExact": {
+    "message": "Alcance guardado: {scope}, solo este nombre de host."
+  },
+  "active": {
+    "message": "El modo oscuro nativo está activo en esta pestaña."
+  },
+  "inactive": {
+    "message": "El modo oscuro nativo está inactivo en esta pestaña."
+  },
+  "noRules": {
+    "message": "Todavía no hay reglas guardadas."
+  },
+  "enabled": {
+    "message": "Activada"
+  },
+  "disabled": {
+    "message": "Desactivada"
+  },
+  "enable": {
+    "message": "Activar"
+  },
+  "disable": {
+    "message": "Desactivar"
+  },
+  "edit": {
+    "message": "Editar"
+  },
+  "remove": {
+    "message": "Eliminar"
+  },
+  "saving": {
+    "message": "Guardando y aplicando la regla…"
+  },
+  "exportPreparing": {
+    "message": "Preparando la exportación JSON…"
+  },
+  "exportPrepared": {
+    "message": "Exportación preparada: {count} reglas. Revisa las descargas del navegador."
+  },
+  "validating": {
+    "message": "Validando el archivo JSON…"
+  },
+  "fileValidated": {
+    "message": "Archivo validado. Todavía no se ha cambiado ningún ajuste."
+  },
+  "previewSummary": {
+    "message": "{added} reglas nuevas y {matching} reglas coincidentes."
+  },
+  "importCanceled": {
+    "message": "Importación cancelada. No se cambió ningún ajuste."
+  },
+  "importing": {
+    "message": "Importando reglas…"
+  },
+  "importSaved": {
+    "message": "Importación guardada: {added} añadidas, {updated} actualizadas y {skipped} sin cambios. Se están actualizando las pestañas coincidentes."
+  },
+  "changingLanguage": {
+    "message": "Cambiando el idioma de la interfaz…"
+  },
+  "errorJson": {
+    "message": "El archivo no contiene JSON válido."
+  },
+  "errorFormat": {
+    "message": "Formato o versión de copia no compatible."
+  },
+  "errorSize": {
+    "message": "Elige una copia JSON de hasta 1 MiB."
+  },
+  "errorLimit": {
+    "message": "La configuración admite un máximo de 1000 reglas."
+  },
+  "errorDuplicate": {
+    "message": "La copia contiene alcances duplicados."
+  },
+  "errorRule": {
+    "message": "La regla {count} no es válida. Revisa su host, ruta y ajustes."
+  },
+  "errorTimeout": {
+    "message": "El navegador tarda demasiado. La regla puede estar guardada. Vuelve a abrir el panel para comprobarlo."
+  },
+  "errorPage": {
+    "message": "Abre una página HTTP o HTTPS para gestionar las reglas."
+  },
+  "errorDetached": {
+    "message": "Conexión finalizada ({reason}). La activación automática está pausada en esta pestaña. Actívala manualmente para continuar."
+  },
+  "regionalDomains": {
+    "message": "Incluir dominios regionales"
+  },
+  "scopeRegional": {
+    "message": "Alcance guardado en {scope}, incluidas las variantes con www."
+  },
+  "scopeRegionalFamily": {
+    "message": "Alcance guardado en {scope} y sus subdominios."
+  }
+}

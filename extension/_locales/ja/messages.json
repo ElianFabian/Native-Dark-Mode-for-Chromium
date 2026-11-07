@@ -1,0 +1,182 @@
+{
+  "extensionName": {
+    "message": "ネイティブダークモード — 試作版"
+  },
+  "extensionDescription": {
+    "message": "サイトとセクションのルールを保存できるブラウザのダークモード。"
+  },
+  "title": {
+    "message": "ネイティブダークモード"
+  },
+  "language": {
+    "message": "言語"
+  },
+  "automatic": {
+    "message": "自動（ブラウザ）"
+  },
+  "address": {
+    "message": "サイトまたはセクションのURL"
+  },
+  "scope": {
+    "message": "適用範囲"
+  },
+  "website": {
+    "message": "サイト全体"
+  },
+  "section": {
+    "message": "パスで指定するセクション"
+  },
+  "subdomains": {
+    "message": "サブドメインを含める"
+  },
+  "save": {
+    "message": "設定を保存"
+  },
+  "rulesNote": {
+    "message": "この端末に保存します。無効なルールは除外として残ります。より具体的なセクションを優先し、クエリとフラグメントは無視します。"
+  },
+  "savedRules": {
+    "message": "保存済みのサイトとセクション"
+  },
+  "backup": {
+    "message": "バックアップと復元"
+  },
+  "export": {
+    "message": "JSONをエクスポート"
+  },
+  "import": {
+    "message": "JSONをインポート"
+  },
+  "matchingRules": {
+    "message": "一致するサイトとセクションのルール"
+  },
+  "keep": {
+    "message": "現在の設定を保持"
+  },
+  "replace": {
+    "message": "ファイル内の設定を使用"
+  },
+  "importNote": {
+    "message": "ファイルにないルールは保持します。有効なルールは、一致する開いたタブにダークモードを適用する場合があります。"
+  },
+  "confirmImport": {
+    "message": "ルールをインポート"
+  },
+  "cancel": {
+    "message": "キャンセル"
+  },
+  "debugNote": {
+    "message": "Braveはデバッグ通知を表示する場合があります。通知を閉じたりDevToolsを開いたりすると、ダークモードの接続が切れる場合があります。"
+  },
+  "diagnostics": {
+    "message": "診断"
+  },
+  "importPreview": {
+    "message": "インポートのプレビュー"
+  },
+  "disableSave": {
+    "message": "無効にして保存"
+  },
+  "enableSave": {
+    "message": "有効にして保存"
+  },
+  "scopeFamily": {
+    "message": "保存範囲：{scope} とそのサブドメイン。先頭のwwwは無視します。"
+  },
+  "scopeExact": {
+    "message": "保存範囲：{scope}。このホスト名のみ。"
+  },
+  "active": {
+    "message": "このタブではネイティブダークモードが有効です。"
+  },
+  "inactive": {
+    "message": "このタブではネイティブダークモードが無効です。"
+  },
+  "noRules": {
+    "message": "保存されたルールはありません。"
+  },
+  "enabled": {
+    "message": "有効"
+  },
+  "disabled": {
+    "message": "無効"
+  },
+  "enable": {
+    "message": "有効にする"
+  },
+  "disable": {
+    "message": "無効にする"
+  },
+  "edit": {
+    "message": "編集"
+  },
+  "remove": {
+    "message": "削除"
+  },
+  "saving": {
+    "message": "ルールを保存して適用しています…"
+  },
+  "exportPreparing": {
+    "message": "JSONエクスポートを準備しています…"
+  },
+  "exportPrepared": {
+    "message": "{count}件のルールをエクスポートする準備ができました。ブラウザのダウンロードを確認してください。"
+  },
+  "validating": {
+    "message": "JSONファイルを検証しています…"
+  },
+  "fileValidated": {
+    "message": "ファイルを検証しました。設定はまだ変更されていません。"
+  },
+  "previewSummary": {
+    "message": "新規{added}件、一致するルール{matching}件。"
+  },
+  "importCanceled": {
+    "message": "インポートをキャンセルしました。設定は変更されていません。"
+  },
+  "importing": {
+    "message": "ルールをインポートしています…"
+  },
+  "importSaved": {
+    "message": "保存しました：追加{added}件、更新{updated}件、変更なし{skipped}件。一致するタブを更新しています。"
+  },
+  "changingLanguage": {
+    "message": "表示言語を変更しています…"
+  },
+  "errorJson": {
+    "message": "有効なJSONファイルではありません。"
+  },
+  "errorFormat": {
+    "message": "対応していないバックアップ形式またはバージョンです。"
+  },
+  "errorSize": {
+    "message": "1 MiB以下のJSONバックアップを選択してください。"
+  },
+  "errorLimit": {
+    "message": "設定できるルールは最大1000件です。"
+  },
+  "errorDuplicate": {
+    "message": "バックアップに重複する範囲があります。"
+  },
+  "errorRule": {
+    "message": "ルール{count}が無効です。ホスト名、パス、設定を確認してください。"
+  },
+  "errorTimeout": {
+    "message": "ブラウザの応答に時間がかかっています。保存済みの場合があります。ポップアップを開き直して確認してください。"
+  },
+  "errorPage": {
+    "message": "HTTPまたはHTTPSのページを開いてルールを管理してください。"
+  },
+  "errorDetached": {
+    "message": "接続が終了しました（{reason}）。このタブの自動適用は一時停止中です。手動で有効にして再開してください。"
+  },
+  "regionalDomains": {
+    "message": "地域別ドメインを含める"
+  },
+  "scopeRegional": {
+    "message": "保存範囲は{scope}です。www付きも含みます。"
+  },
+  "scopeRegionalFamily": {
+    "message": "保存範囲は{scope}とそのサブドメインです。"
+  }
+}

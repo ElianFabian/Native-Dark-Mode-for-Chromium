@@ -1,0 +1,182 @@
+{
+  "extensionName": {
+    "message": "Mode sombre natif — Prototype"
+  },
+  "extensionDescription": {
+    "message": "Mode sombre du navigateur avec règles par site et section."
+  },
+  "title": {
+    "message": "Mode sombre natif"
+  },
+  "language": {
+    "message": "Langue"
+  },
+  "automatic": {
+    "message": "Automatique (navigateur)"
+  },
+  "address": {
+    "message": "URL du site ou de la section"
+  },
+  "scope": {
+    "message": "Portée"
+  },
+  "website": {
+    "message": "Site entier"
+  },
+  "section": {
+    "message": "Section par chemin"
+  },
+  "subdomains": {
+    "message": "Inclure les sous-domaines"
+  },
+  "save": {
+    "message": "Enregistrer les paramètres"
+  },
+  "rulesNote": {
+    "message": "Enregistrement local. Les règles désactivées restent des exclusions. Les sections précises sont prioritaires. Paramètres et fragments ignorés."
+  },
+  "savedRules": {
+    "message": "Sites et sections enregistrés"
+  },
+  "backup": {
+    "message": "Sauvegarde et restauration"
+  },
+  "export": {
+    "message": "Exporter en JSON"
+  },
+  "import": {
+    "message": "Importer un JSON"
+  },
+  "matchingRules": {
+    "message": "Règles de sites et sections correspondantes"
+  },
+  "keep": {
+    "message": "Conserver mes paramètres actuels"
+  },
+  "replace": {
+    "message": "Utiliser les paramètres du fichier"
+  },
+  "importNote": {
+    "message": "Les règles absentes du fichier sont conservées. Les règles actives peuvent assombrir les onglets correspondants ouverts."
+  },
+  "confirmImport": {
+    "message": "Importer les règles"
+  },
+  "cancel": {
+    "message": "Annuler"
+  },
+  "debugNote": {
+    "message": "Brave peut afficher une bannière de débogage. La fermer ou ouvrir DevTools peut déconnecter le mode sombre."
+  },
+  "diagnostics": {
+    "message": "Diagnostic"
+  },
+  "importPreview": {
+    "message": "Aperçu de l’importation"
+  },
+  "disableSave": {
+    "message": "Désactiver et enregistrer"
+  },
+  "enableSave": {
+    "message": "Activer et enregistrer"
+  },
+  "scopeFamily": {
+    "message": "Portée enregistrée : {scope} et ses sous-domaines. Le préfixe www est ignoré."
+  },
+  "scopeExact": {
+    "message": "Portée enregistrée : {scope}, uniquement cet hôte."
+  },
+  "active": {
+    "message": "Le mode sombre natif est actif dans cet onglet."
+  },
+  "inactive": {
+    "message": "Le mode sombre natif est inactif dans cet onglet."
+  },
+  "noRules": {
+    "message": "Aucune règle enregistrée."
+  },
+  "enabled": {
+    "message": "Activée"
+  },
+  "disabled": {
+    "message": "Désactivée"
+  },
+  "enable": {
+    "message": "Activer"
+  },
+  "disable": {
+    "message": "Désactiver"
+  },
+  "edit": {
+    "message": "Modifier"
+  },
+  "remove": {
+    "message": "Supprimer"
+  },
+  "saving": {
+    "message": "Enregistrement et application de la règle…"
+  },
+  "exportPreparing": {
+    "message": "Préparation de l’export JSON…"
+  },
+  "exportPrepared": {
+    "message": "Export préparé : {count} règles. Consultez les téléchargements du navigateur."
+  },
+  "validating": {
+    "message": "Validation du fichier JSON…"
+  },
+  "fileValidated": {
+    "message": "Fichier validé. Aucun paramètre n’a encore été modifié."
+  },
+  "previewSummary": {
+    "message": "{added} nouvelles règles et {matching} règles correspondantes."
+  },
+  "importCanceled": {
+    "message": "Importation annulée. Aucun paramètre modifié."
+  },
+  "importing": {
+    "message": "Importation des règles…"
+  },
+  "importSaved": {
+    "message": "Import enregistré : {added} ajouts, {updated} mises à jour, {skipped} inchangées. Mise à jour des onglets correspondants."
+  },
+  "changingLanguage": {
+    "message": "Changement de langue…"
+  },
+  "errorJson": {
+    "message": "Le fichier n’est pas un JSON valide."
+  },
+  "errorFormat": {
+    "message": "Format ou version de sauvegarde non pris en charge."
+  },
+  "errorSize": {
+    "message": "Choisissez une sauvegarde JSON de 1 Mio maximum."
+  },
+  "errorLimit": {
+    "message": "La configuration accepte 1 000 règles maximum."
+  },
+  "errorDuplicate": {
+    "message": "La sauvegarde contient des portées en double."
+  },
+  "errorRule": {
+    "message": "La règle {count} est invalide. Vérifiez l’hôte, le chemin et les paramètres."
+  },
+  "errorTimeout": {
+    "message": "Le navigateur met trop de temps. La règle est peut-être enregistrée. Rouvrez le panneau pour vérifier."
+  },
+  "errorPage": {
+    "message": "Ouvrez une page HTTP ou HTTPS pour gérer les règles."
+  },
+  "errorDetached": {
+    "message": "Connexion terminée ({reason}). L’activation automatique est suspendue pour cet onglet. Réactivez-la manuellement."
+  },
+  "regionalDomains": {
+    "message": "Inclure les domaines régionaux"
+  },
+  "scopeRegional": {
+    "message": "Portée enregistrée sur {scope}, y compris les variantes www."
+  },
+  "scopeRegionalFamily": {
+    "message": "Portée enregistrée sur {scope} et leurs sous-domaines."
+  }
+}

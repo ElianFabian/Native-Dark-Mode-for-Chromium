@@ -1,0 +1,182 @@
+{
+  "extensionName": {
+    "message": "Native Dark Mode — Prototype"
+  },
+  "extensionDescription": {
+    "message": "Native browser dark mode with saved website and section rules."
+  },
+  "title": {
+    "message": "Native Dark Mode"
+  },
+  "language": {
+    "message": "Language"
+  },
+  "automatic": {
+    "message": "Automatic (browser)"
+  },
+  "address": {
+    "message": "Website or section URL"
+  },
+  "scope": {
+    "message": "Scope"
+  },
+  "website": {
+    "message": "Entire website"
+  },
+  "section": {
+    "message": "Path section"
+  },
+  "subdomains": {
+    "message": "Include subdomains"
+  },
+  "save": {
+    "message": "Save settings"
+  },
+  "rulesNote": {
+    "message": "Saved locally. Disabled rules remain as exclusions. Specific sections take priority. Queries and fragments are ignored."
+  },
+  "savedRules": {
+    "message": "Saved websites and sections"
+  },
+  "backup": {
+    "message": "Backup and restore"
+  },
+  "export": {
+    "message": "Export JSON"
+  },
+  "import": {
+    "message": "Import JSON"
+  },
+  "matchingRules": {
+    "message": "Matching website and section rules"
+  },
+  "keep": {
+    "message": "Keep my existing settings"
+  },
+  "replace": {
+    "message": "Use settings from the file"
+  },
+  "importNote": {
+    "message": "Rules absent from the file are kept. Enabled rules may activate dark mode in matching open tabs."
+  },
+  "confirmImport": {
+    "message": "Import rules"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "debugNote": {
+    "message": "Brave may show a debugging banner. Closing it or opening DevTools may disconnect dark mode."
+  },
+  "diagnostics": {
+    "message": "Diagnostics"
+  },
+  "importPreview": {
+    "message": "Import preview"
+  },
+  "disableSave": {
+    "message": "Disable and save"
+  },
+  "enableSave": {
+    "message": "Enable and save"
+  },
+  "scopeFamily": {
+    "message": "Saved scope: {scope} and its subdomains. A leading www is ignored."
+  },
+  "scopeExact": {
+    "message": "Saved scope: {scope}, this hostname only."
+  },
+  "active": {
+    "message": "Native dark mode is active in this tab."
+  },
+  "inactive": {
+    "message": "Native dark mode is inactive in this tab."
+  },
+  "noRules": {
+    "message": "No saved rules yet."
+  },
+  "enabled": {
+    "message": "Enabled"
+  },
+  "disabled": {
+    "message": "Disabled"
+  },
+  "enable": {
+    "message": "Enable"
+  },
+  "disable": {
+    "message": "Disable"
+  },
+  "edit": {
+    "message": "Edit"
+  },
+  "remove": {
+    "message": "Remove"
+  },
+  "saving": {
+    "message": "Saving and applying the rule…"
+  },
+  "exportPreparing": {
+    "message": "Preparing JSON export…"
+  },
+  "exportPrepared": {
+    "message": "Export prepared: {count} rules. Check your browser downloads."
+  },
+  "validating": {
+    "message": "Validating JSON file…"
+  },
+  "fileValidated": {
+    "message": "File validated. No settings have changed yet."
+  },
+  "previewSummary": {
+    "message": "{added} new rules and {matching} matching rules."
+  },
+  "importCanceled": {
+    "message": "Import canceled. No settings were changed."
+  },
+  "importing": {
+    "message": "Importing saved rules…"
+  },
+  "importSaved": {
+    "message": "Import saved: {added} added, {updated} updated, {skipped} unchanged. Matching tabs are being updated."
+  },
+  "changingLanguage": {
+    "message": "Changing interface language…"
+  },
+  "errorJson": {
+    "message": "The file is not valid JSON."
+  },
+  "errorFormat": {
+    "message": "Unsupported backup format or version."
+  },
+  "errorSize": {
+    "message": "Choose a JSON backup no larger than 1 MiB."
+  },
+  "errorLimit": {
+    "message": "The configuration may contain at most 1,000 rules."
+  },
+  "errorDuplicate": {
+    "message": "The backup contains duplicate scopes."
+  },
+  "errorRule": {
+    "message": "Rule {count} is invalid. Check its hostname, path and settings."
+  },
+  "errorTimeout": {
+    "message": "The browser is taking too long. The rule may already be saved. Reopen the popup to check."
+  },
+  "errorPage": {
+    "message": "Open an HTTP or HTTPS page to manage website rules."
+  },
+  "errorDetached": {
+    "message": "Connection ended ({reason}). Automatic activation is paused for this tab. Enable it manually to resume."
+  },
+  "regionalDomains": {
+    "message": "Include regional domains"
+  },
+  "scopeRegional": {
+    "message": "Saved scope {scope}, including www variants."
+  },
+  "scopeRegionalFamily": {
+    "message": "Saved scope {scope} and their subdomains."
+  }
+}

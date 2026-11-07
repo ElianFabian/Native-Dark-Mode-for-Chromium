@@ -1,0 +1,182 @@
+{
+  "extensionName": {
+    "message": "Modo escuro nativo — Protótipo"
+  },
+  "extensionDescription": {
+    "message": "Modo escuro do navegador com regras por site e secção."
+  },
+  "title": {
+    "message": "Modo escuro nativo"
+  },
+  "language": {
+    "message": "Idioma"
+  },
+  "automatic": {
+    "message": "Automático (navegador)"
+  },
+  "address": {
+    "message": "URL do site ou da secção"
+  },
+  "scope": {
+    "message": "Âmbito"
+  },
+  "website": {
+    "message": "Site completo"
+  },
+  "section": {
+    "message": "Secção por caminho"
+  },
+  "subdomains": {
+    "message": "Incluir subdomínios"
+  },
+  "save": {
+    "message": "Guardar definições"
+  },
+  "rulesNote": {
+    "message": "Guardado localmente. Regras desativadas mantêm-se como exclusões. Secções mais específicas têm prioridade. Parâmetros e fragmentos são ignorados."
+  },
+  "savedRules": {
+    "message": "Sites e secções guardados"
+  },
+  "backup": {
+    "message": "Cópia de segurança e restauro"
+  },
+  "export": {
+    "message": "Exportar JSON"
+  },
+  "import": {
+    "message": "Importar JSON"
+  },
+  "matchingRules": {
+    "message": "Regras de sites e secções correspondentes"
+  },
+  "keep": {
+    "message": "Manter as minhas definições"
+  },
+  "replace": {
+    "message": "Usar as definições do ficheiro"
+  },
+  "importNote": {
+    "message": "As regras ausentes do ficheiro são mantidas. Regras ativas podem aplicar o modo escuro em separadores abertos correspondentes."
+  },
+  "confirmImport": {
+    "message": "Importar regras"
+  },
+  "cancel": {
+    "message": "Cancelar"
+  },
+  "debugNote": {
+    "message": "O Brave pode mostrar um aviso de depuração. Fechá-lo ou abrir o DevTools pode desligar o modo escuro."
+  },
+  "diagnostics": {
+    "message": "Diagnóstico"
+  },
+  "importPreview": {
+    "message": "Pré-visualização da importação"
+  },
+  "disableSave": {
+    "message": "Desativar e guardar"
+  },
+  "enableSave": {
+    "message": "Ativar e guardar"
+  },
+  "scopeFamily": {
+    "message": "Âmbito guardado: {scope} e os seus subdomínios. O prefixo www é ignorado."
+  },
+  "scopeExact": {
+    "message": "Âmbito guardado: {scope}, apenas este anfitrião."
+  },
+  "active": {
+    "message": "O modo escuro nativo está ativo neste separador."
+  },
+  "inactive": {
+    "message": "O modo escuro nativo está inativo neste separador."
+  },
+  "noRules": {
+    "message": "Ainda não há regras guardadas."
+  },
+  "enabled": {
+    "message": "Ativa"
+  },
+  "disabled": {
+    "message": "Inativa"
+  },
+  "enable": {
+    "message": "Ativar"
+  },
+  "disable": {
+    "message": "Desativar"
+  },
+  "edit": {
+    "message": "Editar"
+  },
+  "remove": {
+    "message": "Remover"
+  },
+  "saving": {
+    "message": "A guardar e aplicar a regra…"
+  },
+  "exportPreparing": {
+    "message": "A preparar a exportação JSON…"
+  },
+  "exportPrepared": {
+    "message": "Exportação preparada: {count} regras. Verifique as transferências do navegador."
+  },
+  "validating": {
+    "message": "A validar o ficheiro JSON…"
+  },
+  "fileValidated": {
+    "message": "Ficheiro validado. Nenhuma definição foi alterada."
+  },
+  "previewSummary": {
+    "message": "{added} regras novas e {matching} regras correspondentes."
+  },
+  "importCanceled": {
+    "message": "Importação cancelada. Nenhuma definição foi alterada."
+  },
+  "importing": {
+    "message": "A importar regras…"
+  },
+  "importSaved": {
+    "message": "Importação guardada: {added} adicionadas, {updated} atualizadas e {skipped} sem alterações. A atualizar os separadores correspondentes."
+  },
+  "changingLanguage": {
+    "message": "A alterar o idioma da interface…"
+  },
+  "errorJson": {
+    "message": "O ficheiro não contém JSON válido."
+  },
+  "errorFormat": {
+    "message": "Formato ou versão da cópia não suportado."
+  },
+  "errorSize": {
+    "message": "Escolha uma cópia JSON até 1 MiB."
+  },
+  "errorLimit": {
+    "message": "A configuração permite um máximo de 1000 regras."
+  },
+  "errorDuplicate": {
+    "message": "A cópia contém âmbitos duplicados."
+  },
+  "errorRule": {
+    "message": "A regra {count} é inválida. Verifique o anfitrião, caminho e definições."
+  },
+  "errorTimeout": {
+    "message": "O navegador está a demorar. A regra pode já estar guardada. Reabra o painel para verificar."
+  },
+  "errorPage": {
+    "message": "Abra uma página HTTP ou HTTPS para gerir as regras."
+  },
+  "errorDetached": {
+    "message": "Ligação terminada ({reason}). A ativação automática está suspensa neste separador. Ative manualmente para continuar."
+  },
+  "regionalDomains": {
+    "message": "Incluir domínios regionais"
+  },
+  "scopeRegional": {
+    "message": "Âmbito guardado em {scope}, incluindo variantes com www."
+  },
+  "scopeRegionalFamily": {
+    "message": "Âmbito guardado em {scope} e nos seus subdomínios."
+  }
+}
