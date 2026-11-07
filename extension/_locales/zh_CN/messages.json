@@ -304,5 +304,8 @@
   },
   "errorStaleImport": {
     "message": "已保存的规则发生变化。请取消并重新选择备份以查看最新预览。"
+  },
+  "manageExtension": {
+    "message": "管理扩展程序"
   }
 }

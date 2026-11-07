@@ -304,5 +304,8 @@
   },
   "errorStaleImport": {
     "message": "Saved rules changed. Cancel and select the backup again to review the updated preview."
+  },
+  "manageExtension": {
+    "message": "Manage extension"
   }
 }

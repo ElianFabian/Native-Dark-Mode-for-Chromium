@@ -405,6 +405,14 @@ $('#manage')?.addEventListener('click', async () => {
   try { await chrome.runtime.openOptionsPage(); }
   catch (error) { $('#status').textContent = errorText(error); }
 });
+$('#manage-extension').addEventListener('click', async () => {
+  const agent = navigator.userAgent;
+  const details = `extensions/?id=${chrome.runtime.id}`;
+  const url = /\bOPR\//.test(agent) ? 'opera://extensions/' :
+    `${/\bEdg\//.test(agent) ? 'edge' : 'chrome'}://${details}`;
+  try { await chrome.tabs.create({ url }); }
+  catch (error) { $('#status').textContent = errorText(error); }
+});
 $('#exclude-host')?.addEventListener('click', () => request({ type: 'exclude-inherited-host', url: tab.url }));
 $('#address').addEventListener('input', loadSelection);
 $('#scope').addEventListener('change', loadSelection);

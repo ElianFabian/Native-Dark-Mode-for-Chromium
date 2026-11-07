@@ -102,6 +102,8 @@ h2 { font-size: 1rem; }
 .rule-path { color: var(--muted); font-size: .9em; }
 .rule-state { font-size: .8125rem; color: var(--muted); }
 #save { background: var(--secondary); color: var(--text); }
+#manage-extension { background: var(--secondary); color: var(--text); }
+#manage-extension:enabled:hover { background: var(--secondary-hover); }
 #exclude-host { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
 
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }

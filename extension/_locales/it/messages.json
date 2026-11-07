@@ -304,5 +304,8 @@
   },
   "errorStaleImport": {
     "message": "Le regole salvate sono cambiate. Annulla e seleziona di nuovo il backup per aggiornare l’anteprima."
+  },
+  "manageExtension": {
+    "message": "Gestisci estensione"
   }
 }

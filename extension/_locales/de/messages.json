@@ -304,5 +304,8 @@
   },
   "errorStaleImport": {
     "message": "Die gespeicherten Regeln wurden geändert. Brich ab und wähle die Sicherung erneut aus, um die Vorschau zu prüfen."
+  },
+  "manageExtension": {
+    "message": "Erweiterung verwalten"
   }
 }

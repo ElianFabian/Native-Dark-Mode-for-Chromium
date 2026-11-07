@@ -304,5 +304,8 @@
   },
   "errorStaleImport": {
     "message": "Las reglas guardadas han cambiado. Cancela y vuelve a seleccionar la copia para revisar la vista previa."
+  },
+  "manageExtension": {
+    "message": "Gestionar extensión"
   }
 }

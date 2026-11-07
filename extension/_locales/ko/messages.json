@@ -304,5 +304,8 @@
   },
   "errorStaleImport": {
     "message": "저장된 규칙이 변경되었습니다. 취소하고 백업을 다시 선택해 미리보기를 확인하세요."
+  },
+  "manageExtension": {
+    "message": "확장 프로그램 관리"
   }
 }

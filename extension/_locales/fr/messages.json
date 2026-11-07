@@ -304,5 +304,8 @@
   },
   "errorStaleImport": {
     "message": "Les règles enregistrées ont changé. Annulez et sélectionnez de nouveau la sauvegarde pour actualiser l’aperçu."
+  },
+  "manageExtension": {
+    "message": "Gérer l’extension"
   }
 }

@@ -304,5 +304,8 @@
   },
   "errorStaleImport": {
     "message": "保存済みのルールが変更されました。キャンセルしてバックアップを選択し直し、プレビューを確認してください。"
+  },
+  "manageExtension": {
+    "message": "拡張機能を管理"
   }
 }
