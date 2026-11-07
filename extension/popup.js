@@ -14,7 +14,7 @@ let busy = false;
 let pendingImport;
 let displayedRule;
 let editingId;
-let editorHighlightTimer;
+const panelHighlightTimers = new WeakMap();
 let refreshAppearance;
 
 const appearanceMenu = $('.appearance-menu');
@@ -244,7 +244,7 @@ function renderRule(rule) {
   renderRuleToggle(toggle, rule.enabled, item);
   toggle.addEventListener('click', () => {
     const current = snapshot.rules.find(entry => entry.id === rule.id);
-    if (current) void request({ type: 'update', id: rule.id, patch: { enabled: !current.enabled } }, toggle);
+    if (current) void request({ type: 'update', id: rule.id, patch: { enabled: !current.enabled } }, { retainedButton: toggle });
   });
   const edit = document.createElement('button');
   edit.className = 'rule-edit';
@@ -253,18 +253,35 @@ function renderRule(rule) {
     editingId = rule.id;
     showRule(rule);
     $('#address').focus();
-    const editor = $('.rule-editor');
-    editor.classList.add('is-highlighted');
-    clearTimeout(editorHighlightTimer);
-    editorHighlightTimer = setTimeout(() => editor.classList.remove('is-highlighted'), 800);
+    highlightPanel($('.rule-editor'));
   });
   const remove = document.createElement('button');
   remove.className = 'rule-remove';
   remove.textContent = t('remove');
-  remove.addEventListener('click', () => request({ type: 'remove', id: rule.id }));
+  remove.addEventListener('click', () => request({ type: 'remove', id: rule.id }, { removedRow: item }));
   actions.append(toggle, edit, remove);
   item.append(actions);
   return item;
+}
+
+function highlightPanel(panel) {
+  panel.classList.add('is-highlighted');
+  clearTimeout(panelHighlightTimers.get(panel));
+  panelHighlightTimers.set(panel, setTimeout(() => panel.classList.remove('is-highlighted'), 800));
+}
+
+async function animateRuleRemoval(row) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const group = row.parentElement;
+  const target = group.matches('.domain-group') && group.childElementCount === 2 ? group : row;
+  const height = target.getBoundingClientRect().height;
+  if (!height) return;
+  const animation = target.animate([
+    { height: `${height}px`, opacity: 1, overflow: 'hidden', boxSizing: 'border-box' },
+    { height: '0px', opacity: 0, overflow: 'hidden', boxSizing: 'border-box',
+      paddingBlock: '0px', borderBlockWidth: '0px', marginBlock: '0px' }
+  ], { duration: 220, easing: 'ease-in-out', fill: 'forwards' });
+  await animation.finished.catch(() => {});
 }
 
 function renderRuleToggle(button, enabled, item = button.closest('.rule')) {
@@ -344,16 +361,20 @@ async function withBusy(operation, progress, statusElement = $('#status'), retai
   }
 }
 
-async function request(message, retainedButton) {
+async function request(message, { retainedButton, removedRow } = {}) {
   const hadFocus = retainedButton && document.activeElement === retainedButton;
   await withBusy(async () => {
     const value = await send(message);
     if (value.error) throw new Error(value.error);
     if (editingId && message.type === 'replace-scope') editingId = normalizeRule(message.rule).id;
+    if (removedRow) await animateRuleRemoval(removedRow);
     render(value, retainedButton);
     if (message.type === 'exclude-inherited-host' && value.matching) showRule(value.matching);
     if (isManager && (message.type === 'save' || message.type === 'replace-scope')) $('#status').textContent = t('ruleSaved');
-    if (isManager && message.type === 'remove') $('#status').textContent = t('ruleTrashed');
+    if (isManager && message.type === 'remove') {
+      $('#status').textContent = t('ruleTrashed');
+      highlightPanel($('.trash-panel'));
+    }
     if (isManager && message.type === 'restore') $('#status').textContent = t('ruleRestored');
   }, t('saving'), $('#status'), retainedButton);
   if (hadFocus && !retainedButton.isConnected) {
