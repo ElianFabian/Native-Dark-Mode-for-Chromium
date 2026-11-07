@@ -23,13 +23,15 @@ This project started with a practical goal. Use the browser's own darkening engi
 
 ## Screenshots
 
+Click either screenshot to open it at full resolution.
+
 ### Extension popup
 
-![Extension popup showing an Amazon regional rule, text size controls, and quick access to the rule manager](docs/screenshots/popup.png)
+<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="100%" alt="Extension popup showing an Amazon regional rule, text size controls, and quick access to the rule manager"></a>
 
 ### Rule manager
 
-![Rule manager showing the editor, search and sorting controls, rule status and dates, JSON backups, and trash](docs/screenshots/rule-manager.png)
+<a href="docs/screenshots/rule-manager.png"><img src="docs/screenshots/rule-manager.png" width="100%" alt="Rule manager showing the editor, search and sorting controls, rule status and dates, JSON backups, and trash"></a>
 
 ## Use the extension
 

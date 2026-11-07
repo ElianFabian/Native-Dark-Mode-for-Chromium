@@ -23,13 +23,15 @@ Este proyecto usa el motor de oscurecimiento del propio navegador y recuerda dó
 
 ## Capturas
 
+Haz clic en una captura para abrirla a resolución completa.
+
 ### Panel de la extensión
 
-![Panel con una regla regional de Amazon, controles de tamaño del texto y acceso al gestor de reglas](docs/screenshots/popup.png)
+<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="100%" alt="Panel con una regla regional de Amazon, controles de tamaño del texto y acceso al gestor de reglas"></a>
 
 ### Gestor de reglas
 
-![Gestor con editor, búsqueda, orden, estado y fecha de añadido, copias JSON y papelera](docs/screenshots/rule-manager.png)
+<a href="docs/screenshots/rule-manager.png"><img src="docs/screenshots/rule-manager.png" width="100%" alt="Gestor con editor, búsqueda, orden, estado y fecha de añadido, copias JSON y papelera"></a>
 
 ## Usar la extensión
 
