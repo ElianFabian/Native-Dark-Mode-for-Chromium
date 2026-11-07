@@ -1,110 +1,87 @@
-# Native Dark Mode — Brave prototype
+# Native Dark Mode for Brave
 
-A Manifest V3 extension that sends `Emulation.setAutoDarkModeOverride` through `chrome.debugger`, with persistent rules for websites and path sections. No external daemon, remote debugging port, or global dark mode flag is required. Chromium handles image rendering automatically; the extension does not modify image styles.
+Use Chromium's built-in dark mode on the websites and sections you choose. Save a rule once and the extension applies it when you return.
 
-**Status:** prototype code. Visual compatibility with Brave has not been verified. The CDP command is experimental. See [PLAN.md](PLAN.md) for validation stages.
+## Motivation
 
-## Project files
+Many websites still have no dark theme. On others, dark mode starts off or the site forgets the preference between visits. General-purpose dark mode extensions can help, but in my experience their results vary from site to site. A page can look right in one extension and still have hard-to-read text, broken contrast, or unexpected colors in another.
 
-- `extension/`: loadable extension, background worker, controller and popup.
-- `fixtures/`: local rendering test page and image.
-- `test/`: controller tests using a simulated browser API.
+This project started with a practical goal. Use the browser's own darkening engine where it renders a site well, then remember which sites and sections should use it. You can turn it on for an entire site and keep an exception for a particular hostname or section.
 
-Keep code identifiers, comments, tests and documentation in English. Interface translations live in `extension/_locales`.
+<!-- Add screenshots after capturing them in Brave.
+![The extension popup applying native dark mode to a website](docs/screenshots/popup.png)
+![The rule manager with saved websites and sections](docs/screenshots/rule-manager.png)
+-->
 
-## Local trial
+## Install in Brave
 
-1. Open `brave://extensions`, enable developer mode if appropriate, and select **Load unpacked**.
-2. Select this project's `extension` directory. The extension requests the powerful `debugger` permission; this implementation only sends the native dark mode emulation command.
-3. From the project root, run `python -m http.server 8765 --bind 127.0.0.1 --directory fixtures`.
-4. Open `http://127.0.0.1:8765/test.html`, open the extension popup, choose **Entire website** or **Path section**, and click **Enable and save**.
-5. Observe the result, then try disabling, reloading, navigating, and dismissing the debugging banner. Record results in `PLAN.md`.
+1. Download or clone this repository. If you downloaded a ZIP, extract it first.
+2. Open `brave://extensions` and enable **Developer mode**.
+3. Click **Load unpacked** and select the [extension](extension/) folder. It contains `manifest.json`.
+4. Open the **Extensions** menu and select **Native Dark Mode**. You can pin it to the toolbar for quick access.
 
-Rules are saved in `storage.local` and restored on future visits, including after browser restarts. Disabling retains an inactive rule, which also excludes its scope from a broader enabled rule. The most specific matching path wins. The popup shows up to five rules with their status and a **Manage rules** button. The full-page manager provides search and controls for adding, editing, enabling, disabling and removing rules. To change an existing URL, choose **Edit**, change the address or scope, and select **Save settings**. Editing preserves the rule's enabled state.
+Brave loads the extension directly from the folder. To update your local copy, update the files and click **Reload** on the extension card at `brave://extensions`. Refresh open pages if you want to retry them with the updated extension.
 
-On wide screens the editor stays in view while you scroll the list. Its **Backup and restore** controls are inside the same card. The list highlights each hostname and distinguishes the path and state with smaller text. Sort alphabetically in either direction or by date added, and optionally group by the saved hostname without `www`. The manager saves your sort and grouping preferences. Rules created before version 0.5.0 use their saved order when no creation date is available.
+## Use the extension
 
-**Remove** moves the rule to **Trash**. Open Trash above the list and choose **Restore** to recover its settings and original creation date, where available. A conflicting saved rule keeps its settings and the deleted copy stays in Trash.
+1. Visit an HTTP or HTTPS page and open the extension popup.
+2. Select **Entire website** or **Path section**. The URL field lets you adjust the scope before saving.
+3. Click **Enable and save**. Brave applies its native darkening to the current page and remembers the rule for future visits.
+4. Use **Disable and save** to keep a rule as an exclusion, or open **Manage rules** to edit, search, or remove saved rules.
 
-Queries and fragments are ignored. A section matches its path and descendants, not similarly named neighboring paths. Subdomains require explicit opt-in. HTTP and HTTPS share rules, while nonstandard ports are distinct. Rules do not sync to other devices.
+| Option | What it covers |
+| --- | --- |
+| **Entire website** | The hostname in the URL field. |
+| **Path section** | A path and its descendants, such as `/articles` and `/articles/guide`. |
+| **Include subdomains** | Child hostnames. With this option enabled, `www.android.com` is treated as `android.com`, so the rule can also cover `developer.android.com`. |
+| **Include regional domains** | The same registered name under recognized public suffixes. `amazon.es` becomes `amazon.*`, which can cover `amazon.com.au` and `amazon.co.uk`. Enable subdomains as well to get `*.amazon.*`. |
 
-With **Include subdomains** selected, an initial `www.` is treated as an alias of the remaining hostname. For example, `www.android.com` is saved as `android.com` and covers `developer.android.com`. This also applies to previously saved rules that opted into subdomains. An explicit saved parent rule takes priority if the upgrade merges two equivalent scopes.
+More specific paths take priority. At the same path, a rule for a single domain takes priority over a regional pattern. Regional patterns match names across suffixes. Use a single-domain rule when you want to limit the scope to one domain. When a page inherits an enabled rule, the popup can offer **Exclude this subdomain** or **Exclude this hostname** to save an exception for the current hostname and inherited path.
 
-When the current site inherits an enabled subdomain rule, the popup offers **Exclude this subdomain**. For an enabled regional rule it offers **Exclude this hostname**, including on `www` addresses such as `www.amazon.com.au`. Both actions save an inactive rule for the exact current hostname at the inherited path. Other hostnames still inherit the parent rule. To restore inheritance, remove the exclusion in **Manage rules**.
+The popup shows a short list of saved rules. **Manage rules** opens a full tab with editing, sorting, grouping, and search. **Remove** moves a rule to **Trash**, where you can restore it with its settings. If a rule already occupies that scope, the deleted copy stays in Trash.
 
-**Include regional domains** creates a pattern from a base hostname, such as `amazon.*` from `amazon.es`. It matches the same registrable name under any recognized public suffix, including compound suffixes such as `com.au` and `co.uk`. It covers `www` aliases. **Include subdomains** extends it to other subdomains and the list shows `*.amazon.*`. The selected section path carries across the pattern. At the same path, a single-domain rule takes priority. Existing regional Amazon rules adopt the wildcard scope when loaded, including when imported from an older backup.
+The manager also offers **Export JSON** and **Import JSON**. Import previews new and matching rules before saving. It keeps existing settings for matching rules by default, with an option to use the settings from the file. The JSON covers the main rule list. Trash and display preferences stay in local storage.
 
-Regional matching uses a bundled snapshot of the [ICANN portion of the Public Suffix List](https://publicsuffix.org/list/). To refresh it, download the published list and run `node scripts/update-public-suffixes.mjs PATH_TO_LIST`.
+The interface follows the browser language by default. The **Language** selector in the manager lets you choose English, Spanish, French, European Portuguese, Italian, Simplified Chinese, Japanese, Korean, or German.
 
-When a saved rule is selected, changing **Include subdomains** or **Include regional domains** saves immediately. This replaces the original scope and preserves its enabled state. If unchecking either option narrows the scope to a rule that already exists, that rule keeps its settings and the broader rule is removed. Other scope conflicts require editing the existing rule from the saved list. For new rules, the checkboxes are saved when you choose **Save settings** or **Enable and save**.
+## How it works
 
-The extension pauses automatic activation for a tab after debugger disconnection. Use **Enable and save** to resume an enabled rule manually. Internal browser pages are unsupported. Preserving every color, handling every iframe, and preventing flashes are not guaranteed.
+The [Manifest V3 extension](extension/manifest.json) has a popup, a full-page rule manager, and a [background service worker](extension/background.js).
 
-Opening DevTools may disconnect the session. If another debugger is already attached, the prototype reports the error without trying to remove it.
+1. The worker checks the current URL against the rules saved in `chrome.storage.local` when tabs load or navigate. The rule matcher handles hosts, paths, subdomains, exclusions, and regional patterns. Regional matching uses a bundled snapshot of the ICANN section of the [Public Suffix List](https://publicsuffix.org/list/).
+2. On a matching enabled tab, the [controller](extension/controller.js) attaches through `chrome.debugger` and sends `Emulation.setAutoDarkModeOverride` with `enabled: true`. Chromium renders the dark theme. The extension uses the browser's image handling too.
+3. When a rule stops matching or is disabled, the controller clears its override and releases the connection. If the user cancels the debugging session, automatic activation pauses for that tab. Use **Enable and save** to resume it.
 
-## Back up and restore rules
+The extension uses `debugger` to send the native emulation command, HTTP and HTTPS site access to match URLs during navigation, and `storage` to keep rules on the device. The rules are stored locally. The extension makes no external network requests.
 
-Open **Manage rules** and choose **Export JSON** under **Backup and restore**. The downloaded file contains saved rules with exclusions, sections, subdomain settings, regional settings and creation dates where available. The backup covers the main list. Trash and list preferences are stored locally.
+## Optional launcher for the debugging banner
 
-Choose **Import JSON**, select a backup, review the number of new and matching rules, and confirm. By default, matching scopes keep their existing settings. Select **Use settings from the file** to update those scopes. Rules absent from the file are kept. Invalid files leave the existing rules untouched. The import limit is 1 MiB and 1,000 rules. Imported enabled rules are applied to matching tabs, respecting paused tabs.
+Brave may show a debugging banner while the extension is attached. Closing the banner or opening DevTools can disconnect the session. The extension works through the browser's built-in debugging API. The optional launchers start Brave with `--silent-debugger-extension-api`, which suppresses banners for **all** debugger extensions in that browser session.
 
-## Interface languages
+Run the installer for your system from the project folder. Keep the files in `scripts/` together because the installers use shared helpers.
 
-The manager's **Language** selector supports automatic detection and a saved manual choice. Both views are available in English, Spanish, French, European Portuguese, Italian, Simplified Chinese, Japanese, Korean and German. Automatic mode falls back to English for unsupported languages. The browser uses its own locale for the extension name. Browser diagnostics may retain their original wording.
-
-## Code checks
-
-Run `npm run check` and `npm test` with Node.js installed. No additional packages are required. Simulated tests check connection handling; they do not verify rendering in Brave.
-
-## Images: deferred feature
-
-Version 0.2.2 removes the experimental image controls, CSS injection and the unused `scripting` permission. Existing website and section rules are retained; obsolete image preferences are ignored and removed when rules are next saved. Refresh previously open pages after reloading the extension to clear any styles injected by older versions. The native browser engine remains a requirement; a CSS replacement or brightness filter is not planned.
-
-The native `AutoDarkModeSkipImages` launch-time candidate is documented in [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md) for future consideration. It is deliberately deferred, not enabled in any launcher, and has no control in the extension. It is global per browser launch; a dynamic per-website native image toggle has not been established.
-
-Automatic rules require HTTP/HTTPS site access. The code only stores rules locally and makes no external network requests. Reload the extension in `brave://extensions` after updating, then refresh open test pages.
-
-## Popup responsiveness
-
-The popup does not wait for background tabs before replying to changes. It displays progress and restores controls after ten seconds if the browser has not replied. A timeout does not cancel a browser operation or undo a saved rule; reopen the popup to inspect the latest state.
-
-## Native launcher installers
-
-Installers use the operating system's bundled scripting tools. End users do not need Python, PowerShell or Node.js to install a launcher. Keep the `scripts` directory together, because the Windows installer has a helper and the Unix installers share shell utilities.
-
-| Platform | Installer | Default destination |
+| Platform | Installer | Where to open the launcher |
 | --- | --- | --- |
-| Windows | `scripts/install-launcher-windows.cmd` | Current user's Start Menu / Programs |
-| Linux | `sh scripts/install-launcher-linux.sh` | `$XDG_DATA_HOME/applications`, or `~/.local/share/applications` |
-| macOS | `sh scripts/install-launcher-macos.command` | `~/Applications` |
+| Windows | Double-click [install-launcher-windows.cmd](scripts/install-launcher-windows.cmd) | Search for **Brave - Native Dark Mode** in Start. |
+| Linux | `sh scripts/install-launcher-linux.sh` | Look for **Brave - Native Dark Mode** in your application menu. The script creates a `.desktop` entry for your user. |
+| macOS | `sh scripts/install-launcher-macos.command` | Open **Brave - Native Dark Mode.app** in `~/Applications` or add it to the Dock. |
 
-**Windows:** double-click the CMD installer. It invokes the bundled Windows Script Host through `cscript.exe` and a JScript helper to create and verify a regular `.lnk`. This JScript runs in Windows Script Host, not the browser or Node.js. Windows Script Host must be available; the installer does not change machine policy if an administrator has disabled it. Search the Start menu for **Brave - Native Dark Mode** after installation.
+Fully quit Brave before opening it from the new launcher so it starts with the argument. In `brave://version`, check **Command Line** for `--silent-debugger-extension-api`. The installers use tools included with the operating system. Windows uses Windows Script Host to create a `.lnk`. Linux and macOS use shell scripts. Each installer accepts `--browser PATH` and `--output-directory PATH` for custom installations. The Windows launcher has been confirmed with Brave. The Linux and macOS installers have artifact and argument tests, and their desktop integration and banner behavior still need testing on those systems.
 
-**Linux:** run the shell installer, then look in the desktop environment's application menu. Discovery may require a menu refresh. The installer uses standard shell utilities and detects `brave-browser`, `brave`, or `brave-browser-stable` on PATH. Sandboxed package wrappers such as Flatpak are not automatically configured.
+## Current limits
 
-**macOS:** run the shell installer (or open the executable `.command` file), then open **Brave - Native Dark Mode.app** in your user's Applications folder. You may add it to the Dock. It detects Brave in the system or user Applications directory. The generated app uses a shell executable, not Python or PowerShell, and keeps the browser path as data instead of interpolating it into executable shell code.
+- The extension targets Brave desktop and uses an experimental Chromium DevTools Protocol command. Rendering can vary by site and browser version.
+- Rules apply to HTTP and HTTPS websites. Internal browser pages are outside the rule scope.
+- Chromium controls image treatment. Per-site image preservation is deferred. See [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md) for the experimental launch-time option and its limits.
 
-All installers accept `--browser PATH` and `--output-directory PATH`. The browser executable must already exist; Unix installers require an absolute executable path. For example:
+## Development and screenshots
+
+Run `npm run check` and `npm test` with Node.js. The extension runs directly from `extension/` with no build step. For launcher tests, run `python -m unittest discover -s test -p 'test_*.py' -v`. The launcher tests use temporary files and a mock browser where appropriate. See [PLAN.md](PLAN.md) for validation notes.
+
+For a repeatable screenshot or visual check, serve the local fixture and open it in Brave. Enable a rule for that page, then capture the popup or the rule manager. Suggested screenshot files are `docs/screenshots/popup.png` and `docs/screenshots/rule-manager.png`. Use sample rules and a public or local test page so screenshots can be shared without exposing personal tabs or browsing history.
 
 ```sh
-sh scripts/install-launcher-linux.sh --browser /usr/bin/brave-browser --output-directory ./launcher-preview/linux
-sh scripts/install-launcher-macos.command --browser "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" --output-directory ./launcher-preview/macos
+python -m http.server 8765 --bind 127.0.0.1 --directory fixtures
 ```
 
-Generated Linux/macOS text files use Unix line endings. The installers never open or close Brave, change existing shortcuts, change browser defaults, or change URL associations. To undo installation, remove only the generated launcher.
-
-## Use the launcher without the debugging banner
-
-1. Save pending work and fully exit Brave yourself.
-2. Open **Brave - Native Dark Mode** from your Start menu, application menu, or Applications folder.
-3. Enable a saved rule and check whether the debugging banner stays hidden.
-
-Each launcher starts the installed Brave with `--silent-debugger-extension-api`, using the usual browser profile. If Brave is already running, the new argument may not take effect. The switch suppresses debugger-extension banners for all extensions in that browser launch, not just this extension. It does not remove debugger access or permissions. Fully exit Brave and launch it normally to restore the default behavior.
-
-Generated launchers contain local installation paths and are not committed. `Start Brave Without Debug Banner.cmd` remains an alternative direct launcher that refuses to start while a Brave process is running.
-
-The extension cannot hide browser chrome itself. Chromium's [debugger implementation](https://github.com/chromium/chromium/blob/main/chrome/browser/extensions/api/debugger/debugger_api.cc) checks this launch switch before showing its warning. Actual banner suppression after a Brave restart remains unverified.
-
-## Launcher development checks
-
-Developers can run `python -m unittest discover -s test -p 'test_*.py' -v`. Python is used only by the test harness. On Windows, shell-artifact checks use Git Bash if available. Tests execute the native installers in temporary project directories, verify the Windows shortcut and Linux application entry, parse the macOS bundle, and check argument forwarding using a mock browser. They do not launch a real browser or install menu entries. Linux/macOS desktop integration and actual Brave launch remain untested on those operating systems.
+Open `http://127.0.0.1:8765/test.html` to use the fixture. The screenshot links near the introduction are ready to enable after adding the image files.
