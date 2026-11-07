@@ -77,6 +77,9 @@ document.addEventListener('keydown', event => {
 const languageFlags = {
   en: 'gb', es: 'es', fr: 'fr', pt_PT: 'pt', it: 'it', zh_CN: 'cn', ja: 'jp', ko: 'kr', de: 'de'
 };
+const languageCard = $('.language-control');
+let languageCardSize;
+let languageCardAnimation;
 
 if (isManager) {
   const editorColumn = $('.editor-column');
@@ -88,6 +91,10 @@ if (isManager) {
   new ResizeObserver(([entry]) => {
     document.documentElement.style.setProperty('--text-toolbar-height', `${entry.borderBoxSize[0].blockSize}px`);
   }).observe(toolbar);
+  new ResizeObserver(([entry]) => {
+    const { inlineSize, blockSize } = entry.borderBoxSize[0];
+    languageCardSize = { width: inlineSize, height: blockSize };
+  }).observe(languageCard);
   for (const [code, name] of Object.entries(LANGUAGES)) {
     const option = document.createElement('option');
     const flag = document.createElement('img');
@@ -568,12 +575,22 @@ $('#confirm-import')?.addEventListener('click', async () => {
 });
 
 $('#language')?.addEventListener('change', () => withBusy(async () => {
+  const previousSize = languageCardSize ?? languageCard.getBoundingClientRect();
   await setLanguage($('#language').value);
   updateLanguageFlag($('#language').value);
   translatePage();
   refreshAppearance?.();
   if (snapshot) render(snapshot);
   $('#backup-status').textContent = '';
+  languageCardAnimation?.cancel();
+  const { width, height } = languageCard.getBoundingClientRect();
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches &&
+      (Math.abs(width - previousSize.width) > .5 || Math.abs(height - previousSize.height) > .5)) {
+    languageCardAnimation = languageCard.animate([
+      { width: `${previousSize.width}px`, height: `${previousSize.height}px` },
+      { width: `${width}px`, height: `${height}px` }
+    ], { duration: 200, easing: 'ease-out' });
+  }
 }, t('changingLanguage'), $('#backup-status')));
 
 $('#toggle').addEventListener('click', () => {
