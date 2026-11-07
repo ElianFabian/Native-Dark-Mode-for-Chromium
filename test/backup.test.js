@@ -1,10 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBackup, parseBackup, mergeRules, importBackup, MAX_BACKUP_BYTES } from '../extension/backup.js';
+import { createBackup, parseBackup, mergeRules, importBackup, previewRemovals, MAX_BACKUP_BYTES } from '../extension/backup.js';
 import { normalizeRule, RuleManager } from '../extension/rules.js';
 
 const rule = (url, enabled = true, includeSubdomains = false) => normalizeRule({ url, scope: 'section', enabled, includeSubdomains });
 const encode = rules => JSON.stringify(createBackup(rules));
+
+test('import preview resolves older removal IDs without losing the confirmation list', () => {
+  const removed = rule('example.com/old');
+  const kept = rule('example.com/new');
+  assert.deepEqual(previewRemovals({ removedRules: [removed] }), [removed]);
+  assert.deepEqual(previewRemovals({ removedIds: [removed.id] }, [removed, kept]), [removed]);
+  assert.throws(() => previewRemovals({ removedIds: [removed.id] }, [kept]), /changed since/);
+  assert.throws(() => previewRemovals({}), /preview is unavailable/);
+});
 
 test('backup round trip preserves scopes, exclusions, ports and subdomain settings', () => {
   const rules = [rule('example.com', true, true), rule('example.com/photos', false),

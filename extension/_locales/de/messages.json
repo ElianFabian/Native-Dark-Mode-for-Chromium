@@ -290,6 +290,9 @@
   "importKeepImpact": {
     "message": "Regeln, die in der Sicherung fehlen, bleiben erhalten."
   },
+  "errorImportPreview": {
+    "message": "Die Importvorschau konnte nicht geladen werden. Lade die Erweiterung neu und versuche es erneut."
+  },
   "errorStaleImport": {
     "message": "Die gespeicherten Regeln wurden geändert. Brich ab und wähle die Sicherung erneut aus, um die Vorschau zu prüfen."
   },

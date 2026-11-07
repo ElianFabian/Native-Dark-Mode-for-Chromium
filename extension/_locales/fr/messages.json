@@ -290,6 +290,9 @@
   "importKeepImpact": {
     "message": "Les règles absentes de la sauvegarde seront conservées."
   },
+  "errorImportPreview": {
+    "message": "Impossible de charger l’aperçu. Rechargez l’extension et réessayez."
+  },
   "errorStaleImport": {
     "message": "Les règles enregistrées ont changé. Annulez et sélectionnez de nouveau la sauvegarde pour actualiser l’aperçu."
   },

@@ -84,6 +84,8 @@ main { padding: 20px; }
 .popup-row .has-tooltip > button { display: block; height: 100%; margin: 0; }
 .tooltip {
   visibility: hidden;
+  pointer-events: none;
+  user-select: none;
   position: absolute;
   z-index: 1;
   inset-block-start: 100%;
@@ -91,11 +93,12 @@ main { padding: 20px; }
   padding: .5rem .65rem;
   border: 1px solid var(--border);
   border-radius: .5rem;
-  background: var(--panel);
+  background: var(--secondary);
   color: var(--text);
   overflow-wrap: anywhere;
 }
-.has-tooltip:not([data-tooltip-dismissed]):is(:hover, :focus-within) > .tooltip {
+:root[data-high-contrast] .tooltip { background: var(--text); color: var(--page); }
+.has-tooltip:not([data-tooltip-dismissed]):has(> :is(button, label):hover, :focus-visible) > .tooltip {
   visibility: visible;
 }
 h1 { font-size: 1.2rem; margin: 0 0 8px; }

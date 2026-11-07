@@ -290,6 +290,9 @@
   "importKeepImpact": {
     "message": "Current rules absent from the backup will be kept."
   },
+  "errorImportPreview": {
+    "message": "The import preview could not be loaded. Reload the extension and try again."
+  },
   "errorStaleImport": {
     "message": "Saved rules changed. Cancel and select the backup again to review the updated preview."
   },

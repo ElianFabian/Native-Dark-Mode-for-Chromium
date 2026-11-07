@@ -290,6 +290,9 @@
   "importKeepImpact": {
     "message": "Se conservarán las reglas actuales que no estén en la copia."
   },
+  "errorImportPreview": {
+    "message": "No se pudo cargar la vista previa. Recarga la extensión y vuelve a intentarlo."
+  },
   "errorStaleImport": {
     "message": "Las reglas guardadas han cambiado. Cancela y vuelve a seleccionar la copia para revisar la vista previa."
   },

@@ -25,6 +25,23 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 #language option { gap: .5em; }
 .workspace-container { container-type: inline-size; }
 #status { min-block-size: 1.5em; margin: 0; }
+#rule-toast {
+  position: fixed;
+  z-index: 7;
+  inset-block-end: 1rem;
+  inset-inline-end: 1rem;
+  box-sizing: border-box;
+  max-inline-size: min(28rem, calc(100% - 2rem));
+  padding: .65rem .85rem;
+  border: 1px solid var(--positive-highlight-border);
+  border-radius: .65rem;
+  background: var(--positive-highlight-bg);
+  color: var(--text);
+  box-shadow: 0 .25rem 1rem rgb(0 0 0 / .2);
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+#rule-toast:empty { opacity: 0; }
 .workspace { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 1.7fr); gap: 20px; align-items: start; }
 .editor-column {
   min-width: 0;

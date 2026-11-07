@@ -290,6 +290,9 @@
   "importKeepImpact": {
     "message": "备份中没有的现有规则将保留。"
   },
+  "errorImportPreview": {
+    "message": "无法加载导入预览。请重新加载扩展程序后重试。"
+  },
   "errorStaleImport": {
     "message": "已保存的规则发生变化。请取消并重新选择备份以查看最新预览。"
   },

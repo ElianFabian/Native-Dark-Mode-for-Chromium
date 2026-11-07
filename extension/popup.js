@@ -1,7 +1,7 @@
 import { normalizeRule, orderRules, groupRulesByDomain, ruleAddress, inheritedExclusion } from './rules.js';
 import { regionalBaseForHost, regionalDomain } from './domains.js';
 import { requestWithTimeout } from './request.js';
-import { MAX_BACKUP_BYTES } from './backup.js';
+import { MAX_BACKUP_BYTES, previewRemovals } from './backup.js';
 import { LANGUAGES, initializeLanguage, setLanguage, translatePage, t, errorText } from './i18n.js';
 import { initializeAppearance } from './appearance.js';
 import { readChoice, writeChoice } from './choices.js';
@@ -17,6 +17,7 @@ let editingId;
 const openDomains = new Set();
 const panelHighlightTimers = new WeakMap();
 let refreshAppearance;
+let ruleToastTimer;
 
 const appearanceMenu = $('.appearance-menu');
 const appearanceTrigger = appearanceMenu?.querySelector('summary');
@@ -57,7 +58,7 @@ if (appearanceMenu) {
 
 for (const trigger of document.querySelectorAll('.has-tooltip')) {
   const reset = () => trigger.removeAttribute('data-tooltip-dismissed');
-  trigger.addEventListener('pointerenter', reset);
+  trigger.firstElementChild.addEventListener('pointerenter', reset);
   trigger.addEventListener('focusin', reset);
 }
 document.addEventListener('keydown', event => {
@@ -68,7 +69,7 @@ document.addEventListener('keydown', event => {
     appearanceTrigger.focus();
     return;
   }
-  const visible = document.querySelectorAll('.has-tooltip:not([data-tooltip-dismissed]):is(:hover, :focus-within)');
+  const visible = document.querySelectorAll('.has-tooltip:not([data-tooltip-dismissed]):has(> :is(button, label):hover, :focus-visible)');
   if (!visible.length) return;
   event.preventDefault();
   visible.forEach(trigger => trigger.setAttribute('data-tooltip-dismissed', ''));
@@ -327,6 +328,13 @@ function highlightPanel(panel) {
   panelHighlightTimers.set(panel, setTimeout(() => panel.classList.remove('is-highlighted'), 800));
 }
 
+function notifyRule(message) {
+  const toast = $('#rule-toast');
+  clearTimeout(ruleToastTimer);
+  toast.textContent = t(message);
+  ruleToastTimer = setTimeout(() => { toast.textContent = ''; }, 4000);
+}
+
 async function animateRuleHeight(target, direction = 'normal') {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const height = target.getBoundingClientRect().height;
@@ -450,13 +458,13 @@ async function request(message, { retainedButton, removedRow } = {}) {
     if (removedRow) await animateRuleRemoval(removedRow);
     render(value, retainedButton, message.type === 'replace-scope' ? message.id : undefined);
     if (message.type === 'exclude-inherited-host' && value.matching) showRule(value.matching);
-    if (isManager && (message.type === 'save' || message.type === 'replace-scope')) $('#status').textContent = t('ruleSaved');
+    if (isManager && (message.type === 'save' || message.type === 'replace-scope')) notifyRule('ruleSaved');
     if (isManager && message.type === 'remove') {
-      $('#status').textContent = t('ruleTrashed');
+      notifyRule('ruleTrashed');
       highlightPanel($('.trash-panel'));
     }
     if (isManager && message.type === 'restore') {
-      $('#status').textContent = t('ruleRestored');
+      notifyRule('ruleRestored');
       await revealRestoredRule(restoredId);
     }
   }, t('saving'), $('#status'), retainedButton);
@@ -482,7 +490,7 @@ function saveCheckboxChange() {
       if (value.error) throw new Error(value.error);
       if (editingId) editingId = normalizeRule(rule).id;
       render(value, undefined, previous.id);
-      if (isManager) $('#status').textContent = t('ruleSaved');
+      if (isManager) notifyRule('ruleSaved');
     } catch (error) {
       $('#subdomains').checked = previous.includeSubdomains;
       $('#regional').checked = Boolean(previous.includeRegionalDomains);
@@ -522,8 +530,13 @@ $('#import-file')?.addEventListener('change', async () => {
     pendingImport = undefined;
     if (file.size > MAX_BACKUP_BYTES) throw new Error('Choose a JSON backup smaller than 1 MiB.');
     const text = await file.text();
-    const { summary, removedRules } = await backupRequest({ type: 'preview-import', text });
-    pendingImport = { text, removedRules };
+    const preview = await backupRequest({ type: 'preview-import', text });
+    const { summary } = preview;
+    // An unpacked extension can briefly serve a new UI alongside an older worker.
+    const existing = !Array.isArray(preview.removedRules) && Array.isArray(preview.removedIds)
+      ? (await backupRequest({ type: 'status' })).rules
+      : undefined;
+    const removedRules = previewRemovals(preview, existing);
     const removals = $('#import-removals');
     removals.replaceChildren(...removedRules.map(rule => {
       const entry = document.createElement('li');
@@ -531,6 +544,7 @@ $('#import-file')?.addEventListener('change', async () => {
       return entry;
     }));
     removals.scrollTop = 0;
+    pendingImport = { text, removedRules };
     writeChoice($('#conflict-policy'), 'keep');
     $('#import-summary').textContent = t('previewSummary', { added: summary.added, matching: summary.updated });
     $('#import-status').textContent = '';
@@ -648,7 +662,8 @@ $('#empty-trash')?.addEventListener('click', async () => {
   if (!ids.length || !window.confirm(t('confirmEmptyTrash'))) return;
   await withBusy(async () => {
     render(await send({ type: 'empty-trash', ids }));
-    $('#trash-status').textContent = t('trashEmptied');
+    $('#trash-status').textContent = '';
+    notifyRule('trashEmptied');
   }, t('saving'), $('#trash-status'));
   ($('#empty-trash').disabled ? $('#trash-title') : $('#empty-trash')).focus();
 });

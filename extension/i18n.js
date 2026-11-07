@@ -71,6 +71,7 @@ export function errorText(error) {
   if (/taking too long/.test(text)) return t('errorTimeout');
   if (/already exists for this scope/.test(text)) return t('errorScopeConflict');
   if (/Saved rules changed since the import preview/.test(text)) return t('errorStaleImport');
+  if (/Import preview is unavailable/.test(text)) return t('errorImportPreview');
   if (/no longer inherits a rule/.test(text)) return t('errorInheritedRuleChanged');
   if (/HTTP or HTTPS/.test(text)) return t('errorPage');
   const detached = /^Connection ended \((.*?)\)/.exec(text);

@@ -290,6 +290,9 @@
   "importKeepImpact": {
     "message": "Le regole assenti dal backup verranno conservate."
   },
+  "errorImportPreview": {
+    "message": "Impossibile caricare l’anteprima. Ricarica l’estensione e riprova."
+  },
   "errorStaleImport": {
     "message": "Le regole salvate sono cambiate. Annulla e seleziona di nuovo il backup per aggiornare l’anteprima."
   },

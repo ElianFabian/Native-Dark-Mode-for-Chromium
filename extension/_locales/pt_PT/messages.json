@@ -290,6 +290,9 @@
   "importKeepImpact": {
     "message": "As regras ausentes da cópia serão mantidas."
   },
+  "errorImportPreview": {
+    "message": "Não foi possível carregar a pré-visualização. Recarregue a extensão e tente novamente."
+  },
   "errorStaleImport": {
     "message": "As regras guardadas mudaram. Cancele e selecione novamente a cópia para rever a pré-visualização."
   },

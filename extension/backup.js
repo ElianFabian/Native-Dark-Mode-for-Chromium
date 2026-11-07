@@ -57,6 +57,15 @@ export function createBackup(rules) {
   return document;
 }
 
+export function previewRemovals(preview, existing = []) {
+  if (Array.isArray(preview.removedRules)) return preview.removedRules;
+  if (!Array.isArray(preview.removedIds)) throw new Error('Import preview is unavailable.');
+  const ids = new Set(preview.removedIds);
+  const removed = existing.filter(rule => ids.has(rule.id));
+  if (removed.length !== ids.size) throw new Error('Saved rules changed since the import preview.');
+  return removed;
+}
+
 export function mergeRules(existing, incoming, conflictPolicy = 'keep') {
   if (conflictPolicy === 'replace-all') {
     const existingIds = new Set(existing.map(rule => rule.id));
