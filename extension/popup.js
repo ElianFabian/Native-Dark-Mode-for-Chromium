@@ -42,10 +42,7 @@ if (appearanceMenu) {
       if (!appearanceMenu.contains(document.activeElement)) closeAppearanceMenu();
     }, 220);
   });
-  appearanceTrigger.addEventListener('click', event => {
-    if (!openedByHover) return;
-    // Keep a hover-open menu open when the user explicitly activates it.
-    event.preventDefault();
+  appearanceTrigger.addEventListener('click', () => {
     openedByHover = false;
     clearTimeout(appearanceCloseTimer);
   });
