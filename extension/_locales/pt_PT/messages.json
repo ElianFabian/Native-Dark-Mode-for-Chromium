@@ -271,5 +271,17 @@
   },
   "highContrast": {
     "message": "Contraste elevado"
+  },
+  "trashDescription": {
+    "message": "Restaure regras eliminadas ou esvazie o lixo definitivamente."
+  },
+  "emptyTrash": {
+    "message": "Esvaziar o lixo"
+  },
+  "confirmEmptyTrash": {
+    "message": "Eliminar definitivamente as regras apresentadas no lixo? Esta ação não pode ser anulada."
+  },
+  "trashEmptied": {
+    "message": "Regras eliminadas definitivamente."
   }
 }

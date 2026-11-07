@@ -45,7 +45,7 @@ The browser loads the extension directly from the folder. Installing and using i
 
 More specific paths take priority. At the same path, a rule for a single domain takes priority over a regional pattern. Regional patterns match names across suffixes. Use a single-domain rule when you want to limit the scope to one domain. When a page inherits an enabled rule, the popup can offer **Exclude this subdomain** or **Exclude this hostname** to save an exception for the current hostname and inherited path.
 
-The popup shows a short list of saved rules. **Manage rules** opens a full tab with editing, sorting, grouping, and search. **Remove** moves a rule to **Trash**, where you can restore it with its settings. If a rule already occupies that scope, the deleted copy stays in Trash.
+The popup shows a short list of saved rules. **Manage rules** opens a full tab with editing, sorting, grouping, and search. **Remove** moves a rule to **Trash**, in a card below the rule editor. You can restore a rule with its settings or choose **Empty trash** and confirm permanent deletion. If a saved rule already occupies the same scope, the deleted copy stays in Trash when you try to restore it.
 
 The manager also offers **Export JSON** and **Import JSON**. Import previews new and matching rules before saving. It keeps existing settings for matching rules by default, with an option to use the settings from the file. The JSON covers the main rule list. Trash and display preferences stay in local storage.
 

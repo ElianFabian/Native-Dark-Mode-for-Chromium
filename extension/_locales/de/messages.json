@@ -271,5 +271,17 @@
   },
   "highContrast": {
     "message": "Hoher Kontrast"
+  },
+  "trashDescription": {
+    "message": "Gelöschte Regeln wiederherstellen oder den Papierkorb endgültig leeren."
+  },
+  "emptyTrash": {
+    "message": "Papierkorb leeren"
+  },
+  "confirmEmptyTrash": {
+    "message": "Die im Papierkorb angezeigten Regeln endgültig löschen? Dies kann nicht rückgängig gemacht werden."
+  },
+  "trashEmptied": {
+    "message": "Regeln endgültig gelöscht."
   }
 }

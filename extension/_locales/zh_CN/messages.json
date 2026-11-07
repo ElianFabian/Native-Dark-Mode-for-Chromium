@@ -271,5 +271,17 @@
   },
   "highContrast": {
     "message": "高对比度"
+  },
+  "trashDescription": {
+    "message": "恢复已删除的规则，或永久清空回收站。"
+  },
+  "emptyTrash": {
+    "message": "清空回收站"
+  },
+  "confirmEmptyTrash": {
+    "message": "要永久删除回收站中当前显示的规则吗？此操作无法撤销。"
+  },
+  "trashEmptied": {
+    "message": "已永久删除规则。"
   }
 }

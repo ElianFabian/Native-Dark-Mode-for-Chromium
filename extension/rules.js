@@ -184,6 +184,14 @@ export class RuleManager {
     return trash.map(entry => ({ ...entry, rule: normalizeStoredRule(entry.rule) }));
   }
 
+  emptyTrash(ids) {
+    const confirmed = new Set(ids);
+    return this.enqueueMutation(async () => {
+      const trash = await this.listTrash();
+      await this.api.storage.local.set({ trash: trash.filter(entry => !confirmed.has(entry.id)) });
+    });
+  }
+
   restore(id) {
     return this.enqueueMutation(async () => {
       const trash = await this.listTrash();

@@ -271,5 +271,17 @@
   },
   "highContrast": {
     "message": "High contrast"
+  },
+  "trashDescription": {
+    "message": "Restore deleted rules or permanently empty the trash."
+  },
+  "emptyTrash": {
+    "message": "Empty trash"
+  },
+  "confirmEmptyTrash": {
+    "message": "Permanently delete the rules currently shown in the trash? This cannot be undone."
+  },
+  "trashEmptied": {
+    "message": "Deleted rules permanently removed."
   }
 }

@@ -271,5 +271,17 @@
   },
   "highContrast": {
     "message": "Contraste élevé"
+  },
+  "trashDescription": {
+    "message": "Restaurez les règles supprimées ou videz définitivement la corbeille."
+  },
+  "emptyTrash": {
+    "message": "Vider la corbeille"
+  },
+  "confirmEmptyTrash": {
+    "message": "Supprimer définitivement les règles affichées dans la corbeille ? Cette action est irréversible."
+  },
+  "trashEmptied": {
+    "message": "Règles supprimées définitivement."
   }
 }

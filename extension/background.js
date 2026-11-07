@@ -18,6 +18,10 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
   const fromManager = sender.url === chrome.runtime.getURL('options.html');
   if (!fromManager && !Number.isInteger(message.tabId)) return;
   const result = (async () => {
+    if (fromManager && message.type === 'empty-trash' && Array.isArray(message.ids)) {
+      await manager.emptyTrash(message.ids);
+      return snapshot(undefined);
+    }
     if (message.type === 'export') return { backup: createBackup(await manager.list()) };
     if (message.type === 'preview-import') {
       return { summary: mergeRules(await manager.list(), parseBackup(message.text), 'keep').summary };

@@ -4,9 +4,9 @@ header { display: flex; align-items: center; justify-content: space-between; fle
 h1 { font-size: 1.7rem; }
 header label { min-width: min(190px, 100%); max-width: 100%; }
 .workspace { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 1.7fr); gap: 20px; align-items: start; }
+.editor-column { min-width: 0; position: sticky; top: 24px; max-height: calc(100dvh - 48px); overflow-y: auto; }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
 .panel h2 { margin-top: 0; }
-.rule-editor { position: sticky; top: 24px; box-sizing: border-box; max-height: calc(100dvh - 48px); overflow-y: auto; }
 .backup-panel { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 12px; }
 .backup-panel h3 { margin: 0 0 5px; font-size: .95rem; }
 .backup-panel button { width: auto; margin-right: 8px; }
@@ -14,8 +14,13 @@ header label { min-width: min(190px, 100%); max-width: 100%; }
 .list-controls { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: end; }
 .list-controls select { min-width: min(160px, 100%); }
 .domain-group { color: var(--accent-text); font-size: .875rem; margin: 16px 0 4px; }
-.trash-panel { padding: 10px 0; border-bottom: 1px solid var(--border); }
-.trash-panel summary { cursor: pointer; }
+.trash-panel { margin-block-start: 20px; }
+.trash-heading { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.trash-heading h2 { margin: 0; }
+.trash-count { border: 1px solid var(--border); border-radius: 1rem; padding: 0 .5rem; }
+.trash-count:empty, #trash-status:empty { display: none; }
+#empty-trash { background: transparent; color: var(--danger); border-color: var(--danger); }
+#empty-trash:enabled:hover { background: var(--danger-bg); }
 .rule-address { font-size: 1rem; }
 .rule { padding: 10px 0; }
 .rule-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
@@ -31,9 +36,9 @@ header label { min-width: min(190px, 100%); max-width: 100%; }
   main { padding: 16px; }
   header { align-items: stretch; flex-direction: column; gap: 4px; }
   .workspace { grid-template-columns: 1fr; }
-  .rule-editor { position: static; max-height: none; overflow: visible; }
+  .editor-column { position: static; max-height: none; overflow: visible; }
 }
 
 [data-large-text] .workspace { grid-template-columns: minmax(0, 1fr); }
-[data-large-text] .rule-editor { position: static; max-height: none; overflow: visible; }
+[data-large-text] .editor-column { position: static; max-height: none; overflow: visible; }
 .panel { min-width: 0; overflow-wrap: anywhere; }

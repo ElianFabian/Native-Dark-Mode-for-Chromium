@@ -271,5 +271,17 @@
   },
   "highContrast": {
     "message": "Contrasto elevato"
+  },
+  "trashDescription": {
+    "message": "Ripristina le regole eliminate o svuota definitivamente il cestino."
+  },
+  "emptyTrash": {
+    "message": "Svuota il cestino"
+  },
+  "confirmEmptyTrash": {
+    "message": "Eliminare definitivamente le regole mostrate nel cestino? Questa azione non può essere annullata."
+  },
+  "trashEmptied": {
+    "message": "Regole eliminate definitivamente."
   }
 }

@@ -67,6 +67,7 @@ function updateButton() {
     $('#export').disabled = busy || !snapshot;
     $('#import').disabled = busy || !snapshot;
     $('#confirm-import').disabled = busy || !pendingImport;
+    $('#empty-trash').disabled = busy || !snapshot?.trash?.length;
   }
   try {
     const rule = normalizeRule(draft(false));
@@ -188,10 +189,14 @@ function renderRule(rule) {
 }
 
 function renderTrash(entries) {
-  $('#trash-count').textContent = `(${entries.length})`;
+  $('#trash-count').textContent = new Intl.NumberFormat(document.documentElement.lang).format(entries.length);
   const list = $('#trash-rules');
   list.replaceChildren();
-  if (!entries.length) list.textContent = t('trashEmpty');
+  if (!entries.length) {
+    const empty = document.createElement('p');
+    empty.textContent = t('trashEmpty');
+    list.append(empty);
+  }
   for (const { id, rule } of entries) {
     const item = document.createElement('div');
     item.className = 'rule';
@@ -371,6 +376,15 @@ async function saveListPreferences() {
 }
 $('#sort-rules')?.addEventListener('change', saveListPreferences);
 $('#group-domains')?.addEventListener('change', saveListPreferences);
+$('#empty-trash')?.addEventListener('click', async () => {
+  const ids = snapshot?.trash?.map(entry => entry.id) ?? [];
+  if (!ids.length || !window.confirm(t('confirmEmptyTrash'))) return;
+  await withBusy(async () => {
+    render(await send({ type: 'empty-trash', ids }));
+    $('#trash-status').textContent = t('trashEmptied');
+  }, t('saving'), $('#trash-status'));
+  ($('#empty-trash').disabled ? $('#trash-title') : $('#empty-trash')).focus();
+});
 $('#manage')?.addEventListener('click', async () => {
   try { await chrome.runtime.openOptionsPage(); }
   catch (error) { $('#status').textContent = errorText(error); }

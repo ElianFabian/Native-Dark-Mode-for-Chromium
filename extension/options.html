@@ -29,38 +29,50 @@
   </details>
   <p id="status" role="status" aria-live="polite"></p>
   <div class="workspace">
-    <section class="panel rule-editor" aria-labelledby="editor-title">
-      <h2 id="editor-title" data-i18n="ruleEditor">Rule editor</h2>
-      <label><span data-i18n="address">Website or section URL</span><input id="address" type="text" placeholder="https://example.com/articles/"></label>
-      <label><span data-i18n="scope">Scope</span><select id="scope"><option value="website" data-i18n="website">Entire website</option><option value="section" data-i18n="section">Path section</option></select></label>
-      <label><input id="subdomains" type="checkbox"> <span data-i18n="subdomains">Include subdomains</span></label>
-      <label id="regional-option"><input id="regional" type="checkbox" disabled aria-describedby="regional-help"> <span data-i18n="regionalDomains">Include regional domains</span></label>
-      <p class="note" id="regional-help"></p>
-      <p class="note" id="scope-hint"></p>
-      <button id="toggle" disabled>Please wait…</button>
-      <button id="save" disabled data-i18n="save">Save settings</button>
-      <button id="cancel-edit" hidden data-i18n="cancel">Cancel</button>
-      <p class="note" data-i18n="rulesNote">Saved locally. Disabled rules remain as exclusions. More specific sections take priority. Queries and fragments are ignored.</p>
-      <section class="backup-panel">
-        <h3 data-i18n="backup">Backup and restore</h3>
-        <button id="export" disabled data-i18n="export">Export JSON</button>
-        <button id="import" disabled data-i18n="import">Import JSON</button>
-        <input id="import-file" type="file" accept=".json,application/json" hidden>
-        <p id="backup-status" role="status" aria-live="polite"></p>
-        <section id="import-preview" hidden aria-label="Import preview">
-          <p id="import-summary"></p>
-          <label><span data-i18n="matchingRules">Matching website and section rules</span>
-            <select id="conflict-policy">
-              <option value="keep" data-i18n="keep">Keep my existing settings</option>
-              <option value="replace" data-i18n="replace">Use settings from the file</option>
-            </select>
-          </label>
-          <p class="note" data-i18n="importNote">Rules absent from the file are kept. Enabled rules may activate dark mode in matching open tabs.</p>
-          <button id="confirm-import" data-i18n="confirmImport">Import rules</button>
-          <button id="cancel-import" data-i18n="cancel">Cancel</button>
+    <div class="editor-column">
+      <section class="panel rule-editor" aria-labelledby="editor-title">
+        <h2 id="editor-title" data-i18n="ruleEditor">Rule editor</h2>
+        <label><span data-i18n="address">Website or section URL</span><input id="address" type="text" placeholder="https://example.com/articles/"></label>
+        <label><span data-i18n="scope">Scope</span><select id="scope"><option value="website" data-i18n="website">Entire website</option><option value="section" data-i18n="section">Path section</option></select></label>
+        <label><input id="subdomains" type="checkbox"> <span data-i18n="subdomains">Include subdomains</span></label>
+        <label id="regional-option"><input id="regional" type="checkbox" disabled aria-describedby="regional-help"> <span data-i18n="regionalDomains">Include regional domains</span></label>
+        <p class="note" id="regional-help"></p>
+        <p class="note" id="scope-hint"></p>
+        <button id="toggle" disabled>Please wait…</button>
+        <button id="save" disabled data-i18n="save">Save settings</button>
+        <button id="cancel-edit" hidden data-i18n="cancel">Cancel</button>
+        <p class="note" data-i18n="rulesNote">Saved locally. Disabled rules remain as exclusions. More specific sections take priority. Queries and fragments are ignored.</p>
+        <section class="backup-panel">
+          <h3 data-i18n="backup">Backup and restore</h3>
+          <button id="export" disabled data-i18n="export">Export JSON</button>
+          <button id="import" disabled data-i18n="import">Import JSON</button>
+          <input id="import-file" type="file" accept=".json,application/json" hidden>
+          <p id="backup-status" role="status" aria-live="polite"></p>
+          <section id="import-preview" hidden aria-label="Import preview">
+            <p id="import-summary"></p>
+            <label><span data-i18n="matchingRules">Matching website and section rules</span>
+              <select id="conflict-policy">
+                <option value="keep" data-i18n="keep">Keep my existing settings</option>
+                <option value="replace" data-i18n="replace">Use settings from the file</option>
+              </select>
+            </label>
+            <p class="note" data-i18n="importNote">Rules absent from the file are kept. Enabled rules may activate dark mode in matching open tabs.</p>
+            <button id="confirm-import" data-i18n="confirmImport">Import rules</button>
+            <button id="cancel-import" data-i18n="cancel">Cancel</button>
+          </section>
         </section>
       </section>
-    </section>
+      <section class="panel trash-panel" aria-labelledby="trash-title">
+        <div class="trash-heading">
+          <h2 id="trash-title" data-i18n="trash" tabindex="-1">Trash</h2>
+          <span id="trash-count" class="trash-count"></span>
+        </div>
+        <p class="note" data-i18n="trashDescription">Restore deleted rules or permanently empty the trash.</p>
+        <div id="trash-rules"></div>
+        <button id="empty-trash" type="button" disabled data-i18n="emptyTrash">Empty trash</button>
+        <p id="trash-status" role="status"></p>
+      </section>
+    </div>
     <section class="panel" aria-labelledby="rules-title">
       <h2 id="rules-title" data-i18n="savedRules">Saved websites and sections</h2>
       <label><span data-i18n="searchRules">Search rules</span><input id="search" type="text"></label>
@@ -75,7 +87,6 @@
         </label>
         <label><input id="group-domains" type="checkbox"> <span data-i18n="groupDomains">Group by domain</span></label>
       </div>
-      <details class="trash-panel"><summary><span data-i18n="trash">Trash</span> <span id="trash-count"></span></summary><div id="trash-rules"></div></details>
       <p id="rule-count" class="note"></p>
       <div id="rules"></div>
     </section>

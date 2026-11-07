@@ -271,5 +271,17 @@
   },
   "highContrast": {
     "message": "Alto contraste"
+  },
+  "trashDescription": {
+    "message": "Restaura reglas eliminadas o vacía la papelera de forma definitiva."
+  },
+  "emptyTrash": {
+    "message": "Vaciar papelera"
+  },
+  "confirmEmptyTrash": {
+    "message": "¿Eliminar definitivamente las reglas que se muestran en la papelera? Esta acción no se puede deshacer."
+  },
+  "trashEmptied": {
+    "message": "Reglas eliminadas definitivamente."
   }
 }

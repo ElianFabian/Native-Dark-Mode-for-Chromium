@@ -271,5 +271,17 @@
   },
   "highContrast": {
     "message": "고대비"
+  },
+  "trashDescription": {
+    "message": "삭제한 규칙을 복원하거나 휴지통을 비울 수 있습니다."
+  },
+  "emptyTrash": {
+    "message": "휴지통 비우기"
+  },
+  "confirmEmptyTrash": {
+    "message": "현재 휴지통에 표시된 규칙을 영구 삭제할까요? 이 작업은 되돌릴 수 없습니다."
+  },
+  "trashEmptied": {
+    "message": "규칙을 영구 삭제했습니다."
   }
 }

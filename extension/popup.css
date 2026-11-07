@@ -154,7 +154,16 @@ input[type=checkbox] {
 
 summary { cursor: pointer; overflow-wrap: anywhere; }
 .appearance { border: 1px solid var(--border); border-radius: 8px; padding: .5rem; margin-block: .5rem 1rem; }
-.appearance summary { font-weight: 650; }
+.appearance summary {
+  box-sizing: border-box;
+  min-block-size: 2.75rem;
+  padding: .55rem .65rem;
+  border-radius: .4rem;
+  background: var(--secondary);
+  font-size: 1rem;
+  font-weight: 650;
+}
+.appearance summary:hover { background: var(--secondary-hover); }
 .appearance fieldset { min-inline-size: 0; border: 0; padding: 0; margin: .5rem 0 0; }
 .text-size { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .text-size button { width: auto; min-inline-size: 2.75rem; }

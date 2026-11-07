@@ -271,5 +271,17 @@
   },
   "highContrast": {
     "message": "ハイコントラスト"
+  },
+  "trashDescription": {
+    "message": "削除したルールを復元するか、ごみ箱を空にできます。"
+  },
+  "emptyTrash": {
+    "message": "ごみ箱を空にする"
+  },
+  "confirmEmptyTrash": {
+    "message": "現在ごみ箱に表示されているルールを完全に削除しますか？この操作は取り消せません。"
+  },
+  "trashEmptied": {
+    "message": "ルールを完全に削除しました。"
   }
 }
