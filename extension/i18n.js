@@ -53,6 +53,9 @@ export function translatePage() {
   document.querySelectorAll('[data-i18n]').forEach(element => {
     element.textContent = t(element.dataset.i18n);
   });
+  document.querySelectorAll('[data-i18n-label]').forEach(element => {
+    element.setAttribute('aria-label', t(element.dataset.i18nLabel));
+  });
   document.title = t(document.documentElement.dataset.page === 'options' ? 'manageRules' : 'title');
   document.querySelector('#import-preview')?.setAttribute('aria-label', t('importPreview'));
 }

@@ -244,5 +244,32 @@
   },
   "errorInheritedRuleChanged": {
     "message": "La pestaña ya no hereda una regla. Vuelve a abrir el panel."
+  },
+  "appearance": {
+    "message": "Apariencia y accesibilidad"
+  },
+  "textSize": {
+    "message": "Tamaño del texto"
+  },
+  "smallerText": {
+    "message": "Reducir el tamaño del texto"
+  },
+  "largerText": {
+    "message": "Aumentar el tamaño del texto"
+  },
+  "theme": {
+    "message": "Tema"
+  },
+  "systemTheme": {
+    "message": "Seguir el sistema"
+  },
+  "lightTheme": {
+    "message": "Claro"
+  },
+  "darkTheme": {
+    "message": "Oscuro"
+  },
+  "highContrast": {
+    "message": "Alto contraste"
   }
 }

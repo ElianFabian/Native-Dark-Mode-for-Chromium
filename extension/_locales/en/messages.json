@@ -244,5 +244,32 @@
   },
   "errorInheritedRuleChanged": {
     "message": "The tab no longer inherits a rule. Reopen the popup."
+  },
+  "appearance": {
+    "message": "Appearance and accessibility"
+  },
+  "textSize": {
+    "message": "Text size"
+  },
+  "smallerText": {
+    "message": "Decrease text size"
+  },
+  "largerText": {
+    "message": "Increase text size"
+  },
+  "theme": {
+    "message": "Theme"
+  },
+  "systemTheme": {
+    "message": "Follow system"
+  },
+  "lightTheme": {
+    "message": "Light"
+  },
+  "darkTheme": {
+    "message": "Dark"
+  },
+  "highContrast": {
+    "message": "High contrast"
   }
 }

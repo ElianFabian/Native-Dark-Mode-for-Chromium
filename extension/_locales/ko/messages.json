@@ -244,5 +244,32 @@
   },
   "errorInheritedRuleChanged": {
     "message": "이 탭은 더 이상 규칙을 상속하지 않습니다. 팝업을 다시 여세요."
+  },
+  "appearance": {
+    "message": "모양 및 접근성"
+  },
+  "textSize": {
+    "message": "텍스트 크기"
+  },
+  "smallerText": {
+    "message": "텍스트 크기 줄이기"
+  },
+  "largerText": {
+    "message": "텍스트 크기 늘리기"
+  },
+  "theme": {
+    "message": "테마"
+  },
+  "systemTheme": {
+    "message": "시스템 설정 따르기"
+  },
+  "lightTheme": {
+    "message": "밝게"
+  },
+  "darkTheme": {
+    "message": "어둡게"
+  },
+  "highContrast": {
+    "message": "고대비"
   }
 }

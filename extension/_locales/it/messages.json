@@ -244,5 +244,32 @@
   },
   "errorInheritedRuleChanged": {
     "message": "La scheda non eredita più una regola. Riapri il pannello."
+  },
+  "appearance": {
+    "message": "Aspetto e accessibilità"
+  },
+  "textSize": {
+    "message": "Dimensione del testo"
+  },
+  "smallerText": {
+    "message": "Riduci la dimensione del testo"
+  },
+  "largerText": {
+    "message": "Aumenta la dimensione del testo"
+  },
+  "theme": {
+    "message": "Tema"
+  },
+  "systemTheme": {
+    "message": "Segui il sistema"
+  },
+  "lightTheme": {
+    "message": "Chiaro"
+  },
+  "darkTheme": {
+    "message": "Scuro"
+  },
+  "highContrast": {
+    "message": "Contrasto elevato"
   }
 }

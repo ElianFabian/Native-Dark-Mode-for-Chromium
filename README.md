@@ -51,6 +51,8 @@ The manager also offers **Export JSON** and **Import JSON**. Import previews new
 
 The interface follows the browser language by default. The **Language** selector in the manager lets you choose English, Spanish, French, European Portuguese, Italian, Simplified Chinese, Japanese, Korean, or German.
 
+Open **Appearance and accessibility** in the popup or rule manager to adjust text size from 75% to 200%, enable high contrast, or choose a light or dark theme. The theme follows your system by default. The extension saves these preferences locally and shares them between its two interfaces. Website dark mode is controlled separately by your rules.
+
 ## How it works
 
 The [Manifest V3 extension](extension/manifest.json) has a popup, a full-page rule manager, and a [background service worker](extension/background.js).

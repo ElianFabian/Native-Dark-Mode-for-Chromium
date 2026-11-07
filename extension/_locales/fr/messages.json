@@ -244,5 +244,32 @@
   },
   "errorInheritedRuleChanged": {
     "message": "Cet onglet n’hérite plus d’une règle. Rouvrez le panneau."
+  },
+  "appearance": {
+    "message": "Apparence et accessibilité"
+  },
+  "textSize": {
+    "message": "Taille du texte"
+  },
+  "smallerText": {
+    "message": "Réduire la taille du texte"
+  },
+  "largerText": {
+    "message": "Augmenter la taille du texte"
+  },
+  "theme": {
+    "message": "Thème"
+  },
+  "systemTheme": {
+    "message": "Suivre le système"
+  },
+  "lightTheme": {
+    "message": "Clair"
+  },
+  "darkTheme": {
+    "message": "Sombre"
+  },
+  "highContrast": {
+    "message": "Contraste élevé"
   }
 }

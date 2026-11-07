@@ -244,5 +244,32 @@
   },
   "errorInheritedRuleChanged": {
     "message": "このタブはルールを継承していません。ポップアップを開き直してください。"
+  },
+  "appearance": {
+    "message": "外観とアクセシビリティ"
+  },
+  "textSize": {
+    "message": "文字サイズ"
+  },
+  "smallerText": {
+    "message": "文字を小さくする"
+  },
+  "largerText": {
+    "message": "文字を大きくする"
+  },
+  "theme": {
+    "message": "テーマ"
+  },
+  "systemTheme": {
+    "message": "システム設定に従う"
+  },
+  "lightTheme": {
+    "message": "ライト"
+  },
+  "darkTheme": {
+    "message": "ダーク"
+  },
+  "highContrast": {
+    "message": "ハイコントラスト"
   }
 }

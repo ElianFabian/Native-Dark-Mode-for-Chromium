@@ -3,6 +3,7 @@ import { regionalBaseForHost, regionalDomain } from './domains.js';
 import { requestWithTimeout } from './request.js';
 import { MAX_BACKUP_BYTES } from './backup.js';
 import { LANGUAGES, initializeLanguage, setLanguage, translatePage, t, errorText } from './i18n.js';
+import { initializeAppearance } from './appearance.js';
 
 const $ = selector => document.querySelector(selector);
 const isManager = document.documentElement.dataset.page === 'options';
@@ -14,6 +15,7 @@ let pendingImport;
 let pendingPreviewSummary;
 let displayedRule;
 let editingId;
+let refreshAppearance;
 
 for (const [code, name] of Object.entries(LANGUAGES)) {
   const option = document.createElement('option');
@@ -342,6 +344,7 @@ $('#confirm-import')?.addEventListener('click', () => withBusy(async () => {
 $('#language')?.addEventListener('change', () => withBusy(async () => {
   await setLanguage($('#language').value);
   translatePage();
+  refreshAppearance?.();
   if (snapshot) render(snapshot);
   if (pendingPreviewSummary) {
     $('#import-summary').textContent = t('previewSummary', {
@@ -380,6 +383,8 @@ $('#regional').addEventListener('change', saveCheckboxChange);
 
 try {
   const language = await initializeLanguage();
+  translatePage();
+  refreshAppearance = await initializeAppearance();
   if (isManager) {
     $('#language').value = language;
     const { ruleListPreferences } = await chrome.storage.local.get('ruleListPreferences');
@@ -387,7 +392,6 @@ try {
     if (!$('#sort-rules').value) $('#sort-rules').value = 'alphabetical';
     $('#group-domains').checked = Boolean(ruleListPreferences?.group);
   }
-  translatePage();
   if (!isManager) {
     [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id) throw new Error('The active tab could not be found.');

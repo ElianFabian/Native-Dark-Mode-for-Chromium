@@ -244,5 +244,32 @@
   },
   "errorInheritedRuleChanged": {
     "message": "Der Tab erbt keine Regel mehr. Öffne das Popup erneut."
+  },
+  "appearance": {
+    "message": "Darstellung und Barrierefreiheit"
+  },
+  "textSize": {
+    "message": "Textgröße"
+  },
+  "smallerText": {
+    "message": "Text verkleinern"
+  },
+  "largerText": {
+    "message": "Text vergrößern"
+  },
+  "theme": {
+    "message": "Design"
+  },
+  "systemTheme": {
+    "message": "Systemeinstellung verwenden"
+  },
+  "lightTheme": {
+    "message": "Hell"
+  },
+  "darkTheme": {
+    "message": "Dunkel"
+  },
+  "highContrast": {
+    "message": "Hoher Kontrast"
   }
 }

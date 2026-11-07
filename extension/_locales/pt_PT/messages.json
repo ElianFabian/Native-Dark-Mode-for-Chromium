@@ -244,5 +244,32 @@
   },
   "errorInheritedRuleChanged": {
     "message": "O separador já não herda uma regra. Reabra o painel."
+  },
+  "appearance": {
+    "message": "Aspeto e acessibilidade"
+  },
+  "textSize": {
+    "message": "Tamanho do texto"
+  },
+  "smallerText": {
+    "message": "Diminuir o tamanho do texto"
+  },
+  "largerText": {
+    "message": "Aumentar o tamanho do texto"
+  },
+  "theme": {
+    "message": "Tema"
+  },
+  "systemTheme": {
+    "message": "Seguir o sistema"
+  },
+  "lightTheme": {
+    "message": "Claro"
+  },
+  "darkTheme": {
+    "message": "Escuro"
+  },
+  "highContrast": {
+    "message": "Contraste elevado"
   }
 }
