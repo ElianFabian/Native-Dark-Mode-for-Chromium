@@ -56,6 +56,7 @@ class NativeLauncherTests(unittest.TestCase):
                 'TEST_BROWSER_BIN': shell_path(directory),
                 'TEST_DESKTOP': shell_path(desktop),
                 'XDG_DATA_HOME': shell_path(data),
+                'NATIVE_DARK_MODE_LANG': 'en',
             }
             result = subprocess.run(
                 [BASH, '-c', 'PATH="$TEST_BROWSER_BIN:$PATH" sh scripts/install-launcher-linux.sh'],
@@ -113,7 +114,8 @@ class NativeLauncherTests(unittest.TestCase):
             result = subprocess.run(
                 ['cmd.exe', '/d', '/c', r'scripts\install-launcher-windows.cmd',
                  '--browser', str(browser), '--output-directory', str(directory)],
-                cwd=ROOT, input='\n', check=True, capture_output=True, text=True,
+                cwd=ROOT, env={**os.environ, 'NATIVE_DARK_MODE_LANG': 'en'},
+                input='\n', check=True, capture_output=True, text=True,
             )
             self.assertIn('Native Dark Mode | Shortcut installer', result.stdout)
             self.assertIn('Output directory', result.stdout)

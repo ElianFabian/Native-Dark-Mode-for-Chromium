@@ -75,11 +75,13 @@ Run the installer for your system from the project folder. The three installers 
 
 The console explains what the installer is about to do and prints the path of each shortcut it creates. On Windows, the report groups shortcuts by browser and uses color in Windows Terminal. When you run the installer interactively, press Enter at the end to dismiss the prompt.
 
+Installer messages are available in English and Spanish. The installer reads your Windows regional format or your shell locale on Linux and macOS, with the macOS regional preference as a fallback. Other languages use English. Set `NATIVE_DARK_MODE_LANG` to `en` or `es` to override the detected locale.
+
 For a browser in a custom location or outside the detection list, append `--browser "ABSOLUTE_PATH_TO_BROWSER_EXECUTABLE"` to the installer command. This selects just that executable and uses the name **Chromium Browser - Native Dark Mode**. With `--output-directory PATH`, the installer writes only to that directory, which is useful for testing or keeping shortcuts for multiple custom executables separate.
 
 Fully quit the target browser before opening the new launcher so the flag takes effect. Check **Command Line** on your browser's version page (for example, `chrome://version`, `edge://version`, or `brave://version`) for `--silent-debugger-extension-api`. The installers use tools included with the operating system. Windows uses Windows Script Host to create a `.lnk`. Linux and macOS use shell scripts.
 
-Banner suppression has been confirmed in Brave on Windows. The launcher tests check the generated artifacts. Desktop integration on Linux and macOS and banner suppression in other browsers still need hands-on verification.
+The installer was tested on Windows 11, where banner suppression was confirmed in Brave. The Linux and macOS installers have automated checks for generated files, but have yet to be tested on actual Linux or macOS systems. Banner suppression in other browsers still needs hands-on verification.
 
 ## Current limits
 

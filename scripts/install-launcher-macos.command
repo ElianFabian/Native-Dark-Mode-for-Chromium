@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
 script_directory=$(CDPATH= cd "$(dirname "$0")" && pwd)
+installer_platform_locale=$(defaults read -g AppleLocale 2>/dev/null) || installer_platform_locale=''
 . "$script_directory/internal/launcher-common.sh"
 parse_arguments "$@"
 
@@ -39,16 +40,16 @@ LAUNCHER
 <key>CFBundleExecutable</key><string>launcher</string>
 </dict></plist>
 PLIST
-  printf 'Created: %s\n' "$app"
+  printf '%s %s\n' "$(message 'Created:')" "$app"
   if [ -n "$desktop" ] && [ -d "$desktop" ]; then
     desktop_link="$desktop/$launcher_name.app"
     if [ -L "$desktop_link" ] && [ "$(readlink "$desktop_link")" = "$app" ]; then
-      printf 'Already present: %s\n' "$desktop_link"
+      printf '%s %s\n' "$(message 'Already present:')" "$desktop_link"
     elif [ -e "$desktop_link" ] || [ -L "$desktop_link" ]; then
-      printf 'Desktop shortcut skipped because the path is occupied: %s\n' "$desktop_link" >&2
+      printf '%s %s\n' "$(message 'Desktop shortcut skipped because the path is occupied:')" "$desktop_link" >&2
     else
       ln -s "$app" "$desktop_link"
-      printf 'Created: %s\n' "$desktop_link"
+      printf '%s %s\n' "$(message 'Created:')" "$desktop_link"
     fi
   fi
 }

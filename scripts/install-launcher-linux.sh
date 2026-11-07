@@ -7,7 +7,7 @@ parse_arguments "$@"
 desktop=''
 if [ -z "$destination" ]; then
   data_home=${XDG_DATA_HOME:-"$HOME/.local/share"}
-  case "$data_home" in /*) ;; *) fail 'XDG_DATA_HOME must be an absolute path.' ;; esac
+  case "$data_home" in /*) ;; *) fail "$(message 'XDG_DATA_HOME must be an absolute path.')" ;; esac
   destination="$data_home/applications"
   desktop="$HOME/Desktop"
   if command -v xdg-user-dir >/dev/null 2>&1; then
@@ -17,7 +17,7 @@ if [ -z "$destination" ]; then
 fi
 
 create_launcher() {
-  case "$browser" in *=*) fail 'Desktop Entry executable paths cannot contain an equals sign.' ;; esac
+  case "$browser" in *=*) fail "$(message 'Desktop Entry executable paths cannot contain an equals sign.')" ;; esac
   mkdir -p "$destination"
   entry="$destination/$launcher_id.desktop"
 
@@ -43,12 +43,12 @@ create_launcher() {
     printf '%s\n' 'Terminal=false' 'Categories=Network;WebBrowser;'
   } > "$entry"
   chmod 755 "$entry"
-  printf 'Created: %s\n' "$entry"
+  printf '%s %s\n' "$(message 'Created:')" "$entry"
   if [ -n "$desktop" ] && [ -d "$desktop" ] && [ ! "$desktop" -ef "$destination" ]; then
     desktop_entry="$desktop/$launcher_id.desktop"
     cp "$entry" "$desktop_entry"
     chmod 755 "$desktop_entry"
-    printf 'Created: %s\n' "$desktop_entry"
+    printf '%s %s\n' "$(message 'Created:')" "$desktop_entry"
   fi
 }
 
