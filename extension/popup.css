@@ -160,6 +160,36 @@ input[type=checkbox] {
   margin: 0;
   accent-color: var(--primary);
 }
+input.contrast-switch {
+  appearance: none;
+  position: relative;
+  box-sizing: border-box;
+  inline-size: 2.65em;
+  block-size: 1.45em;
+  border: 2px solid var(--border);
+  border-radius: 1em;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+}
+.contrast-switch::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: .16em;
+  inline-size: .9em;
+  block-size: .9em;
+  translate: 0 -50%;
+  border-radius: 50%;
+  background: currentColor;
+}
+.contrast-switch:checked { border-color: var(--primary); background: var(--primary); color: var(--primary-text); }
+.contrast-switch:checked::before { inset-inline-start: auto; inset-inline-end: .16em; }
+.contrast-switch:disabled { opacity: .55; cursor: default; }
+@media (forced-colors: active) {
+  input.contrast-switch { forced-color-adjust: none; border-color: CanvasText; background: Canvas; color: CanvasText; }
+  input.contrast-switch:checked { border-color: Highlight; background: Highlight; color: HighlightText; }
+}
 
 @media (forced-colors: none) {
   @supports (appearance: base-select) and selector(select::picker(select)) {
@@ -298,7 +328,7 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
 .appearance-menu .accessibility-icon { inset-inline-end: 10px; inline-size: 18px; block-size: 18px; }
 .appearance-menu-content {
   position: absolute;
-  inset-block-start: 100%;
+  inset-block-start: calc(100% - 9px);
   inset-inline-end: 12px;
   box-sizing: border-box;
   inline-size: min(26rem, calc(100% - 24px));

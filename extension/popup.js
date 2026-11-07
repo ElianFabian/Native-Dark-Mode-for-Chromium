@@ -17,9 +17,38 @@ let editingId;
 let refreshAppearance;
 
 const appearanceMenu = $('.appearance-menu');
+const appearanceTrigger = appearanceMenu?.querySelector('summary');
+let openedByHover = false;
+let appearanceCloseTimer;
+
+function closeAppearanceMenu() {
+  clearTimeout(appearanceCloseTimer);
+  openedByHover = false;
+  appearanceMenu.open = false;
+}
+
 if (appearanceMenu) {
+  appearanceTrigger.addEventListener('pointerenter', event => {
+    if (event.pointerType !== 'mouse' || appearanceMenu.open) return;
+    appearanceMenu.open = true;
+    openedByHover = true;
+  });
+  appearanceMenu.addEventListener('pointerenter', () => clearTimeout(appearanceCloseTimer));
+  appearanceMenu.addEventListener('pointerleave', event => {
+    if (event.pointerType !== 'mouse' || !openedByHover) return;
+    appearanceCloseTimer = setTimeout(() => {
+      if (!appearanceMenu.contains(document.activeElement)) closeAppearanceMenu();
+    }, 220);
+  });
+  appearanceTrigger.addEventListener('click', event => {
+    if (!openedByHover) return;
+    // Keep a hover-open menu open when the user explicitly activates it.
+    event.preventDefault();
+    openedByHover = false;
+    clearTimeout(appearanceCloseTimer);
+  });
   document.addEventListener('pointerdown', event => {
-    if (appearanceMenu.open && !appearanceMenu.contains(event.target)) appearanceMenu.open = false;
+    if (appearanceMenu.open && !appearanceMenu.contains(event.target)) closeAppearanceMenu();
   });
 }
 
@@ -32,8 +61,8 @@ document.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || $('#import-preview')?.open) return;
   if (appearanceMenu?.open) {
     event.preventDefault();
-    appearanceMenu.open = false;
-    appearanceMenu.querySelector('summary').focus();
+    closeAppearanceMenu();
+    appearanceTrigger.focus();
     return;
   }
   const visible = document.querySelectorAll('.has-tooltip:not([data-tooltip-dismissed]):is(:hover, :focus-within)');
