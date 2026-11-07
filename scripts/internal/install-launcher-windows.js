@@ -2,11 +2,17 @@
 // Uses only components included in Windows. Never launches or closes the browser.
 var shell = new ActiveXObject('WScript.Shell');
 var files = new ActiveXObject('Scripting.FileSystemObject');
+var environment = shell.Environment('Process');
+var useColor = Boolean(environment('WT_SESSION')) && !environment('NO_COLOR');
 var destination = '';
 var browser = '';
 
+function color(message, code) {
+  return useColor ? '\x1b[' + code + 'm' + message + '\x1b[0m' : message;
+}
+
 function fail(message) {
-  WScript.Echo(message);
+  WScript.StdErr.WriteLine('\n' + color('Error', '1;31') + '\n  ' + message + '\n');
   WScript.Quit(1);
 }
 
@@ -32,13 +38,16 @@ try {
     else browser = WScript.Arguments(index);
   }
 
+  var primaryLocation = destination ? 'Output directory' : 'Start menu';
   var desktop = destination ? '' : shell.SpecialFolders('Desktop');
   destination = files.GetAbsolutePathName(destination || shell.SpecialFolders('Programs'));
-  WScript.Echo('Looking for Chromium-based browsers and creating shortcuts for native dark mode.');
+  WScript.Echo(color('Native Dark Mode | Shortcut installer', '1;36'));
+  WScript.Echo(browser ? 'Creating shortcuts for the selected browser.' :
+    'Looking for Chromium-based browsers and creating shortcuts for each one found.');
   var installed = 0;
   if (browser) {
     if (!files.FileExists(browser)) fail('The browser executable was not found: ' + browser);
-    installBrowser('Chromium Browser', browser, desktop);
+    installBrowser('Chromium Browser', browser, primaryLocation, desktop);
     installed++;
   } else {
     var browsers = [
@@ -52,14 +61,18 @@ try {
     for (var candidate = 0; candidate < browsers.length; candidate++) {
       var executable = findBrowser(browsers[candidate]);
       if (executable) {
-        installBrowser(browsers[candidate][0], executable, desktop);
+        installBrowser(browsers[candidate][0], executable, primaryLocation, desktop);
         installed++;
       }
     }
   }
   if (!installed) fail('No supported browser installation was found. Use --browser with its executable path.');
-  WScript.Echo('Fully exit the target browser before opening its shortcut.');
-  WScript.Echo('If the browser honors the launch flag, it suppresses banners for all debugger extensions in that session.');
+  WScript.Echo('');
+  WScript.Echo(color('Done', '1;32') + '  Shortcuts ready for ' + installed +
+    (installed === 1 ? ' browser.' : ' browsers.'));
+  WScript.Echo('  Fully exit the browser before opening its new shortcut.');
+  WScript.Echo('  If supported, the flag hides all debugger-extension banners for that session.');
+  WScript.Echo('');
 } catch (error) {
   fail('Launcher installation failed: ' + error.message);
 }
@@ -88,16 +101,17 @@ function findBrowser(info) {
   return '';
 }
 
-function installBrowser(name, executable, desktop) {
+function installBrowser(name, executable, primaryLocation, desktop) {
   executable = files.GetAbsolutePathName(executable);
-  WScript.Echo('Creating shortcuts for ' + name + ' (' + executable + ')');
-  createShortcut(destination, name, executable);
+  WScript.Echo('');
+  WScript.Echo(color(name, '1;36'));
+  createShortcut(destination, primaryLocation, name, executable);
   if (desktop && files.FolderExists(desktop) && desktop.toLowerCase() !== destination.toLowerCase()) {
-    createShortcut(desktop, name, executable);
+    createShortcut(desktop, 'Desktop', name, executable);
   }
 }
 
-function createShortcut(directory, name, executable) {
+function createShortcut(directory, location, name, executable) {
   ensureDirectory(directory);
   var path = files.BuildPath(directory, name + ' - Native Dark Mode.lnk');
   var shortcut = shell.CreateShortcut(path);
@@ -112,5 +126,6 @@ function createShortcut(directory, name, executable) {
   if (saved.TargetPath.toLowerCase() !== executable.toLowerCase() || saved.Arguments !== '--silent-debugger-extension-api') {
     fail('Shortcut verification failed: ' + path);
   }
-  WScript.Echo('Created and verified: ' + path);
+  WScript.Echo('  ' + color(location, '32') + '  (created and verified)');
+  WScript.Echo('    ' + path);
 }

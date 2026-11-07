@@ -13,7 +13,7 @@ const entries = section.split(/\r?\n/).map(line => line.split('//')[0].trim()).f
   return prefix + domain;
 });
 const version = data.match(/^\/\/ VERSION: ([\w-]+)$/m)?.[1] ?? 'unknown';
-writeFileSync(new URL('../extension/icann-suffixes.js', import.meta.url),
+writeFileSync(new URL('../../extension/icann-suffixes.js', import.meta.url),
   `// This Source Code Form is subject to the terms of the Mozilla Public\n` +
   `// License, v. 2.0. If a copy of the MPL was not distributed with this\n` +
   `// file, You can obtain one at https://mozilla.org/MPL/2.0/.\n` +

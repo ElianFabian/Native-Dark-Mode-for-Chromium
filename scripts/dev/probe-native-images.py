@@ -20,7 +20,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--browser', required=True, type=Path)
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     output = root / 'research-artifacts' / 'native-images' / f'run-{time.time_ns()}'
     output.mkdir(parents=True, exist_ok=True)
     logo = Image.new('RGB', (32, 32), 'white')

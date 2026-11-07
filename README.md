@@ -65,7 +65,7 @@ The extension uses `debugger` to send the native emulation command, HTTP and HTT
 
 Your browser may show a debugging banner while the extension is attached. Closing the banner or opening DevTools can disconnect the session. The optional launchers pass `--silent-debugger-extension-api`. When the browser honors this flag, it suppresses banners for **all** debugger extensions in that session.
 
-Run the installer for your system from the project folder. Keep the files in `scripts/` together because the installers use shared helpers. Each installer looks for Brave, Google Chrome, Chromium, Microsoft Edge, Vivaldi, and Opera in the usual locations for that platform. It creates one set of shortcuts per browser it finds, using the name **Browser Name - Native Dark Mode**.
+Run the installer for your system from the project folder. The three installers are at the top level of `scripts/`, and their helpers stay in `scripts/internal/`. Each installer looks for Brave, Google Chrome, Chromium, Microsoft Edge, Vivaldi, and Opera in the usual locations for that platform. It creates one set of shortcuts per browser it finds, using the name **Browser Name - Native Dark Mode**.
 
 | Platform | Installer | Where to open the launcher |
 | --- | --- | --- |
@@ -73,7 +73,7 @@ Run the installer for your system from the project folder. Keep the files in `sc
 | Linux | `sh scripts/install-launcher-linux.sh` | Your application menu and, when available, your configured desktop directory. Your desktop environment may require you to mark the desktop copy as trusted before opening it. |
 | macOS | `sh scripts/install-launcher-macos.command` | Your `~/Applications` folder and a link on your Desktop, when the Desktop folder exists. |
 
-The console explains what the installer is about to do and prints the path of each shortcut it creates. When you run it interactively, press Enter at the end to dismiss the prompt.
+The console explains what the installer is about to do and prints the path of each shortcut it creates. On Windows, the report groups shortcuts by browser and uses color in Windows Terminal. When you run the installer interactively, press Enter at the end to dismiss the prompt.
 
 For a browser in a custom location or outside the detection list, append `--browser "ABSOLUTE_PATH_TO_BROWSER_EXECUTABLE"` to the installer command. This selects just that executable and uses the name **Chromium Browser - Native Dark Mode**. With `--output-directory PATH`, the installer writes only to that directory, which is useful for testing or keeping shortcuts for multiple custom executables separate.
 
@@ -88,6 +88,8 @@ Banner suppression has been confirmed in Brave on Windows. The launcher tests ch
 - Chromium controls image treatment. Per-site image preservation is deferred. See [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md) for the experimental launch-time option and its limits.
 
 ## Development and screenshots
+
+Maintenance tools for the public suffix list and image research live in `scripts/dev/`.
 
 Run `npm run check` and `npm test` with Node.js. The extension runs directly from `extension/` with no build step. For launcher tests, run `python -m unittest discover -s test -p 'test_*.py' -v`. The launcher tests use temporary files and a mock browser where appropriate. See [PLAN.md](PLAN.md) for validation notes.
 

@@ -93,9 +93,18 @@ class NativeLauncherTests(unittest.TestCase):
             self.assertTrue(directory.is_relative_to(ROOT))
             browser = directory / 'msedge.exe'
             browser.write_bytes(b'not a real browser; never execute')
-            result = subprocess.run([str(Path(os.environ['SystemRoot']) / 'System32/cscript.exe'), '//nologo', '//E:JScript', str(ROOT / 'scripts/install-launcher-windows.js'), '--browser', str(browser), '--output-directory', str(directory)], check=True, capture_output=True, text=True)
-            self.assertIn('Created and verified', result.stdout)
-            self.assertTrue((directory / 'Chromium Browser - Native Dark Mode.lnk').is_file())
+            result = subprocess.run(
+                ['cmd.exe', '/d', '/c', r'scripts\install-launcher-windows.cmd',
+                 '--browser', str(browser), '--output-directory', str(directory)],
+                cwd=ROOT, input='\n', check=True, capture_output=True, text=True,
+            )
+            self.assertIn('Native Dark Mode | Shortcut installer', result.stdout)
+            self.assertIn('Output directory', result.stdout)
+            self.assertIn('Shortcuts ready for 1 browser.', result.stdout)
+            self.assertIn('Press Enter to close...', result.stdout)
+            shortcut = directory / 'Chromium Browser - Native Dark Mode.lnk'
+            self.assertIn(f'    {shortcut}', result.stdout)
+            self.assertTrue(shortcut.is_file())
 
 
 if __name__ == '__main__':

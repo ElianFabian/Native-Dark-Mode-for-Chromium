@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 script_directory=$(CDPATH= cd "$(dirname "$0")" && pwd)
-. "$script_directory/launcher-common.sh"
+. "$script_directory/internal/launcher-common.sh"
 parse_arguments "$@"
 
 desktop=''
