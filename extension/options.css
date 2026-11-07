@@ -38,7 +38,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 :root {
   --positive-highlight-bg: #e4f4ea;
   --positive-highlight-border: #31744f;
-  --disabled-rule-bg: rgb(0 0 0 / .09);
+  --disabled-rule-bg: rgb(0 0 0 / .16);
 }
 .rule-editor, .trash-panel, .domain-group, .domain-group summary {
   transition: background-color 180ms ease-out, border-color 180ms ease-out, box-shadow 180ms ease-out;
@@ -46,7 +46,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 :root[data-theme="dark"] {
   --positive-highlight-bg: #203d31;
   --positive-highlight-border: #8ac7a5;
-  --disabled-rule-bg: rgb(0 0 0 / .32);
+  --disabled-rule-bg: rgb(0 0 0 / .48);
 }
 :root[data-high-contrast] {
   --positive-highlight-bg: var(--panel);
@@ -194,6 +194,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
   transition: background-color 180ms ease-out;
 }
 #rules .rule[data-rule-disabled] { background: var(--disabled-rule-bg); }
+#rules .rule[data-rule-disabled]:not(.is-highlighted) { box-shadow: inset 3px 0 var(--border); }
 :root[data-high-contrast] #rules .rule[data-rule-disabled]:not(.is-highlighted) {
   box-shadow: inset 4px 0 var(--text);
 }
