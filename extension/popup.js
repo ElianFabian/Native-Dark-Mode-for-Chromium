@@ -173,25 +173,31 @@ function showRule(rule) {
 }
 
 function renderRules() {
+  const list = $('#rules');
   const rules = snapshot?.rules ?? [];
   const query = $('#search').value.trim().toLowerCase();
   const order = selectedSortOrder();
   const visible = orderRules(rules.filter(rule => matchesSearch(rule, query)), order, document.documentElement.lang);
-  $('#rules').replaceChildren();
+  list.replaceChildren();
   $('#rule-count').textContent = visible.length < rules.length
     ? t('ruleCount', { shown: visible.length, total: rules.length }) : '';
-  if (!visible.length) $('#rules').textContent = t(rules.length ? 'noSearchResults' : 'noRules');
+  if (!visible.length) list.textContent = t(rules.length ? 'noSearchResults' : 'noRules');
   const groups = $('#group-domains').checked
     ? groupRulesByDomain(visible, rules, order, document.documentElement.lang)
     : [[null, visible]];
   for (const [domain, group] of groups) {
+    let container = list;
     if (domain) {
+      container = document.createElement('section');
+      container.className = 'domain-group';
       const title = document.createElement('h3');
-      title.className = 'domain-group';
+      title.id = `domain-group-${list.childElementCount}`;
       title.textContent = domain;
-      $('#rules').append(title);
+      container.setAttribute('aria-labelledby', title.id);
+      container.append(title);
+      list.append(container);
     }
-    for (const rule of group) renderRule(rule);
+    for (const rule of group) container.append(renderRule(rule));
   }
 }
 
@@ -199,7 +205,6 @@ function renderRule(rule) {
   const item = document.createElement('div');
   item.className = 'rule';
   item.append(ruleHeading(rule));
-  $('#rules').append(item);
   const actions = document.createElement('div');
   actions.className = 'rule-actions';
   const toggle = document.createElement('button');
@@ -224,6 +229,7 @@ function renderRule(rule) {
   remove.addEventListener('click', () => request({ type: 'remove', id: rule.id }));
   actions.append(toggle, edit, remove);
   item.append(actions);
+  return item;
 }
 
 function renderRuleToggle(button, enabled, item = button.closest('.rule')) {
