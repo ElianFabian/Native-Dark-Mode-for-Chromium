@@ -1,4 +1,5 @@
-import { AMAZON_DOMAINS, normalizeRule, orderRules, regionalDomainsForHost, ruleAddress, subdomainExclusion } from './rules.js';
+import { normalizeRule, orderRules, ruleAddress, subdomainExclusion } from './rules.js';
+import { regionalBaseForHost, regionalDomain } from './domains.js';
 import { requestWithTimeout } from './request.js';
 import { MAX_BACKUP_BYTES } from './backup.js';
 import { LANGUAGES, initializeLanguage, setLanguage, translatePage, t, errorText } from './i18n.js';
@@ -38,12 +39,12 @@ function selected() {
 }
 
 function updateButton() {
-  let domains = [];
-  try { domains = regionalDomainsForHost(normalizeRule({ ...draft(false), includeRegionalDomains: false }).host); }
+  let regionalBase;
+  try { regionalBase = regionalBaseForHost(normalizeRule({ ...draft(false), includeSubdomains: false, includeRegionalDomains: false }).host); }
   catch { /* The address may be incomplete while being edited. */ }
-  $('#regional-option').hidden = !isManager && !domains.length;
-  if (!domains.length) $('#regional').checked = false;
-  $('#regional').disabled = busy || !domains.length;
+  $('#regional-option').hidden = !isManager && !regionalBase;
+  if (!regionalBase) $('#regional').checked = false;
+  $('#regional').disabled = busy || !regionalBase;
   const needsResume = snapshot?.state.suspended || snapshot?.state.error;
   displayedRule = selected();
   $('#toggle').textContent = t(displayedRule?.enabled && !needsResume ? 'disableSave' : 'enableSave');
@@ -56,7 +57,7 @@ function updateButton() {
   $('#toggle').disabled = busy || !canEdit;
   $('#save').disabled = busy || !canEdit;
   if (isManager) {
-    $('#regional-help').textContent = domains.length ? '' : t('regionalAvailability', { domains: AMAZON_DOMAINS.join(', ') });
+    $('#regional-help').textContent = regionalBase ? '' : t('regionalAvailability');
     $('#toggle').hidden = Boolean(editingId);
     $('#cancel-edit').hidden = !editingId;
     $('#export').disabled = busy || !snapshot;
@@ -66,7 +67,7 @@ function updateButton() {
   try {
     const rule = normalizeRule(draft(false));
     $('#scope-hint').textContent = rule.includeRegionalDomains
-      ? t(rule.includeSubdomains ? 'scopeRegionalFamily' : 'scopeRegional', { scope: domains.map(domain => domain + rule.path).join(', ') })
+      ? t(rule.includeSubdomains ? 'scopeRegionalFamily' : 'scopeRegional', { scope: `${rule.regionalName}.*${rule.path}` })
       : t(rule.includeSubdomains ? 'scopeFamily' : 'scopeExact', { scope: `${rule.host}${rule.path}` });
   } catch { $('#scope-hint').textContent = ''; }
 }
@@ -75,24 +76,33 @@ function loadSelection() {
   updateButton();
 }
 
-function hostsFor(rule) {
-  return rule.includeRegionalDomains ? regionalDomainsForHost(rule.host) : [rule.host];
+function displayHost(rule) {
+  return rule.includeRegionalDomains ? `${rule.regionalName}.*` : rule.host;
+}
+
+function matchesSearch(rule, query) {
+  if ((displayHost(rule) + rule.path).toLowerCase().includes(query) ||
+      (rule.host + rule.path).toLowerCase().includes(query)) return true;
+  if (!rule.includeRegionalDomains) return false;
+  try {
+    const url = new URL(query.includes('://') ? query : `https://${query}`);
+    return regionalDomain(url.hostname)?.name === rule.regionalName &&
+      (url.pathname === '/' || rule.path.toLowerCase().startsWith(url.pathname));
+  } catch { return false; }
 }
 
 function ruleHeading(rule) {
   const heading = document.createElement('div');
   heading.className = 'rule-heading';
-  for (const host of hostsFor(rule)) {
-    const address = document.createElement('span');
-    address.className = 'rule-address';
-    const domain = document.createElement('strong');
-    domain.textContent = `${rule.includeSubdomains ? '*.' : ''}${host}`;
-    const path = document.createElement('span');
-    path.className = 'rule-path';
-    path.textContent = rule.path;
-    address.append(domain, path);
-    heading.append(address);
-  }
+  const address = document.createElement('span');
+  address.className = 'rule-address';
+  const domain = document.createElement('strong');
+  domain.textContent = `${rule.includeSubdomains ? '*.' : ''}${displayHost(rule)}`;
+  const path = document.createElement('span');
+  path.className = 'rule-path';
+  path.textContent = rule.path;
+  address.append(domain, path);
+  heading.append(address);
   const state = document.createElement('span');
   state.className = 'rule-state';
   state.textContent = t(rule.enabled ? 'enabled' : 'disabled');
@@ -104,7 +114,7 @@ function groupRules(rules) {
   if (!isManager || !$('#group-domains').checked) return [[null, rules]];
   const groups = new Map();
   for (const rule of rules) {
-    const domain = rule.host.replace(/^www\./, '');
+    const domain = displayHost(rule).replace(/^www\./, '');
     if (!groups.has(domain)) groups.set(domain, []);
     groups.get(domain).push(rule);
   }
@@ -127,7 +137,7 @@ function renderRules() {
   const rules = snapshot?.rules ?? [];
   const query = $('#search')?.value.trim().toLowerCase() ?? '';
   const visible = isManager
-    ? orderRules(rules.filter(rule => hostsFor(rule).some(host => (host + rule.path).toLowerCase().includes(query))),
+    ? orderRules(rules.filter(rule => matchesSearch(rule, query)),
       $('#sort-rules').value, document.documentElement.lang)
     : rules.slice(0, popupRuleLimit);
   $('#rules').replaceChildren();

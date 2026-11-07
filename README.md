@@ -32,7 +32,9 @@ With **Include subdomains** selected, an initial `www.` is treated as an alias o
 
 When the current site inherits an enabled subdomain rule, the popup offers **Exclude this subdomain**. It saves an inactive rule for the current hostname at the inherited path. The parent rule still applies to siblings. To inherit the parent rule again, remove the exclusion in **Manage rules**.
 
-**Include regional domains** is available for the Amazon group `amazon.es`, `amazon.com` and `amazon.com.au`. The manager shows the option alongside a list of eligible domains when the current URL cannot use it. The group includes their `www` addresses, carries the same section path across the group and supports the separate subdomain option. At the same path, a rule for one domain takes priority over a regional rule. The editor shows the domains that will be covered.
+**Include regional domains** creates a pattern from a base hostname, such as `amazon.*` from `amazon.es`. It matches the same registrable name under any recognized public suffix, including compound suffixes such as `com.au` and `co.uk`. It covers `www` aliases. **Include subdomains** extends it to other subdomains and the list shows `*.amazon.*`. The selected section path carries across the pattern. At the same path, a single-domain rule takes priority. Existing regional Amazon rules adopt the wildcard scope when loaded, including when imported from an older backup.
+
+Regional matching uses a bundled snapshot of the [ICANN portion of the Public Suffix List](https://publicsuffix.org/list/). To refresh it, download the published list and run `node scripts/update-public-suffixes.mjs PATH_TO_LIST`.
 
 When a saved rule is selected, changing **Include subdomains** or **Include regional domains** saves immediately. This replaces the original scope and preserves its enabled state. If unchecking either option narrows the scope to a rule that already exists, that rule keeps its settings and the broader rule is removed. Other scope conflicts require editing the existing rule from the saved list. For new rules, the checkboxes are saved when you choose **Save settings** or **Enable and save**.
 

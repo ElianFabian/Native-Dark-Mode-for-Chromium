@@ -1,8 +1,4 @@
-export const AMAZON_DOMAINS = Object.freeze(['amazon.es', 'amazon.com', 'amazon.com.au']);
-
-export function regionalDomainsForHost(host) {
-  return AMAZON_DOMAINS.includes(host.replace(/^www\./, '')) ? AMAZON_DOMAINS : [];
-}
+import { regionalBaseForHost, regionalDomain } from './domains.js';
 
 export function ruleAddress({ host, path }) {
   // Use a scheme that preserves an explicitly stored port.
@@ -19,7 +15,8 @@ export function orderRules(rules, order, locale) {
   }
   const collator = new Intl.Collator(locale);
   const direction = order === 'reverse-alphabetical' ? -1 : 1;
-  return ordered.sort((a, b) => direction * collator.compare(a.host + a.path, b.host + b.path));
+  const key = rule => (rule.regionalName ? `${rule.regionalName}.*` : rule.host) + rule.path;
+  return ordered.sort((a, b) => direction * collator.compare(key(a), key(b)));
 }
 
 export function normalizeRule(input) {
@@ -33,17 +30,18 @@ export function normalizeRule(input) {
   let host = includeSubdomains && url.hostname.startsWith('www.') && url.hostname.slice(4).includes('.')
     ? url.host.slice(4).toLowerCase() : url.host.toLowerCase();
   const identity = [host, path, includeSubdomains];
+  let regional;
   if (input.includeRegionalDomains === true) {
-    const domains = regionalDomainsForHost(host);
-    if (!domains.length) throw new Error('Regional domains are not available for this hostname.');
-    host = domains[0];
-    identity[0] = host;
+    regional = regionalBaseForHost(url.host);
+    if (!regional) throw new Error('Regional domains are not available for this hostname.');
+    host = regional.domain;
+    identity[0] = `${regional.name}.*`;
     identity.push(true);
   }
   return {
     id: JSON.stringify(identity),
     host, path, includeSubdomains,
-    ...(input.includeRegionalDomains === true ? { includeRegionalDomains: true } : {}),
+    ...(regional ? { includeRegionalDomains: true, regionalName: regional.name } : {}),
     enabled: Boolean(input.enabled)
   };
 }
@@ -52,28 +50,37 @@ export function matchingRule(rules, address) {
   let url;
   try { url = new URL(address); } catch { return undefined; }
   if (!['http:', 'https:'].includes(url.protocol)) return undefined;
+  const regional = url.port ? undefined : regionalDomain(url.hostname);
   return rules.filter(rule => {
     const host = new URL(ruleAddress(rule));
     const localMatch = url.host === rule.host || (
       rule.includeSubdomains && url.port === host.port && url.hostname.endsWith(`.${host.hostname}`)
     );
     const hostMatches = rule.includeRegionalDomains
-      ? !url.port && regionalDomainsForHost(rule.host).some(domain => url.hostname === domain ||
-          url.hostname === `www.${domain}` || (rule.includeSubdomains && url.hostname.endsWith(`.${domain}`)))
+      ? regional && regional.name === rule.regionalName &&
+          (!regional.subdomain || regional.subdomain === 'www' || rule.includeSubdomains)
       : localMatch;
     return hostMatches && (rule.path === '/' || url.pathname === rule.path || url.pathname.startsWith(`${rule.path}/`));
   }).sort((a, b) => b.path.length - a.path.length ||
     Number(Boolean(a.includeRegionalDomains)) - Number(Boolean(b.includeRegionalDomains)) ||
-    b.host.length - a.host.length || Number(a.includeSubdomains) - Number(b.includeSubdomains))[0];
+    (a.includeRegionalDomains && b.includeRegionalDomains ? 0 : b.host.length - a.host.length) ||
+    Number(a.includeSubdomains) - Number(b.includeSubdomains))[0];
 }
 
 export function subdomainExclusion(rule, address) {
   if (!rule?.enabled || !rule.includeSubdomains || !matchingRule([rule], address)) return undefined;
   const url = new URL(address);
-  const parents = rule.includeRegionalDomains ? regionalDomainsForHost(rule.host) : [new URL(ruleAddress(rule)).hostname];
-  const isSubdomain = parents.some(parent => url.hostname.endsWith(`.${parent}`) && url.hostname !== `www.${parent}`);
+  const parent = rule.includeRegionalDomains ? regionalDomain(url.hostname).domain : new URL(ruleAddress(rule)).hostname;
+  const isSubdomain = url.hostname.endsWith(`.${parent}`) && url.hostname !== `www.${parent}`;
   if (!isSubdomain) return undefined;
   return normalizeRule({ url: url.origin + rule.path, scope: 'section', enabled: false });
+}
+
+function normalizeStoredRule(stored) {
+  const rule = normalizeRule({ url: ruleAddress(stored), scope: 'section', enabled: stored.enabled,
+    includeSubdomains: stored.includeSubdomains, includeRegionalDomains: stored.includeRegionalDomains });
+  if (Number.isSafeInteger(stored.createdAt)) rule.createdAt = stored.createdAt;
+  return rule;
 }
 
 export class RuleManager {
@@ -89,10 +96,7 @@ export class RuleManager {
     // explicit parent rule already exists, keep it over the old www alias.
     const normalized = new Map();
     for (const stored of rules) {
-      const rule = normalizeRule({ url: ruleAddress(stored),
-        scope: 'section', enabled: stored.enabled, includeSubdomains: stored.includeSubdomains,
-        includeRegionalDomains: stored.includeRegionalDomains });
-      if (Number.isSafeInteger(stored.createdAt)) rule.createdAt = stored.createdAt;
+      const rule = normalizeStoredRule(stored);
       const alias = stored.host !== rule.host;
       if (!normalized.has(rule.id) || (!alias && normalized.get(rule.id).alias)) {
         normalized.set(rule.id, { rule, alias });
@@ -175,7 +179,8 @@ export class RuleManager {
   }
 
   async listTrash() {
-    return (await this.api.storage.local.get('trash')).trash ?? [];
+    const trash = (await this.api.storage.local.get('trash')).trash ?? [];
+    return trash.map(entry => ({ ...entry, rule: normalizeStoredRule(entry.rule) }));
   }
 
   restore(id) {

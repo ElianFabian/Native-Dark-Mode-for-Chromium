@@ -207,7 +207,7 @@
     "message": "La pestaña ya no hereda una regla de subdominio. Vuelve a abrir el panel."
   },
   "regionalAvailability": {
-    "message": "Disponible para {domains}."
+    "message": "Introduce un dominio base como ejemplo.com."
   },
   "sortRules": {
     "message": "Ordenar reglas"

@@ -207,7 +207,7 @@
     "message": "La scheda non eredita più una regola per sottodomini. Riapri il pannello."
   },
   "regionalAvailability": {
-    "message": "Disponibile per {domains}."
+    "message": "Inserisci un dominio base come esempio.com."
   },
   "sortRules": {
     "message": "Ordina regole"

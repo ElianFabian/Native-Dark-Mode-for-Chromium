@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeRule, matchingRule, orderRules, subdomainExclusion, RuleManager } from '../extension/rules.js';
+import { regionalDomain } from '../extension/domains.js';
 import { DarkModeController } from '../extension/controller.js';
 
 const rule = (url, enabled = true, extra = {}) => normalizeRule({ url, enabled, scope: 'section', ...extra });
@@ -41,13 +42,13 @@ test('www is optional with subdomains enabled and exact otherwise', async () => 
   assert.equal(migrated[0].enabled, false);
 });
 
-test('Amazon regional rules share a scope and respect path and host exclusions', () => {
+test('regional rules use the registrable name across public suffixes', () => {
   const group = rule('www.amazon.es/deals', true, { includeRegionalDomains: true });
   assert.equal(group.id, rule('amazon.com.au/deals', true, { includeRegionalDomains: true }).id);
-  for (const url of ['https://www.amazon.com.au/deals/today', 'https://www.amazon.com/deals', 'https://amazon.es/deals']) {
+  for (const url of ['https://www.amazon.com.au/deals/today', 'https://www.amazon.com/deals', 'https://amazon.es/deals', 'https://amazon.co.uk/deals']) {
     assert.equal(matchingRule([group], url).enabled, true);
   }
-  for (const url of ['https://amazon.net/deals', 'https://amazon.com.evil.example/deals', 'https://www.amazon.com.au/deals-extra',
+  for (const url of ['https://other.net/deals', 'https://amazon.evil.com/deals', 'https://amazon.github.io/deals', 'https://www.amazon.com.au/deals-extra',
     'https://seller.amazon.com/deals', 'https://amazon.com:8443/deals']) {
     assert.equal(matchingRule([group], url), undefined);
   }
@@ -55,7 +56,22 @@ test('Amazon regional rules share a scope and respect path and host exclusions',
   assert.equal(matchingRule([family], 'https://seller.amazon.com.au/deals').enabled, true);
   const exclusion = rule('www.amazon.com.au/deals', false);
   assert.equal(matchingRule([group, exclusion], 'https://www.amazon.com.au/deals').enabled, false);
-  assert.throws(() => rule('example.com', true, { includeRegionalDomains: true }), /not available/);
+  const another = rule('example.co.uk', true, { includeRegionalDomains: true });
+  assert.equal(matchingRule([another], 'https://example.de/').enabled, true);
+  assert.throws(() => rule('localhost', true, { includeRegionalDomains: true }), /not available/);
+  assert.throws(() => rule('seller.amazon.com', true, { includeRegionalDomains: true }), /not available/);
+});
+
+test('regional scope honors suffix exceptions and upgrades legacy rules', async () => {
+  assert.deepEqual(regionalDomain('x.y.ck'), { name: 'x', domain: 'x.y.ck', subdomain: '' });
+  assert.deepEqual(regionalDomain('www.ck'), { name: 'www', domain: 'www.ck', subdomain: '' });
+  const { api, manager } = integration();
+  await api.storage.local.set({ rules: [{ id: '["amazon.es","/deals",false,true]', host: 'amazon.es',
+    path: '/deals', includeSubdomains: false, includeRegionalDomains: true, enabled: true, createdAt: 10 }] });
+  const [saved] = await manager.list();
+  assert.equal(saved.createdAt, 10);
+  assert.equal(saved.regionalName, 'amazon');
+  assert.equal(matchingRule([saved], 'https://amazon.de/deals').enabled, true);
 });
 
 test('normalization merges trailing slash variants and rejects unsafe schemes', () => {

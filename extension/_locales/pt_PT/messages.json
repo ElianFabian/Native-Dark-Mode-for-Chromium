@@ -207,7 +207,7 @@
     "message": "O separador já não herda uma regra de subdomínio. Reabra o painel."
   },
   "regionalAvailability": {
-    "message": "Disponível para {domains}."
+    "message": "Introduza um domínio base como exemplo.com."
   },
   "sortRules": {
     "message": "Ordenar regras"

@@ -207,7 +207,7 @@
     "message": "Cet onglet n’hérite plus d’une règle de sous-domaine. Rouvrez le panneau."
   },
   "regionalAvailability": {
-    "message": "Disponible pour {domains}."
+    "message": "Saisissez un domaine de base comme example.com."
   },
   "sortRules": {
     "message": "Trier les règles"

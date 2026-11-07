@@ -19,7 +19,7 @@ test('backups preserve regional rules and reject unsupported groups', () => {
   const regional = normalizeRule({ url: 'www.amazon.com.au/deals', scope: 'section', enabled: true, includeRegionalDomains: true });
   const backup = createBackup([regional]);
   assert.deepEqual(parseBackup(JSON.stringify(backup)), [regional]);
-  backup.rules[0].host = 'example.com';
+  backup.rules[0].host = 'localhost';
   assert.throws(() => parseBackup(JSON.stringify(backup)), /invalid/);
 });
 

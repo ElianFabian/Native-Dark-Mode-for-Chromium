@@ -19,7 +19,7 @@ Enable the native filter per tab, then per website and path section, without glo
 - `/articles/` matches `/articles` and descendants, but not `/articles-extra`. Paths are case-sensitive. Do not decode escaped separators when determining boundaries.
 - Rules can enable or exclude a scope. The most specific path wins. For equal paths, an exact hostname takes precedence over an inherited subdomain match. Reject duplicate scopes to avoid ambiguous precedence.
 - Including subdomains must be explicit. `example.com` must not match `otherexample.com`. With subdomains enabled, a leading `www.` is an alias for its parent hostname. Existing rules with this setting use the new behavior, with an explicit parent rule winning collisions.
-- Regional groups are opt-in and use explicit hostname lists. The first group covers `amazon.es`, `amazon.com` and `amazon.com.au`, including their `www` aliases. Sections and the subdomain preference carry across the group. A single-domain rule wins at an equal path.
+- Regional rules are opt-in and match a registrable name across recognized ICANN public suffixes, including compound suffixes. The list displays `name.*` or `*.name.*` according to the subdomain preference. Sections carry across the pattern. A single-domain rule wins at an equal path.
 - Queries and fragments do not create separate scopes in the first version. Display the saved scope. HTTP and HTTPS share rules; a nonstandard port distinguishes a destination.
 - Test trailing slashes, adjacent paths, subdomains, domain changes, same-document navigation and exclusions inside enabled websites.
 - Acceptance example: enable `example.com`, exclude `example.com/photos/`, then enable `example.com/photos/articles/`.

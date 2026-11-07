@@ -207,7 +207,7 @@
     "message": "このタブはサブドメインのルールを継承していません。ポップアップを開き直してください。"
   },
   "regionalAvailability": {
-    "message": "{domains}で利用できます。"
+    "message": "example.comのようなベースドメインを入力してください。"
   },
   "sortRules": {
     "message": "ルールの並べ替え"

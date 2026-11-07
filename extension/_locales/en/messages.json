@@ -207,7 +207,7 @@
     "message": "The tab no longer inherits a subdomain rule. Reopen the popup."
   },
   "regionalAvailability": {
-    "message": "Available for {domains}."
+    "message": "Enter a base domain such as example.com."
   },
   "sortRules": {
     "message": "Sort rules"

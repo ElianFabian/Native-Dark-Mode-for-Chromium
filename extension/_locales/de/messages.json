@@ -207,7 +207,7 @@
     "message": "Der Tab erbt keine Subdomain-Regel mehr. Öffne das Popup erneut."
   },
   "regionalAvailability": {
-    "message": "Verfügbar für {domains}."
+    "message": "Gib eine Basisdomain wie example.com ein."
   },
   "sortRules": {
     "message": "Regeln sortieren"
