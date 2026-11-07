@@ -1,4 +1,4 @@
-import { normalizeRule, orderRules, ruleAddress, inheritedExclusion } from './rules.js';
+import { normalizeRule, orderRules, groupRulesByDomain, ruleAddress, inheritedExclusion } from './rules.js';
 import { regionalBaseForHost, regionalDomain } from './domains.js';
 import { requestWithTimeout } from './request.js';
 import { MAX_BACKUP_BYTES } from './backup.js';
@@ -164,20 +164,6 @@ function selectedSortOrder() {
   return descending ? 'reverse-alphabetical' : 'alphabetical';
 }
 
-function groupRules(rules, order) {
-  if (!$('#group-domains').checked) return [[null, rules]];
-  const groups = new Map();
-  for (const rule of rules) {
-    const domain = displayHost(rule).replace(/^www\./, '');
-    if (!groups.has(domain)) groups.set(domain, []);
-    groups.get(domain).push(rule);
-  }
-  if (order === 'newest' || order === 'oldest') return groups;
-  const collator = new Intl.Collator(document.documentElement.lang);
-  const direction = order === 'reverse-alphabetical' ? -1 : 1;
-  return [...groups].sort(([first], [second]) => direction * collator.compare(first, second));
-}
-
 function showRule(rule) {
   $('#address').value = rule ? ruleAddress(rule) : '';
   writeChoice($('#scope'), rule && rule.path !== '/' ? 'section' : 'website');
@@ -195,7 +181,10 @@ function renderRules() {
   $('#rule-count').textContent = visible.length < rules.length
     ? t('ruleCount', { shown: visible.length, total: rules.length }) : '';
   if (!visible.length) $('#rules').textContent = t(rules.length ? 'noSearchResults' : 'noRules');
-  for (const [domain, group] of groupRules(visible, order)) {
+  const groups = $('#group-domains').checked
+    ? groupRulesByDomain(visible, rules, order, document.documentElement.lang)
+    : [[null, visible]];
+  for (const [domain, group] of groups) {
     if (domain) {
       const title = document.createElement('h3');
       title.className = 'domain-group';

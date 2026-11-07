@@ -19,6 +19,22 @@ export function orderRules(rules, order, locale) {
   return ordered.sort((a, b) => direction * collator.compare(key(a), key(b)));
 }
 
+export function groupRulesByDomain(ordered, allRules, order, locale) {
+  const regionalNames = new Set(allRules.filter(rule => rule.includeRegionalDomains).map(rule => rule.regionalName));
+  const groups = new Map();
+  for (const rule of ordered) {
+    const site = regionalDomain(rule.host);
+    const domain = regionalNames.has(site?.name) ? `${site.name}.*` :
+      site?.domain ?? rule.host.replace(/^www\./, '');
+    if (!groups.has(domain)) groups.set(domain, []);
+    groups.get(domain).push(rule);
+  }
+  if (order === 'newest' || order === 'oldest') return groups;
+  const collator = new Intl.Collator(locale);
+  const direction = order === 'reverse-alphabetical' ? -1 : 1;
+  return [...groups].sort(([first], [second]) => direction * collator.compare(first, second));
+}
+
 export function normalizeRule(input) {
   const url = new URL(input.url.includes('://') ? input.url : `https://${input.url}`);
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {

@@ -1,10 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRule, matchingRule, orderRules, inheritedExclusion, RuleManager } from '../extension/rules.js';
+import { normalizeRule, matchingRule, orderRules, groupRulesByDomain, inheritedExclusion, RuleManager } from '../extension/rules.js';
 import { regionalDomain } from '../extension/domains.js';
 import { DarkModeController } from '../extension/controller.js';
 
 const rule = (url, enabled = true, extra = {}) => normalizeRule({ url, enabled, scope: 'section', ...extra });
+
+test('domain grouping keeps regional exceptions and ordinary subdomains together', () => {
+  const exception = rule('www.amazon.com.au', false);
+  const regional = rule('amazon.es', true, { includeRegionalDomains: true, includeSubdomains: true });
+  const android = rule('android.com');
+  const developer = rule('developer.android.com');
+  const separate = rule('android.org');
+  const rules = [exception, developer, regional, android, separate];
+  assert.deepEqual([...groupRulesByDomain(rules, rules, 'newest', 'en')], [
+    ['amazon.*', [exception, regional]], ['android.com', [developer, android]], ['android.org', [separate]]
+  ]);
+  assert.deepEqual([...groupRulesByDomain([exception], rules, 'alphabetical', 'en')], [['amazon.*', [exception]]]);
+});
 
 test('section boundaries and longest-path exclusions override website rules', () => {
   const rules = [rule('example.com/'), rule('example.com/photos/', false), rule('example.com/photos/articles/')];
