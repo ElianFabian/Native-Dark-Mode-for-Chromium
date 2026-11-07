@@ -203,9 +203,6 @@
   "excludeSubdomain": {
     "message": "Excluir este subdominio"
   },
-  "errorSubdomainChanged": {
-    "message": "La pestaña ya no hereda una regla de subdominio. Vuelve a abrir el panel."
-  },
   "regionalAvailability": {
     "message": "Introduce un dominio base como ejemplo.com."
   },
@@ -241,5 +238,11 @@
   },
   "ruleRestored": {
     "message": "Regla restaurada."
+  },
+  "excludeRegionalHost": {
+    "message": "Excluir este nombre de host"
+  },
+  "errorInheritedRuleChanged": {
+    "message": "La pestaña ya no hereda una regla. Vuelve a abrir el panel."
   }
 }

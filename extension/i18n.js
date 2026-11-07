@@ -68,7 +68,7 @@ export function errorText(error) {
   if (rule) return t('errorRule', { count: rule[1] });
   if (/taking too long/.test(text)) return t('errorTimeout');
   if (/already exists for this scope/.test(text)) return t('errorScopeConflict');
-  if (/no longer inherits a subdomain rule/.test(text)) return t('errorSubdomainChanged');
+  if (/no longer inherits a rule/.test(text)) return t('errorInheritedRuleChanged');
   if (/HTTP or HTTPS/.test(text)) return t('errorPage');
   const detached = /^Connection ended \((.*?)\)/.exec(text);
   if (detached) return t('errorDetached', { reason: detached[1] });

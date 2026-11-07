@@ -203,9 +203,6 @@
   "excludeSubdomain": {
     "message": "Exclude this subdomain"
   },
-  "errorSubdomainChanged": {
-    "message": "The tab no longer inherits a subdomain rule. Reopen the popup."
-  },
   "regionalAvailability": {
     "message": "Enter a base domain such as example.com."
   },
@@ -241,5 +238,11 @@
   },
   "ruleRestored": {
     "message": "Rule restored."
+  },
+  "excludeRegionalHost": {
+    "message": "Exclude this hostname"
+  },
+  "errorInheritedRuleChanged": {
+    "message": "The tab no longer inherits a rule. Reopen the popup."
   }
 }

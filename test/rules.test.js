@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRule, matchingRule, orderRules, subdomainExclusion, RuleManager } from '../extension/rules.js';
+import { normalizeRule, matchingRule, orderRules, inheritedExclusion, RuleManager } from '../extension/rules.js';
 import { regionalDomain } from '../extension/domains.js';
 import { DarkModeController } from '../extension/controller.js';
 
@@ -206,14 +206,24 @@ test('the subdomain action excludes the current host at the inherited section an
   const [parent] = await manager.save({ url: 'www.amazon.es/deals', scope: 'section',
     includeRegionalDomains: true, includeSubdomains: true, enabled: true });
   tab.url = 'https://seller.amazon.com.au/deals/today';
-  await assert.rejects(manager.excludeSubdomain(7, 'https://seller.amazon.com/deals/today'), /no longer inherits/);
-  assert.equal(subdomainExclusion(parent, 'https://www.amazon.com.au/deals'), undefined);
-  const rules = await manager.excludeSubdomain(7, tab.url);
+  await assert.rejects(manager.excludeInheritedHost(7, 'https://seller.amazon.com/deals/today'), /no longer inherits/);
+  const rules = await manager.excludeInheritedHost(7, tab.url);
   assert.deepEqual(rules[0], parent);
   assert.equal(rules[1].path, '/deals');
   assert.equal(matchingRule(rules, tab.url).enabled, false);
   assert.equal(matchingRule(rules, 'https://other.amazon.com.au/deals').enabled, true);
-  await assert.rejects(manager.excludeSubdomain(7, tab.url), /no longer inherits/);
+  await assert.rejects(manager.excludeInheritedHost(7, tab.url), /no longer inherits/);
+});
+
+test('a regional rule offers an exact exclusion for its www alias without subdomains enabled', async () => {
+  const { manager, tab } = integration();
+  const [regional] = await manager.save({ url: 'amazon.es', includeRegionalDomains: true, enabled: true });
+  tab.url = 'https://www.amazon.com.au/';
+  assert.equal(inheritedExclusion(regional, tab.url).host, 'www.amazon.com.au');
+  const rules = await manager.excludeInheritedHost(7, tab.url);
+  assert.equal(matchingRule(rules, tab.url).enabled, false);
+  assert.equal(matchingRule(rules, 'https://www.amazon.es/').enabled, true);
+  assert.equal(matchingRule(rules, 'https://amazon.com.au/').enabled, true);
 });
 
 test('native activation requires no CSS scripting even with a legacy input field', async () => {

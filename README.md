@@ -30,7 +30,7 @@ Queries and fragments are ignored. A section matches its path and descendants, n
 
 With **Include subdomains** selected, an initial `www.` is treated as an alias of the remaining hostname. For example, `www.android.com` is saved as `android.com` and covers `developer.android.com`. This also applies to previously saved rules that opted into subdomains. An explicit saved parent rule takes priority if the upgrade merges two equivalent scopes.
 
-When the current site inherits an enabled subdomain rule, the popup offers **Exclude this subdomain**. It saves an inactive rule for the current hostname at the inherited path. The parent rule still applies to siblings. To inherit the parent rule again, remove the exclusion in **Manage rules**.
+When the current site inherits an enabled subdomain rule, the popup offers **Exclude this subdomain**. For an enabled regional rule it offers **Exclude this hostname**, including on `www` addresses such as `www.amazon.com.au`. Both actions save an inactive rule for the exact current hostname at the inherited path. Other hostnames still inherit the parent rule. To restore inheritance, remove the exclusion in **Manage rules**.
 
 **Include regional domains** creates a pattern from a base hostname, such as `amazon.*` from `amazon.es`. It matches the same registrable name under any recognized public suffix, including compound suffixes such as `com.au` and `co.uk`. It covers `www` aliases. **Include subdomains** extends it to other subdomains and the list shows `*.amazon.*`. The selected section path carries across the pattern. At the same path, a single-domain rule takes priority. Existing regional Amazon rules adopt the wildcard scope when loaded, including when imported from an older backup.
 

@@ -203,9 +203,6 @@
   "excludeSubdomain": {
     "message": "このサブドメインを除外"
   },
-  "errorSubdomainChanged": {
-    "message": "このタブはサブドメインのルールを継承していません。ポップアップを開き直してください。"
-  },
   "regionalAvailability": {
     "message": "example.comのようなベースドメインを入力してください。"
   },
@@ -241,5 +238,11 @@
   },
   "ruleRestored": {
     "message": "ルールを復元しました。"
+  },
+  "excludeRegionalHost": {
+    "message": "このホスト名を除外"
+  },
+  "errorInheritedRuleChanged": {
+    "message": "このタブはルールを継承していません。ポップアップを開き直してください。"
   }
 }

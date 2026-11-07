@@ -203,9 +203,6 @@
   "excludeSubdomain": {
     "message": "Exclure ce sous-domaine"
   },
-  "errorSubdomainChanged": {
-    "message": "Cet onglet n’hérite plus d’une règle de sous-domaine. Rouvrez le panneau."
-  },
   "regionalAvailability": {
     "message": "Saisissez un domaine de base comme example.com."
   },
@@ -241,5 +238,11 @@
   },
   "ruleRestored": {
     "message": "Règle restaurée."
+  },
+  "excludeRegionalHost": {
+    "message": "Exclure cet hôte"
+  },
+  "errorInheritedRuleChanged": {
+    "message": "Cet onglet n’hérite plus d’une règle. Rouvrez le panneau."
   }
 }

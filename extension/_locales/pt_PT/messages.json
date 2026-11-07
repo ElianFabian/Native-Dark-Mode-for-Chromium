@@ -203,9 +203,6 @@
   "excludeSubdomain": {
     "message": "Excluir este subdomínio"
   },
-  "errorSubdomainChanged": {
-    "message": "O separador já não herda uma regra de subdomínio. Reabra o painel."
-  },
   "regionalAvailability": {
     "message": "Introduza um domínio base como exemplo.com."
   },
@@ -241,5 +238,11 @@
   },
   "ruleRestored": {
     "message": "Regra restaurada."
+  },
+  "excludeRegionalHost": {
+    "message": "Excluir este nome de host"
+  },
+  "errorInheritedRuleChanged": {
+    "message": "O separador já não herda uma regra. Reabra o painel."
   }
 }

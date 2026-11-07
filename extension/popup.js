@@ -1,4 +1,4 @@
-import { normalizeRule, orderRules, ruleAddress, subdomainExclusion } from './rules.js';
+import { normalizeRule, orderRules, ruleAddress, inheritedExclusion } from './rules.js';
 import { regionalBaseForHost, regionalDomain } from './domains.js';
 import { requestWithTimeout } from './request.js';
 import { MAX_BACKUP_BYTES } from './backup.js';
@@ -50,9 +50,11 @@ function updateButton() {
   $('#toggle').textContent = t(displayedRule?.enabled && !needsResume ? 'disableSave' : 'enableSave');
   const canEdit = isManager ? Boolean(snapshot) : Boolean(tab?.id);
   if (!isManager) {
-    const exclusion = subdomainExclusion(snapshot?.matching, tab?.url);
-    $('#exclude-subdomain').hidden = !exclusion;
-    $('#exclude-subdomain').disabled = busy || !exclusion;
+    const matching = snapshot?.matching;
+    const exclusion = inheritedExclusion(matching, tab?.url);
+    $('#exclude-host').hidden = !exclusion;
+    $('#exclude-host').disabled = busy || !exclusion;
+    $('#exclude-host').textContent = t(matching?.includeRegionalDomains ? 'excludeRegionalHost' : 'excludeSubdomain');
   }
   $('#toggle').disabled = busy || !canEdit;
   $('#save').disabled = busy || !canEdit;
@@ -242,7 +244,7 @@ function request(message) {
     if (value.error) throw new Error(value.error);
     if (editingId && message.type === 'replace-scope') editingId = normalizeRule(message.rule).id;
     render(value);
-    if (message.type === 'exclude-subdomain' && value.matching) showRule(value.matching);
+    if (message.type === 'exclude-inherited-host' && value.matching) showRule(value.matching);
     if (isManager && (message.type === 'save' || message.type === 'replace-scope')) $('#status').textContent = t('ruleSaved');
     if (isManager && message.type === 'remove') $('#status').textContent = t('ruleTrashed');
     if (isManager && message.type === 'restore') $('#status').textContent = t('ruleRestored');
@@ -370,7 +372,7 @@ $('#manage')?.addEventListener('click', async () => {
   try { await chrome.runtime.openOptionsPage(); }
   catch (error) { $('#status').textContent = errorText(error); }
 });
-$('#exclude-subdomain')?.addEventListener('click', () => request({ type: 'exclude-subdomain', url: tab.url }));
+$('#exclude-host')?.addEventListener('click', () => request({ type: 'exclude-inherited-host', url: tab.url }));
 $('#address').addEventListener('input', loadSelection);
 $('#scope').addEventListener('change', loadSelection);
 $('#subdomains').addEventListener('change', saveCheckboxChange);

@@ -203,9 +203,6 @@
   "excludeSubdomain": {
     "message": "Escludi questo sottodominio"
   },
-  "errorSubdomainChanged": {
-    "message": "La scheda non eredita più una regola per sottodomini. Riapri il pannello."
-  },
   "regionalAvailability": {
     "message": "Inserisci un dominio base come esempio.com."
   },
@@ -241,5 +238,11 @@
   },
   "ruleRestored": {
     "message": "Regola ripristinata."
+  },
+  "excludeRegionalHost": {
+    "message": "Escludi questo host"
+  },
+  "errorInheritedRuleChanged": {
+    "message": "La scheda non eredita più una regola. Riapri il pannello."
   }
 }

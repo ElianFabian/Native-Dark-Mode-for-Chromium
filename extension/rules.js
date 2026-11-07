@@ -67,12 +67,13 @@ export function matchingRule(rules, address) {
     Number(a.includeSubdomains) - Number(b.includeSubdomains))[0];
 }
 
-export function subdomainExclusion(rule, address) {
-  if (!rule?.enabled || !rule.includeSubdomains || !matchingRule([rule], address)) return undefined;
+export function inheritedExclusion(rule, address) {
+  if (!rule?.enabled || !matchingRule([rule], address)) return undefined;
   const url = new URL(address);
-  const parent = rule.includeRegionalDomains ? regionalDomain(url.hostname).domain : new URL(ruleAddress(rule)).hostname;
-  const isSubdomain = url.hostname.endsWith(`.${parent}`) && url.hostname !== `www.${parent}`;
-  if (!isSubdomain) return undefined;
+  if (!rule.includeRegionalDomains) {
+    const parent = new URL(ruleAddress(rule)).hostname;
+    if (!rule.includeSubdomains || !url.hostname.endsWith(`.${parent}`) || url.hostname === `www.${parent}`) return undefined;
+  }
   return normalizeRule({ url: url.origin + rule.path, scope: 'section', enabled: false });
 }
 
@@ -128,11 +129,11 @@ export class RuleManager {
     });
   }
 
-  async excludeSubdomain(tabId, expectedUrl) {
+  async excludeInheritedHost(tabId, expectedUrl) {
     const { url } = await this.api.tabs.get(tabId);
     return this.mutate(rules => {
-      const exclusion = url === expectedUrl && subdomainExclusion(matchingRule(rules, url), url);
-      if (!exclusion) throw new Error('The tab no longer inherits a subdomain rule. Reopen the popup.');
+      const exclusion = url === expectedUrl && inheritedExclusion(matchingRule(rules, url), url);
+      if (!exclusion) throw new Error('The tab no longer inherits a rule. Reopen the popup.');
       return [...rules, { ...exclusion, createdAt: Date.now() }];
     });
   }
