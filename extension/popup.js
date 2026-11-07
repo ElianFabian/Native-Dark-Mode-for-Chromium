@@ -14,6 +14,7 @@ let busy = false;
 let pendingImport;
 let displayedRule;
 let editingId;
+let editorHighlightTimer;
 let refreshAppearance;
 
 const appearanceMenu = $('.appearance-menu');
@@ -251,6 +252,10 @@ function renderRule(rule) {
     editingId = rule.id;
     showRule(rule);
     $('#address').focus();
+    const editor = $('.rule-editor');
+    editor.classList.add('is-highlighted');
+    clearTimeout(editorHighlightTimer);
+    editorHighlightTimer = setTimeout(() => editor.classList.remove('is-highlighted'), 800);
   });
   const remove = document.createElement('button');
   remove.className = 'rule-remove';

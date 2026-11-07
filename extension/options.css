@@ -19,6 +19,30 @@ header label { min-width: min(190px, 100%); max-width: 100%; }
 .editor-column { min-width: 0; position: sticky; top: calc(var(--text-toolbar-height) + 24px); max-height: calc(100dvh - var(--text-toolbar-height) - 48px); overflow-y: auto; }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
 .panel h2 { margin-top: 0; }
+.rule-editor {
+  --editor-highlight-bg: #e4f4ea;
+  --editor-highlight-border: #31744f;
+  transition: background-color 180ms ease-out, border-color 180ms ease-out, box-shadow 180ms ease-out;
+}
+[data-theme="dark"] .rule-editor {
+  --editor-highlight-bg: #203d31;
+  --editor-highlight-border: #8ac7a5;
+}
+:root[data-high-contrast] .rule-editor {
+  --editor-highlight-bg: var(--panel);
+  --editor-highlight-border: var(--text);
+}
+.rule-editor.is-highlighted {
+  background: var(--editor-highlight-bg);
+  border-color: var(--editor-highlight-border);
+  box-shadow: inset 0 0 0 2px var(--editor-highlight-border);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rule-editor { transition: none; }
+}
+@media (forced-colors: active) {
+  .rule-editor.is-highlighted { outline: 2px solid Highlight; outline-offset: -3px; }
+}
 .backup-panel { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 12px; }
 .backup-panel h3 { margin: 0 0 5px; font-size: .95rem; }
 .backup-panel button { width: auto; margin-right: 8px; }
