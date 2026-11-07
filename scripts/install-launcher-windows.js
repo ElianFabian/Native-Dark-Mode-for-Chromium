@@ -1,9 +1,10 @@
 // Windows Script Host JScript: run through the companion CMD, not Node.js.
-// Uses only components included in Windows. Never launches or closes Brave.
+// Uses only components included in Windows. Never launches or closes the browser.
 var shell = new ActiveXObject('WScript.Shell');
 var files = new ActiveXObject('Scripting.FileSystemObject');
 var destination = shell.SpecialFolders('Programs');
 var browser = '';
+var launcherName = 'Brave - Native Dark Mode';
 
 function fail(message) {
   WScript.Echo(message);
@@ -29,7 +30,10 @@ try {
     index++;
     if (index >= WScript.Arguments.length) fail('Missing value for ' + argument);
     if (argument === '--output-directory') destination = WScript.Arguments(index);
-    else browser = WScript.Arguments(index);
+    else {
+      browser = WScript.Arguments(index);
+      launcherName = 'Chromium Browser - Native Dark Mode';
+    }
   }
 
   if (!browser) {
@@ -43,17 +47,17 @@ try {
       if (files.FileExists(expanded)) { browser = expanded; break; }
     }
   }
-  if (!browser || !files.FileExists(browser)) fail('Brave was not found. Use --browser with its executable path.');
+  if (!browser || !files.FileExists(browser)) fail('The browser was not found. Use --browser with its executable path.');
   browser = files.GetAbsolutePathName(browser);
   destination = files.GetAbsolutePathName(destination);
   ensureDirectory(destination);
-  var path = files.BuildPath(destination, 'Brave - Native Dark Mode.lnk');
+  var path = files.BuildPath(destination, launcherName + '.lnk');
   var shortcut = shell.CreateShortcut(path);
   shortcut.TargetPath = browser;
   shortcut.Arguments = '--silent-debugger-extension-api';
   shortcut.WorkingDirectory = files.GetParentFolderName(browser);
   shortcut.IconLocation = browser + ',0';
-  shortcut.Description = 'Brave with debugger-extension banners suppressed.';
+  shortcut.Description = 'Launch with debugger-extension banner suppression requested.';
   shortcut.WindowStyle = 1;
   shortcut.Save();
   var saved = shell.CreateShortcut(path);
@@ -61,8 +65,8 @@ try {
     fail('Shortcut verification failed.');
   }
   WScript.Echo('Created and verified: ' + path);
-  WScript.Echo('Fully exit Brave before opening the launcher. All debugger-extension banners are suppressed for that launch.');
-  WScript.Echo('Brave has not been launched or closed. Existing shortcuts and browser defaults were not changed.');
+  WScript.Echo('Fully exit the target browser before opening the launcher. If the browser honors the launch flag, it suppresses banners for all debugger extensions in that session.');
+  WScript.Echo('The browser has not been launched or closed. Existing shortcuts and browser defaults were not changed.');
 } catch (error) {
   fail('Launcher installation failed: ' + error.message);
 }

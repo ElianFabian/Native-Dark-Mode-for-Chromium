@@ -66,7 +66,7 @@
     "message": "Cancel"
   },
   "debugNote": {
-    "message": "Brave may show a debugging banner. Closing it or opening DevTools may disconnect dark mode."
+    "message": "Your browser may show a debugging banner. Closing it or opening DevTools may disconnect dark mode."
   },
   "diagnostics": {
     "message": "Diagnostics"

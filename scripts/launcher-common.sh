@@ -7,6 +7,8 @@ fail() { printf '%s\n' "$*" >&2; exit 1; }
 parse_arguments() {
   destination=''
   browser=''
+  launcher_name='Brave - Native Dark Mode'
+  launcher_id='brave-native-dark-mode'
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --help) printf '%s\n' 'Options: --output-directory PATH --browser PATH'; exit 0 ;;
@@ -15,7 +17,11 @@ parse_arguments() {
         [ "$#" -ge 2 ] || fail "Missing value for $option"
         case "$option" in
           --output-directory) destination=$2 ;;
-          --browser) browser=$2 ;;
+          --browser)
+            browser=$2
+            launcher_name='Chromium Browser - Native Dark Mode'
+            launcher_id='chromium-browser-native-dark-mode'
+            ;;
         esac
         shift 2 ;;
       *) fail "Unknown argument: $1" ;;
@@ -24,7 +30,7 @@ parse_arguments() {
 }
 
 validate_browser() {
-  [ -n "$browser" ] && [ -f "$browser" ] && [ -x "$browser" ] || fail 'Brave was not found or is not executable. Use --browser with its absolute executable path.'
+  [ -n "$browser" ] && [ -f "$browser" ] && [ -x "$browser" ] || fail 'The browser was not found or is not executable. Use --browser with its absolute executable path.'
   case "$browser" in /*) ;; *) fail 'The browser path must be absolute.' ;; esac
   newline='
 '
@@ -34,6 +40,6 @@ validate_browser() {
 
 finish() {
   printf '%s\n' "Created: $1" \
-    'Fully exit Brave before opening the launcher. All debugger-extension banners are suppressed for that launch.' \
-    'Brave has not been launched or closed. Existing shortcuts and browser defaults were not changed.'
+    'Fully exit the target browser before opening the launcher. If the browser honors the launch flag, it suppresses banners for all debugger extensions in that session.' \
+    'The browser has not been launched or closed. Existing shortcuts and browser defaults were not changed.'
 }

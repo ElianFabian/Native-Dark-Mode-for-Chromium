@@ -12,7 +12,11 @@ if [ -z "$browser" ]; then
 fi
 validate_browser
 destination=${destination:-"$HOME/Applications"}
-app="$destination/Brave - Native Dark Mode.app"
+app="$destination/$launcher_name.app"
+bundle_id='local.native-dark-mode.brave-launcher'
+if [ "$launcher_id" != 'brave-native-dark-mode' ]; then
+  bundle_id='local.native-dark-mode.chromium-browser-launcher'
+fi
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 # Keep the executable path as data instead of interpolating it into shell code.
 printf '%s\n' "$browser" > "$app/Contents/Resources/browser-path"
@@ -24,13 +28,13 @@ IFS= read -r browser < "$launcher_directory/../Resources/browser-path"
 exec "$browser" --silent-debugger-extension-api "$@"
 LAUNCHER
 chmod 755 "$app/Contents/MacOS/launcher"
-cat > "$app/Contents/Info.plist" <<'PLIST'
+cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>CFBundleName</key><string>Brave - Native Dark Mode</string>
-<key>CFBundleDisplayName</key><string>Brave - Native Dark Mode</string>
-<key>CFBundleIdentifier</key><string>local.native-dark-mode.brave-launcher</string>
+<key>CFBundleName</key><string>$launcher_name</string>
+<key>CFBundleDisplayName</key><string>$launcher_name</string>
+<key>CFBundleIdentifier</key><string>$bundle_id</string>
 <key>CFBundleVersion</key><string>1</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleExecutable</key><string>launcher</string>

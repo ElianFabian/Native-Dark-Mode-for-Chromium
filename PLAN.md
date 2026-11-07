@@ -1,4 +1,10 @@
-# Validation plan — native dark mode in Brave
+# Validation plan — native dark mode in Chromium
+
+Brave was the initial test browser. To verify another Chromium build, load the
+extension, enable a rule on the local fixture, navigate within and outside its
+scope, and reload the browser to confirm that the rule persists. Test optional
+banner suppression separately with the launcher and record the browser version
+and operating system.
 
 ## Objective
 

@@ -66,7 +66,7 @@
     "message": "取消"
   },
   "debugNote": {
-    "message": "Brave 可能显示调试提示。关闭提示或打开开发者工具可能会断开深色模式连接。"
+    "message": "浏览器可能显示调试提示。关闭提示或打开开发者工具可能会断开深色模式连接。"
   },
   "diagnostics": {
     "message": "诊断"

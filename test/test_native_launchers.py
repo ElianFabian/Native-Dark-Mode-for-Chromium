@@ -25,12 +25,13 @@ class NativeLauncherTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=ROOT) as folder:
             directory = Path(folder).resolve()
             self.assertTrue(directory.is_relative_to(ROOT))
-            browser = directory / 'Brave Browser'
+            browser = directory / 'Google Chrome'
             browser.write_text('#!/bin/sh\nexit 99\n', encoding='utf-8', newline='\n')
             browser.chmod(0o755)
             subprocess.run([BASH, 'scripts/install-launcher-linux.sh', '--browser', shell_path(browser), '--output-directory', shell_path(directory)], cwd=ROOT, check=True, capture_output=True)
-            entry = (directory / 'brave-native-dark-mode.desktop').read_text(encoding='utf-8')
+            entry = (directory / 'chromium-browser-native-dark-mode.desktop').read_text(encoding='utf-8')
             self.assertIn(f'Exec="{shell_path(browser)}" --silent-debugger-extension-api %U', entry)
+            self.assertIn('Name=Chromium Browser - Native Dark Mode', entry)
             self.assertIn('Terminal=false', entry)
 
     @unittest.skipUnless(BASH, 'A shell is needed for shell-artifact checks.')
@@ -38,13 +39,14 @@ class NativeLauncherTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=ROOT) as folder:
             directory = Path(folder).resolve()
             self.assertTrue(directory.is_relative_to(ROOT))
-            browser = directory / "Brave's $100% executable"
+            browser = directory / "Chrome's $100% executable"
             browser.write_text('#!/bin/sh\nprintf \'%s\\n\' "$@" > "$LAUNCHER_TEST_ARGS"\n', encoding='utf-8', newline='\n')
             browser.chmod(0o755)
             subprocess.run([BASH, 'scripts/install-launcher-macos.command', '--browser', shell_path(browser), '--output-directory', shell_path(directory)], cwd=ROOT, check=True, capture_output=True)
-            app = directory / 'Brave - Native Dark Mode.app'
+            app = directory / 'Chromium Browser - Native Dark Mode.app'
             with (app / 'Contents/Info.plist').open('rb') as stream:
                 info = plistlib.load(stream)
+            self.assertEqual(info['CFBundleDisplayName'], 'Chromium Browser - Native Dark Mode')
             executable = app / 'Contents/MacOS' / info['CFBundleExecutable']
             self.assertNotIn(b'\r\n', executable.read_bytes())
             result = directory / 'arguments.txt'
@@ -57,11 +59,11 @@ class NativeLauncherTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=ROOT) as folder:
             directory = Path(folder).resolve()
             self.assertTrue(directory.is_relative_to(ROOT))
-            browser = directory / 'brave.exe'
+            browser = directory / 'msedge.exe'
             browser.write_bytes(b'not a real browser; never execute')
             result = subprocess.run([str(Path(os.environ['SystemRoot']) / 'System32/cscript.exe'), '//nologo', '//E:JScript', str(ROOT / 'scripts/install-launcher-windows.js'), '--browser', str(browser), '--output-directory', str(directory)], check=True, capture_output=True, text=True)
             self.assertIn('Created and verified', result.stdout)
-            self.assertTrue((directory / 'Brave - Native Dark Mode.lnk').is_file())
+            self.assertTrue((directory / 'Chromium Browser - Native Dark Mode.lnk').is_file())
 
 
 if __name__ == '__main__':

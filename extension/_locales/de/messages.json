@@ -66,7 +66,7 @@
     "message": "Abbrechen"
   },
   "debugNote": {
-    "message": "Brave kann einen Debugging-Hinweis anzeigen. Schließen oder Öffnen von DevTools kann die Dunkelmodus-Verbindung trennen."
+    "message": "Der Browser kann einen Debugging-Hinweis anzeigen. Schließen oder Öffnen von DevTools kann die Dunkelmodus-Verbindung trennen."
   },
   "diagnostics": {
     "message": "Diagnose"

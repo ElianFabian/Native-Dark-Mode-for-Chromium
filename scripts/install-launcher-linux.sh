@@ -17,7 +17,7 @@ if [ -z "$destination" ]; then
   destination="$data_home/applications"
 fi
 mkdir -p "$destination"
-entry="$destination/brave-native-dark-mode.desktop"
+entry="$destination/$launcher_id.desktop"
 
 # Escape both Desktop Entry string values and Exec quoting, not shell syntax.
 quoted_browser=$(printf '%s' "$browser" | awk '
@@ -33,9 +33,12 @@ quoted_browser=$(printf '%s' "$browser" | awk '
 ')
 {
   printf '%s\n' '[Desktop Entry]' 'Version=1.0' 'Type=Application' \
-    'Name=Brave - Native Dark Mode' 'Comment=Brave with debugger-extension banners suppressed'
+    "Name=$launcher_name" 'Comment=Launch with debugger-extension banner suppression requested'
   printf 'Exec=%s --silent-debugger-extension-api %%U\n' "$quoted_browser"
-  printf '%s\n' 'Icon=brave-browser' 'Terminal=false' 'Categories=Network;WebBrowser;'
+  if [ "$launcher_id" = 'brave-native-dark-mode' ]; then
+    printf '%s\n' 'Icon=brave-browser'
+  fi
+  printf '%s\n' 'Terminal=false' 'Categories=Network;WebBrowser;'
 } > "$entry"
 chmod 755 "$entry"
 finish "$entry"

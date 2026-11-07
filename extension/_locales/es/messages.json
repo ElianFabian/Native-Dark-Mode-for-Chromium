@@ -66,7 +66,7 @@
     "message": "Cancelar"
   },
   "debugNote": {
-    "message": "Brave puede mostrar un aviso de depuración. Cerrarlo o abrir DevTools puede desconectar el modo oscuro."
+    "message": "El navegador puede mostrar un aviso de depuración. Cerrarlo o abrir DevTools puede desconectar el modo oscuro."
   },
   "diagnostics": {
     "message": "Diagnóstico"

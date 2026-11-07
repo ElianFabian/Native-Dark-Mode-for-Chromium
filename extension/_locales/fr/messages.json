@@ -66,7 +66,7 @@
     "message": "Annuler"
   },
   "debugNote": {
-    "message": "Brave peut afficher une bannière de débogage. La fermer ou ouvrir DevTools peut déconnecter le mode sombre."
+    "message": "Le navigateur peut afficher une bannière de débogage. La fermer ou ouvrir DevTools peut déconnecter le mode sombre."
   },
   "diagnostics": {
     "message": "Diagnostic"

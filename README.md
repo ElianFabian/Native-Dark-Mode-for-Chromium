@@ -1,4 +1,4 @@
-# Native Dark Mode for Brave
+# Native Dark Mode for Chromium
 
 Use Chromium's built-in dark mode on the websites and sections you choose. Save a rule once and the extension applies it when you return.
 
@@ -18,20 +18,22 @@ This project started with a practical goal. Use the browser's own darkening engi
 
 ![Rule manager showing saved websites grouped by domain, with search, sorting, trash, and JSON backup controls](docs/screenshots/rule-manager.png)
 
-## Install in Brave
+## Install in a Chromium-based browser
+
+The extension uses Manifest V3 and Chromium's native darkening command. It is designed for desktop browsers that expose both the [extension debugger API](https://developer.chrome.com/docs/extensions/reference/api/debugger) and [`Emulation.setAutoDarkModeOverride`](https://chromedevtools.github.io/devtools-protocol/tot/Emulation/#method-setAutoDarkModeOverride). Brave is the browser used for hands-on testing. Chrome, Edge, and other Chromium builds still need end-to-end verification.
 
 1. Download or clone this repository. If you downloaded a ZIP, extract it first.
-2. Open `brave://extensions` and enable **Developer mode**.
+2. Open your browser's **Extensions** page and enable **Developer mode**. Use `chrome://extensions` in Chrome or Chromium, `edge://extensions` in Edge, or `brave://extensions` in Brave.
 3. Click **Load unpacked** and select the [extension](extension/) folder. It contains `manifest.json`.
 4. Open the **Extensions** menu and select **Native Dark Mode**. You can pin it to the toolbar for quick access.
 
-Brave loads the extension directly from the folder. To update your local copy, update the files and click **Reload** on the extension card at `brave://extensions`. Refresh open pages if you want to retry them with the updated extension.
+The browser loads the extension directly from the folder. Installing and using it requires no build step, Node.js, npm, or Python. To update your local copy, update the files and click **Reload** on the extension card. Refresh open pages if you want to retry them with the updated extension.
 
 ## Use the extension
 
 1. Visit an HTTP or HTTPS page and open the extension popup.
 2. Select **Entire website** or **Path section**. The URL field lets you adjust the scope before saving.
-3. Click **Enable and save**. Brave applies its native darkening to the current page and remembers the rule for future visits.
+3. Click **Enable and save**. The browser applies its native darkening to the current page, and the extension remembers the rule for future visits.
 4. Use **Disable and save** to keep a rule as an exclusion, or open **Manage rules** to edit, search, or remove saved rules.
 
 | Option | What it covers |
@@ -61,9 +63,9 @@ The extension uses `debugger` to send the native emulation command, HTTP and HTT
 
 ## Optional launcher for the debugging banner
 
-Brave may show a debugging banner while the extension is attached. Closing the banner or opening DevTools can disconnect the session. The extension works through the browser's built-in debugging API. The optional launchers start Brave with `--silent-debugger-extension-api`, which suppresses banners for **all** debugger extensions in that browser session.
+Your browser may show a debugging banner while the extension is attached. Closing the banner or opening DevTools can disconnect the session. The optional launchers pass `--silent-debugger-extension-api`. When the browser honors this flag, it suppresses banners for **all** debugger extensions in that session.
 
-Run the installer for your system from the project folder. Keep the files in `scripts/` together because the installers use shared helpers.
+Run the installer for your system from the project folder. Keep the files in `scripts/` together because the installers use shared helpers. The installers look for Brave by default.
 
 | Platform | Installer | Where to open the launcher |
 | --- | --- | --- |
@@ -71,11 +73,15 @@ Run the installer for your system from the project folder. Keep the files in `sc
 | Linux | `sh scripts/install-launcher-linux.sh` | Look for **Brave - Native Dark Mode** in your application menu. The script creates a `.desktop` entry for your user. |
 | macOS | `sh scripts/install-launcher-macos.command` | Open **Brave - Native Dark Mode.app** in `~/Applications` or add it to the Dock. |
 
-Fully quit Brave before opening it from the new launcher so it starts with the argument. In `brave://version`, check **Command Line** for `--silent-debugger-extension-api`. The installers use tools included with the operating system. Windows uses Windows Script Host to create a `.lnk`. Linux and macOS use shell scripts. Each installer accepts `--browser PATH` and `--output-directory PATH` for custom installations. The Windows launcher has been confirmed with Brave. The Linux and macOS installers have artifact and argument tests, and their desktop integration and banner behavior still need testing on those systems.
+For Chrome, Edge, or another Chromium browser, run the installer from a terminal with `--browser "ABSOLUTE_PATH_TO_BROWSER_EXECUTABLE"` appended to the command. This creates a shortcut named **Chromium Browser - Native Dark Mode**. Use `--output-directory PATH` to keep shortcuts for multiple custom executables in separate locations.
+
+Fully quit the target browser before opening the new launcher so the flag takes effect. Check **Command Line** on your browser's version page (for example, `chrome://version`, `edge://version`, or `brave://version`) for `--silent-debugger-extension-api`. The installers use tools included with the operating system. Windows uses Windows Script Host to create a `.lnk`. Linux and macOS use shell scripts.
+
+Banner suppression has been confirmed in Brave on Windows. The launcher tests check the generated artifacts. Desktop integration on Linux and macOS and banner suppression in other browsers still need hands-on verification.
 
 ## Current limits
 
-- The extension targets Brave desktop and uses an experimental Chromium DevTools Protocol command. Rendering can vary by site and browser version.
+- The extension uses an experimental Chromium DevTools Protocol command. Rendering can vary by site and browser version.
 - Rules apply to HTTP and HTTPS websites. Internal browser pages are outside the rule scope.
 - Chromium controls image treatment. Per-site image preservation is deferred. See [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md) for the experimental launch-time option and its limits.
 
@@ -83,7 +89,7 @@ Fully quit Brave before opening it from the new launcher so it starts with the a
 
 Run `npm run check` and `npm test` with Node.js. The extension runs directly from `extension/` with no build step. For launcher tests, run `python -m unittest discover -s test -p 'test_*.py' -v`. The launcher tests use temporary files and a mock browser where appropriate. See [PLAN.md](PLAN.md) for validation notes.
 
-For a repeatable screenshot or visual check, serve the local fixture and open it in Brave. Enable a rule for that page, then capture the popup or the rule manager. Suggested screenshot files are `docs/screenshots/popup.png` and `docs/screenshots/rule-manager.png`. Use sample rules and a public or local test page so screenshots can be shared without exposing personal tabs or browsing history.
+For a repeatable screenshot or visual check, serve the local fixture and open it in the Chromium-based browser you are testing. Enable a rule for that page, then capture the popup or the rule manager. Suggested screenshot files are `docs/screenshots/popup.png` and `docs/screenshots/rule-manager.png`. Use sample rules and a public or local test page so screenshots can be shared without exposing personal tabs or browsing history.
 
 ```sh
 python -m http.server 8765 --bind 127.0.0.1 --directory fixtures
