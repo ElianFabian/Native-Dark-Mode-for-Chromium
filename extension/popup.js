@@ -30,11 +30,29 @@ document.addEventListener('keydown', event => {
   visible.forEach(trigger => trigger.setAttribute('data-tooltip-dismissed', ''));
 });
 
-for (const [code, name] of Object.entries(LANGUAGES)) {
-  const option = document.createElement('option');
-  option.value = code;
-  option.textContent = name;
-  $('#language')?.append(option);
+const languageFlags = {
+  en: 'gb', es: 'es', fr: 'fr', pt_PT: 'pt', it: 'it', zh_CN: 'cn', ja: 'jp', ko: 'kr', de: 'de'
+};
+
+if (isManager) {
+  for (const [code, name] of Object.entries(LANGUAGES)) {
+    const option = document.createElement('option');
+    const flag = document.createElement('img');
+    flag.src = `flags/${languageFlags[code]}.svg`;
+    flag.alt = '';
+    flag.className = 'language-option-flag';
+    option.value = code;
+    option.append(flag, name);
+    $('#language').append(option);
+  }
+}
+
+function updateLanguageFlag(choice) {
+  const country = languageFlags[choice];
+  const flag = $('#language-current-flag');
+  if (country) flag.src = `flags/${country}.svg`;
+  flag.hidden = !country;
+  $('#language-auto-icon').hidden = Boolean(country);
 }
 
 function draft(enabled) {
@@ -249,7 +267,7 @@ function render(value, toggledButton) {
   snapshot = value;
   const state = value.state;
   $('#status').textContent = state.error ? errorText(state.error) : isManager ? '' : t(state.enabled ? 'active' : 'inactive');
-  $('#diagnostic').textContent = JSON.stringify(value, null, 2);
+  if (isManager) $('#diagnostic').textContent = JSON.stringify(value, null, 2);
   if (editingId && !value.rules.some(rule => rule.id === editingId)) {
     editingId = undefined;
     showRule();
@@ -280,7 +298,7 @@ async function withBusy(operation, progress, statusElement = $('#status'), retai
     return await operation();
   } catch (error) {
     statusElement.textContent = errorText(error);
-    $('#diagnostic').textContent = String(error.message ?? error);
+    if (isManager) $('#diagnostic').textContent = String(error.message ?? error);
   } finally {
     busy = false;
     document.querySelectorAll('button, input, select').forEach(element => { element.disabled = false; });
@@ -416,6 +434,7 @@ $('#confirm-import')?.addEventListener('click', async () => {
 
 $('#language')?.addEventListener('change', () => withBusy(async () => {
   await setLanguage($('#language').value);
+  updateLanguageFlag($('#language').value);
   translatePage();
   refreshAppearance?.();
   if (snapshot) render(snapshot);
@@ -473,6 +492,7 @@ try {
   refreshAppearance = await initializeAppearance();
   if (isManager) {
     $('#language').value = language;
+    updateLanguageFlag(language);
     const { ruleListPreferences } = await chrome.storage.local.get('ruleListPreferences');
     const order = ruleListPreferences?.order;
     writeChoice($('#sort-rules'), order === 'newest' || order === 'oldest' ? 'date' : 'alphabetical');

@@ -7,6 +7,13 @@ header #manage-extension { width: auto; }
 .language-control { box-sizing: border-box; padding: .5rem .65rem .65rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--panel); }
 .language-label { display: inline-flex; align-items: center; gap: .45em; color: var(--accent-text); font-size: 1rem; font-weight: 700; }
 .language-flag-icon { mask-image: url("language-flag.svg"); }
+.language-option-flag {
+  flex: none;
+  inline-size: 1.4em;
+  block-size: 1.05em;
+  object-fit: contain;
+}
+#language option { gap: .5em; }
 .workspace-container { container-type: inline-size; }
 #status { min-block-size: 1.5em; }
 .workspace { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 1.7fr); gap: 20px; align-items: start; }

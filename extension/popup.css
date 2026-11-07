@@ -238,9 +238,11 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
   --appearance-hover: var(--secondary-hover);
 }
 .appearance summary {
+  position: relative;
   box-sizing: border-box;
   min-block-size: 2.75rem;
   padding: .55rem .65rem;
+  padding-inline-end: 2.75rem;
   border-radius: .4rem;
   background: var(--appearance-heading);
   font-size: 1rem;
@@ -248,9 +250,12 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
 }
 .appearance summary:hover { background: var(--appearance-hover); }
 .accessibility-icon {
-  display: inline-block;
-  margin-inline: .2em .45em;
-  vertical-align: -.12em;
+  position: absolute;
+  inset-inline-end: .65rem;
+  top: 50%;
+  translate: 0 -50%;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
   mask-image: url("accessibility.svg");
 }
 .appearance fieldset {
@@ -295,6 +300,9 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
 .choices { display: flex; flex-wrap: wrap; gap: .4rem; margin-block-start: .25rem; }
 .choices label { position: relative; min-inline-size: 0; margin: 0; }
 .choices .has-tooltip { min-inline-size: 0; max-inline-size: 100%; }
+#scope .choices { position: relative; }
+#scope .has-tooltip { position: static; }
+#scope .tooltip { inset-block-start: auto; }
 .choices input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; }
 .choices label > span {
   display: flex;

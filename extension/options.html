@@ -16,11 +16,18 @@
 </div>
 <main>
   <header><h1 data-i18n="manageRules">Manage rules</h1>
-  <label class="language-control"><span class="language-label"><span class="language-flag-icon" aria-hidden="true"></span><span data-i18n="language">Language</span></span><select id="language"><option value="auto" data-i18n="automatic">Automatic (browser)</option></select></label>
+  <label class="language-control">
+    <span class="language-label">
+      <span id="language-auto-icon" class="language-flag-icon" aria-hidden="true"></span>
+      <img id="language-current-flag" class="language-option-flag" alt="" hidden>
+      <span data-i18n="language">Language</span>
+    </span>
+    <select id="language"><option value="auto" data-i18n="automatic">Automatic (browser)</option></select>
+  </label>
   <button id="manage-extension" type="button" class="opens-tab"><span data-i18n="manageExtension">Manage extension</span><span class="external-link-icon" aria-hidden="true"></span></button>
   </header>
   <details class="appearance">
-    <summary><span class="accessibility-icon" aria-hidden="true"></span><span data-i18n="appearance">Appearance and accessibility</span></summary>
+    <summary><span data-i18n="appearance">Appearance and accessibility</span><span class="accessibility-icon" aria-hidden="true"></span></summary>
     <fieldset id="ui-theme" class="choice-group">
       <legend data-i18n="theme">Theme</legend>
       <div class="choices">
