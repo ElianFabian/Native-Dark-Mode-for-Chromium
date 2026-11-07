@@ -158,9 +158,9 @@ test('checkbox scope changes preserve state and reject collisions with saved rul
   assert.equal(regional.enabled, false);
   assert.equal(regional.includeRegionalDomains, true);
   assert.equal((await manager.list()).length, 1);
-  await manager.save({ url: 'amazon.es', enabled: true });
+  const [, local] = await manager.save({ url: 'amazon.es', enabled: true });
   const before = await manager.list();
-  await assert.rejects(manager.replaceScope(regional.id, { url: 'amazon.es' }), /already exists/);
+  await assert.rejects(manager.replaceScope(local.id, { url: 'amazon.es', includeRegionalDomains: true }), /already exists/);
   assert.deepEqual(await manager.list(), before);
 });
 
@@ -172,6 +172,17 @@ test('unchecking subdomains keeps an existing exact rule and removes the broader
   assert.deepEqual(rules, [exact]);
   assert.equal(matchingRule(rules, 'https://docs.example.com/articles'), undefined);
   assert.equal(matchingRule(rules, 'https://www.example.com/articles').enabled, false);
+});
+
+test('unchecking regional domains keeps an existing single-domain rule and its subdomain setting', async () => {
+  const { manager } = integration();
+  const localInput = { url: 'www.amazon.com.au/deals', scope: 'section', includeSubdomains: true, enabled: false };
+  const [local] = await manager.save(localInput);
+  const [, regional] = await manager.save({ ...localInput, includeRegionalDomains: true, enabled: true });
+  const rules = await manager.replaceScope(regional.id, localInput);
+  assert.deepEqual(rules, [local]);
+  assert.equal(matchingRule(rules, 'https://seller.amazon.com.au/deals').enabled, false);
+  assert.equal(matchingRule(rules, 'https://www.amazon.com/deals'), undefined);
 });
 
 test('native activation requires no CSS scripting even with a legacy input field', async () => {

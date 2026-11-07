@@ -99,9 +99,14 @@ export class RuleManager {
       const current = rules.find(rule => rule.id === id);
       if (!current) throw new Error('The original rule changed. Reopen the popup to edit it.');
       if (target.id !== id && rules.some(rule => rule.id === target.id)) {
-        // Narrowing to a saved exact scope keeps its explicit settings.
-        if (current.includeSubdomains && !target.includeSubdomains &&
-            normalizeRule({ ...input, includeSubdomains: true }).id === current.id) {
+        // Narrowing to a saved scope keeps its explicit settings.
+        const narrowsScope = (current.includeSubdomains && !target.includeSubdomains) ||
+          (current.includeRegionalDomains && !target.includeRegionalDomains);
+        if (narrowsScope && normalizeRule({
+          ...input,
+          includeSubdomains: current.includeSubdomains || target.includeSubdomains,
+          includeRegionalDomains: current.includeRegionalDomains || target.includeRegionalDomains
+        }).id === current.id) {
           return rules.filter(rule => rule.id !== id);
         }
         throw new Error('A rule already exists for this scope. Edit it from the saved list.');
