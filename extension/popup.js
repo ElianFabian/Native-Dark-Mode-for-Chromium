@@ -285,18 +285,36 @@ function highlightPanel(panel) {
   panelHighlightTimers.set(panel, setTimeout(() => panel.classList.remove('is-highlighted'), 800));
 }
 
-async function animateRuleRemoval(row) {
+async function animateRuleHeight(target, direction = 'normal') {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const group = row.parentElement;
-  const target = group.matches('.domain-group') && group.childElementCount === 2 ? group : row;
   const height = target.getBoundingClientRect().height;
   if (!height) return;
   const animation = target.animate([
     { height: `${height}px`, opacity: 1, overflow: 'hidden', boxSizing: 'border-box' },
     { height: '0px', opacity: 0, overflow: 'hidden', boxSizing: 'border-box',
       paddingBlock: '0px', borderBlockWidth: '0px', marginBlock: '0px' }
-  ], { duration: 220, easing: 'ease-in-out', fill: 'forwards' });
+  ], { duration: 220, easing: 'ease-in-out', direction,
+    fill: direction === 'reverse' ? 'backwards' : 'forwards' });
   await animation.finished.catch(() => {});
+}
+
+function animateRuleRemoval(row) {
+  const group = row.parentElement;
+  return animateRuleHeight(group.matches('.domain-group') && group.childElementCount === 2 ? group : row);
+}
+
+async function revealRestoredRule(id) {
+  if (!id) return;
+  const row = $(`[data-rule-id="${CSS.escape(id)}"]`)?.closest('.rule');
+  if (!row) return;
+  const group = row.closest('.domain-group');
+  if (group) {
+    group.open = true;
+    highlightPanel(group);
+  }
+  highlightPanel(row);
+  row.scrollIntoView({ block: 'nearest' });
+  await animateRuleHeight(row, 'reverse');
 }
 
 function renderRuleToggle(button, enabled, item = button.closest('.rule')) {
@@ -379,6 +397,9 @@ async function withBusy(operation, progress, statusElement = $('#status'), retai
 async function request(message, { retainedButton, removedRow } = {}) {
   const hadFocus = retainedButton && document.activeElement === retainedButton;
   await withBusy(async () => {
+    const restoredId = message.type === 'restore'
+      ? snapshot?.trash?.find(entry => entry.id === message.id)?.rule.id
+      : undefined;
     const value = await send(message);
     if (value.error) throw new Error(value.error);
     if (editingId && message.type === 'replace-scope') editingId = normalizeRule(message.rule).id;
@@ -390,7 +411,10 @@ async function request(message, { retainedButton, removedRow } = {}) {
       $('#status').textContent = t('ruleTrashed');
       highlightPanel($('.trash-panel'));
     }
-    if (isManager && message.type === 'restore') $('#status').textContent = t('ruleRestored');
+    if (isManager && message.type === 'restore') {
+      $('#status').textContent = t('ruleRestored');
+      await revealRestoredRule(restoredId);
+    }
   }, t('saving'), $('#status'), retainedButton);
   if (hadFocus && !retainedButton.isConnected) {
     $(`[data-rule-id="${CSS.escape(message.id)}"]`)?.focus({ preventScroll: true });
