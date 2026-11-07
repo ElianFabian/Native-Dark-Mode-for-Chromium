@@ -79,7 +79,21 @@ button[aria-disabled="true"] { opacity: .5; cursor: default; }
 .note { font-size: .8125rem; color: var(--muted); }
 pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8125rem; }
 label { display: block; margin: 10px 0; }
-input[type=text], select { box-sizing: border-box; width: 100%; padding: 8px; margin-top: 4px; font: inherit; }
+input[type=text], select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: .55rem .75rem;
+  margin-top: .3rem;
+  font: inherit;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: .6rem;
+}
+select { background: var(--secondary); font-weight: 600; }
+select:enabled { cursor: pointer; }
+select:enabled:hover { background: var(--secondary-hover); border-color: var(--focus); }
 button { margin: 5px 0; }
 h2 { font-size: 1rem; }
 .rule { border-top: 1px solid var(--border); padding: 12px 0; overflow-wrap: anywhere; }
@@ -91,9 +105,53 @@ h2 { font-size: 1rem; }
 #exclude-host { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
 
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-input[type=text], select { background: var(--panel); color: var(--text); border: 1px solid var(--border); }
 input::placeholder { color: var(--muted); opacity: 1; }
-input[type=checkbox] { inline-size: 1em; block-size: 1em; font: inherit; }
+label:has(> input[type=checkbox]) {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  min-block-size: 2.25rem;
+  cursor: pointer;
+}
+input[type=checkbox] {
+  flex: none;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+@media (forced-colors: none) {
+  @supports (appearance: base-select) and selector(select::picker(select)) {
+    select, select::picker(select) { appearance: base-select; }
+    select { align-items: center; gap: .5rem; }
+    select::picker-icon { flex: none; color: var(--accent-text); }
+    select::picker(select) {
+      max-inline-size: calc(100vw - 1rem);
+      padding: .25rem;
+      border: 1px solid var(--border);
+      border-radius: .6rem;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+      box-shadow: 0 .35rem 1rem rgb(0 0 0 / .2);
+    }
+    select option {
+      box-sizing: border-box;
+      min-block-size: 2.75rem;
+      padding: .45rem .6rem;
+      border-radius: .35rem;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    select option:checked { background: var(--secondary); font-weight: 700; }
+    select option:is(:hover, :focus-visible) {
+      outline: 2px solid var(--focus);
+      outline-offset: -2px;
+    }
+  }
+}
+
 summary { cursor: pointer; overflow-wrap: anywhere; }
 .appearance { border: 1px solid var(--border); border-radius: 8px; padding: .5rem; margin-block: .5rem 1rem; }
 .appearance summary { font-weight: 650; }
