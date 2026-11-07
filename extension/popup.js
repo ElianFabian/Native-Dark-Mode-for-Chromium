@@ -208,6 +208,7 @@ function renderRules() {
   const query = $('#search').value.trim().toLowerCase();
   const order = selectedSortOrder();
   const visible = orderRules(rules.filter(rule => matchesSearch(rule, query)), order, document.documentElement.lang);
+  const openDomains = new Set([...list.querySelectorAll('.domain-group[open]')].map(group => group.dataset.domain));
   list.replaceChildren();
   $('#rule-count').textContent = visible.length < rules.length
     ? t('ruleCount', { shown: visible.length, total: rules.length }) : '';
@@ -218,12 +219,12 @@ function renderRules() {
   for (const [domain, group] of groups) {
     let container = list;
     if (domain) {
-      container = document.createElement('section');
+      container = document.createElement('details');
       container.className = 'domain-group';
-      const title = document.createElement('h3');
-      title.id = `domain-group-${list.childElementCount}`;
+      container.dataset.domain = domain;
+      container.open = openDomains.has(domain);
+      const title = document.createElement('summary');
       title.textContent = domain;
-      container.setAttribute('aria-labelledby', title.id);
       container.append(title);
       list.append(container);
     }

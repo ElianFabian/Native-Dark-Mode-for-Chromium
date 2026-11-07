@@ -55,17 +55,19 @@ header label { min-width: min(190px, 100%); max-width: 100%; }
   border-radius: .7rem;
   background: var(--page);
 }
-.domain-group h3 {
+.domain-group summary {
   margin: 0;
   padding: .55rem .8rem;
-  border-bottom: 1px solid var(--border);
-  border-radius: .65rem .65rem 0 0;
+  border-radius: .65rem;
   background: var(--secondary);
   color: var(--text);
   font-size: 1.05rem;
+  font-weight: 700;
 }
+.domain-group summary:hover { background: var(--secondary-hover); }
+.domain-group[open] summary { border-bottom: 1px solid var(--border); border-radius: .65rem .65rem 0 0; }
 .domain-group > .rule { margin-inline: .8rem; }
-.domain-group h3 + .rule { border-top: 0; }
+.domain-group summary + .rule { border-top: 0; }
 .trash-panel { margin-block-start: 20px; background: #e8ebf0; }
 [data-theme="dark"] .trash-panel { background: #252b35; }
 :root[data-high-contrast] .trash-panel { background: var(--panel); border-width: 2px; }
