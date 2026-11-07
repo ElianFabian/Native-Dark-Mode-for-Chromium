@@ -21,6 +21,38 @@ def shell_path(path):
 
 class NativeLauncherTests(unittest.TestCase):
     @unittest.skipUnless(BASH, 'A shell is needed for shell-artifact checks.')
+    def test_linux_detects_multiple_browsers_and_copies_entries_to_the_desktop(self):
+        with tempfile.TemporaryDirectory(dir=ROOT) as folder:
+            directory = Path(folder)
+            desktop = directory / 'Test Desktop'
+            desktop.mkdir()
+            for name in ('brave-browser', 'google-chrome'):
+                executable = directory / name
+                executable.write_bytes(b'#!/bin/sh\nexit 99\n')
+                executable.chmod(0o755)
+            desktop_lookup = directory / 'xdg-user-dir'
+            desktop_lookup.write_bytes(b'#!/bin/sh\nprintf "%s\\n" "$TEST_DESKTOP"\n')
+            desktop_lookup.chmod(0o755)
+            data = directory / 'data'
+            environment = {
+                **os.environ,
+                'TEST_BROWSER_BIN': shell_path(directory),
+                'TEST_DESKTOP': shell_path(desktop),
+                'XDG_DATA_HOME': shell_path(data),
+            }
+            result = subprocess.run(
+                [BASH, '-c', 'PATH="$TEST_BROWSER_BIN:$PATH" sh scripts/install-launcher-linux.sh'],
+                cwd=ROOT, env=environment, stdin=subprocess.DEVNULL,
+                check=True, capture_output=True, text=True,
+            )
+            for browser in ('brave', 'google-chrome'):
+                name = f'{browser}-native-dark-mode.desktop'
+                entry = data / 'applications' / name
+                self.assertEqual((desktop / name).read_bytes(), entry.read_bytes())
+                self.assertIn(f'Created: {shell_path(entry)}', result.stdout)
+                self.assertIn(f'Created: {shell_path(desktop / name)}', result.stdout)
+
+    @unittest.skipUnless(BASH, 'A shell is needed for shell-artifact checks.')
     def test_linux_installer_creates_an_application_entry(self):
         with tempfile.TemporaryDirectory(dir=ROOT) as folder:
             directory = Path(folder).resolve()

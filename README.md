@@ -65,15 +65,17 @@ The extension uses `debugger` to send the native emulation command, HTTP and HTT
 
 Your browser may show a debugging banner while the extension is attached. Closing the banner or opening DevTools can disconnect the session. The optional launchers pass `--silent-debugger-extension-api`. When the browser honors this flag, it suppresses banners for **all** debugger extensions in that session.
 
-Run the installer for your system from the project folder. Keep the files in `scripts/` together because the installers use shared helpers. The installers look for Brave by default.
+Run the installer for your system from the project folder. Keep the files in `scripts/` together because the installers use shared helpers. Each installer looks for Brave, Google Chrome, Chromium, Microsoft Edge, Vivaldi, and Opera in the usual locations for that platform. It creates one set of shortcuts per browser it finds, using the name **Browser Name - Native Dark Mode**.
 
 | Platform | Installer | Where to open the launcher |
 | --- | --- | --- |
-| Windows | Double-click [install-launcher-windows.cmd](scripts/install-launcher-windows.cmd) | Search for **Brave - Native Dark Mode** in Start. |
-| Linux | `sh scripts/install-launcher-linux.sh` | Look for **Brave - Native Dark Mode** in your application menu. The script creates a `.desktop` entry for your user. |
-| macOS | `sh scripts/install-launcher-macos.command` | Open **Brave - Native Dark Mode.app** in `~/Applications` or add it to the Dock. |
+| Windows | Double-click [install-launcher-windows.cmd](scripts/install-launcher-windows.cmd) | Start menu and your Desktop. |
+| Linux | `sh scripts/install-launcher-linux.sh` | Your application menu and, when available, your configured desktop directory. Your desktop environment may require you to mark the desktop copy as trusted before opening it. |
+| macOS | `sh scripts/install-launcher-macos.command` | Your `~/Applications` folder and a link on your Desktop, when the Desktop folder exists. |
 
-For Chrome, Edge, or another Chromium browser, run the installer from a terminal with `--browser "ABSOLUTE_PATH_TO_BROWSER_EXECUTABLE"` appended to the command. This creates a shortcut named **Chromium Browser - Native Dark Mode**. Use `--output-directory PATH` to keep shortcuts for multiple custom executables in separate locations.
+The console explains what the installer is about to do and prints the path of each shortcut it creates. When you run it interactively, press Enter at the end to dismiss the prompt.
+
+For a browser in a custom location or outside the detection list, append `--browser "ABSOLUTE_PATH_TO_BROWSER_EXECUTABLE"` to the installer command. This selects just that executable and uses the name **Chromium Browser - Native Dark Mode**. With `--output-directory PATH`, the installer writes only to that directory, which is useful for testing or keeping shortcuts for multiple custom executables separate.
 
 Fully quit the target browser before opening the new launcher so the flag takes effect. Check **Command Line** on your browser's version page (for example, `chrome://version`, `edge://version`, or `brave://version`) for `--silent-debugger-extension-api`. The installers use tools included with the operating system. Windows uses Windows Script Host to create a `.lnk`. Linux and macOS use shell scripts.
 
