@@ -126,7 +126,6 @@ h2 { font-size: 1rem; }
 .rule-heading { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
 .rule-address { min-width: 0; }
 .rule-path { color: var(--muted); font-size: .9em; }
-.rule-state { font-size: .8125rem; color: var(--muted); }
 #save { background: var(--secondary); color: var(--text); }
 #manage-extension { background: var(--secondary); color: var(--text); }
 #manage-extension:enabled:hover { background: var(--secondary-hover); }

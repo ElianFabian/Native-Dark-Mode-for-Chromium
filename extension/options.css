@@ -147,7 +147,37 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 #cancel-import { background: var(--secondary); color: var(--text); }
 #confirm-import[data-destructive] { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
 .rule-address { font-size: 1rem; }
-.rule-added { color: var(--muted); font-size: .8125rem; }
+.rule-state {
+  padding: .12em .6em;
+  border: 1px solid var(--positive-highlight-border);
+  border-radius: 1em;
+  background: var(--positive-highlight-bg);
+  color: var(--text);
+  font-size: .8125rem;
+  font-weight: 650;
+}
+.rule-state[data-disabled] {
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+:root[data-high-contrast] .rule-state[data-disabled] { border-style: dashed; }
+.rule-added {
+  display: inline-flex;
+  align-items: center;
+  gap: .35em;
+  color: var(--muted);
+  font-size: .8125rem;
+}
+.rule-added::before {
+  content: '';
+  flex: none;
+  inline-size: 1.15em;
+  block-size: 1.15em;
+  background: currentColor;
+  mask: url("calendar.svg") center / contain no-repeat;
+  forced-color-adjust: none;
+}
 .rule { padding: 10px 0; }
 #rules .rule {
   padding-inline: .55rem;

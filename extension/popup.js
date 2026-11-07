@@ -190,7 +190,7 @@ function ruleHeading(rule, dateFormatter) {
   heading.append(address);
   const state = document.createElement('span');
   state.className = 'rule-state';
-  state.textContent = t(rule.enabled ? 'enabled' : 'disabled');
+  renderRuleState(state, rule.enabled);
   heading.append(state);
   const createdAt = new Date(rule.createdAt);
   if (Number.isFinite(createdAt.getTime())) {
@@ -201,6 +201,11 @@ function ruleHeading(rule, dateFormatter) {
     heading.append(added);
   }
   return heading;
+}
+
+function renderRuleState(state, enabled) {
+  state.toggleAttribute('data-disabled', !enabled);
+  state.textContent = t(enabled ? 'enabled' : 'disabled');
 }
 
 function selectedSortOrder() {
@@ -347,7 +352,7 @@ function renderRuleToggle(button, enabled, item = button.closest('.rule')) {
   button.className = enabled ? 'rule-toggle rule-disable' : 'rule-toggle rule-enable';
   button.firstElementChild.textContent = t(enabled ? 'disable' : 'enable');
   button.dataset.alternateLabel = t(enabled ? 'enable' : 'disable');
-  item.querySelector('.rule-state').textContent = t(enabled ? 'enabled' : 'disabled');
+  renderRuleState(item.querySelector('.rule-state'), enabled);
 }
 
 function renderTrash(entries) {
