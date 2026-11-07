@@ -205,5 +205,41 @@
   },
   "errorSubdomainChanged": {
     "message": "La pestaña ya no hereda una regla de subdominio. Vuelve a abrir el panel."
+  },
+  "regionalAvailability": {
+    "message": "Disponible para {domains}."
+  },
+  "sortRules": {
+    "message": "Ordenar reglas"
+  },
+  "alphabetical": {
+    "message": "Alfabético (A–Z)"
+  },
+  "reverseAlphabetical": {
+    "message": "Alfabético (Z–A)"
+  },
+  "newest": {
+    "message": "Añadidas más recientemente"
+  },
+  "oldest": {
+    "message": "Añadidas primero"
+  },
+  "groupDomains": {
+    "message": "Agrupar por dominio"
+  },
+  "trash": {
+    "message": "Papelera"
+  },
+  "trashEmpty": {
+    "message": "No hay reglas borradas."
+  },
+  "restoreRule": {
+    "message": "Restaurar"
+  },
+  "ruleTrashed": {
+    "message": "Regla movida a la papelera."
+  },
+  "ruleRestored": {
+    "message": "Regla restaurada."
   }
 }

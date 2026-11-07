@@ -1,4 +1,4 @@
-import { normalizeRule, regionalDomainsForHost, ruleAddress, subdomainExclusion } from './rules.js';
+import { AMAZON_DOMAINS, normalizeRule, orderRules, regionalDomainsForHost, ruleAddress, subdomainExclusion } from './rules.js';
 import { requestWithTimeout } from './request.js';
 import { MAX_BACKUP_BYTES } from './backup.js';
 import { LANGUAGES, initializeLanguage, setLanguage, translatePage, t, errorText } from './i18n.js';
@@ -41,7 +41,7 @@ function updateButton() {
   let domains = [];
   try { domains = regionalDomainsForHost(normalizeRule({ ...draft(false), includeRegionalDomains: false }).host); }
   catch { /* The address may be incomplete while being edited. */ }
-  $('#regional-option').hidden = !domains.length;
+  $('#regional-option').hidden = !isManager && !domains.length;
   if (!domains.length) $('#regional').checked = false;
   $('#regional').disabled = busy || !domains.length;
   const needsResume = snapshot?.state.suspended || snapshot?.state.error;
@@ -56,6 +56,7 @@ function updateButton() {
   $('#toggle').disabled = busy || !canEdit;
   $('#save').disabled = busy || !canEdit;
   if (isManager) {
+    $('#regional-help').textContent = domains.length ? '' : t('regionalAvailability', { domains: AMAZON_DOMAINS.join(', ') });
     $('#toggle').hidden = Boolean(editingId);
     $('#cancel-edit').hidden = !editingId;
     $('#export').disabled = busy || !snapshot;
@@ -74,9 +75,44 @@ function loadSelection() {
   updateButton();
 }
 
-function scopesFor(rule) {
-  const hosts = rule.includeRegionalDomains ? regionalDomainsForHost(rule.host) : [rule.host];
-  return hosts.map(host => `${rule.includeSubdomains ? '*.' : ''}${host}${rule.path}`).join(', ');
+function hostsFor(rule) {
+  return rule.includeRegionalDomains ? regionalDomainsForHost(rule.host) : [rule.host];
+}
+
+function ruleHeading(rule) {
+  const heading = document.createElement('div');
+  heading.className = 'rule-heading';
+  for (const host of hostsFor(rule)) {
+    const address = document.createElement('span');
+    address.className = 'rule-address';
+    const domain = document.createElement('strong');
+    domain.textContent = `${rule.includeSubdomains ? '*.' : ''}${host}`;
+    const path = document.createElement('span');
+    path.className = 'rule-path';
+    path.textContent = rule.path;
+    address.append(domain, path);
+    heading.append(address);
+  }
+  const state = document.createElement('span');
+  state.className = 'rule-state';
+  state.textContent = t(rule.enabled ? 'enabled' : 'disabled');
+  heading.append(state);
+  return heading;
+}
+
+function groupRules(rules) {
+  if (!isManager || !$('#group-domains').checked) return [[null, rules]];
+  const groups = new Map();
+  for (const rule of rules) {
+    const domain = rule.host.replace(/^www\./, '');
+    if (!groups.has(domain)) groups.set(domain, []);
+    groups.get(domain).push(rule);
+  }
+  const order = $('#sort-rules').value;
+  if (order === 'newest' || order === 'oldest') return groups;
+  const collator = new Intl.Collator(document.documentElement.lang);
+  const direction = order === 'reverse-alphabetical' ? -1 : 1;
+  return [...groups].sort(([first], [second]) => direction * collator.compare(first, second));
 }
 
 function showRule(rule) {
@@ -90,39 +126,71 @@ function showRule(rule) {
 function renderRules() {
   const rules = snapshot?.rules ?? [];
   const query = $('#search')?.value.trim().toLowerCase() ?? '';
-  const visible = isManager ? rules.filter(rule => scopesFor(rule).includes(query)) : rules.slice(0, popupRuleLimit);
+  const visible = isManager
+    ? orderRules(rules.filter(rule => hostsFor(rule).some(host => (host + rule.path).toLowerCase().includes(query))),
+      $('#sort-rules').value, document.documentElement.lang)
+    : rules.slice(0, popupRuleLimit);
   $('#rules').replaceChildren();
   $('#rule-count').textContent = visible.length < rules.length
     ? t('ruleCount', { shown: visible.length, total: rules.length }) : '';
   if (!visible.length) $('#rules').textContent = t(rules.length ? 'noSearchResults' : 'noRules');
-  for (const rule of visible) {
+  for (const [domain, group] of groupRules(visible)) {
+    if (domain) {
+      const title = document.createElement('h3');
+      title.className = 'domain-group';
+      title.textContent = domain;
+      $('#rules').append(title);
+    }
+    for (const rule of group) renderRule(rule);
+  }
+}
+
+function renderRule(rule) {
+  const item = document.createElement('div');
+  item.className = 'rule';
+  item.append(ruleHeading(rule));
+  $('#rules').append(item);
+  if (!isManager) return;
+  const actions = document.createElement('div');
+  actions.className = 'rule-actions';
+  const toggle = document.createElement('button');
+  toggle.className = rule.enabled ? 'rule-disable' : 'rule-enable';
+  toggle.textContent = t(rule.enabled ? 'disable' : 'enable');
+  toggle.addEventListener('click', () => request({ type: 'update', id: rule.id, patch: { enabled: !rule.enabled } }));
+  const edit = document.createElement('button');
+  edit.className = 'rule-edit';
+  edit.textContent = t('edit');
+  edit.addEventListener('click', () => {
+    editingId = rule.id;
+    showRule(rule);
+    $('#address').focus();
+  });
+  const remove = document.createElement('button');
+  remove.className = 'rule-remove';
+  remove.textContent = t('remove');
+  remove.addEventListener('click', () => request({ type: 'remove', id: rule.id }));
+  actions.append(toggle, edit, remove);
+  item.append(actions);
+}
+
+function renderTrash(entries) {
+  $('#trash-count').textContent = `(${entries.length})`;
+  const list = $('#trash-rules');
+  list.replaceChildren();
+  if (!entries.length) list.textContent = t('trashEmpty');
+  for (const { id, rule } of entries) {
     const item = document.createElement('div');
     item.className = 'rule';
-    const text = document.createElement('div');
-    text.textContent = `${scopesFor(rule)} — ${t(rule.enabled ? 'enabled' : 'disabled')}`;
-    item.append(text);
-    $('#rules').append(item);
-    if (!isManager) continue;
+    item.append(ruleHeading(rule));
     const actions = document.createElement('div');
     actions.className = 'rule-actions';
-    const toggle = document.createElement('button');
-    toggle.className = rule.enabled ? 'rule-disable' : 'rule-enable';
-    toggle.textContent = t(rule.enabled ? 'disable' : 'enable');
-    toggle.addEventListener('click', () => request({ type: 'update', id: rule.id, patch: { enabled: !rule.enabled } }));
-    const edit = document.createElement('button');
-    edit.className = 'rule-edit';
-    edit.textContent = t('edit');
-    edit.addEventListener('click', () => {
-      editingId = rule.id;
-      showRule(rule);
-      $('#address').focus();
-    });
-    const remove = document.createElement('button');
-    remove.className = 'rule-remove';
-    remove.textContent = t('remove');
-    remove.addEventListener('click', () => request({ type: 'remove', id: rule.id }));
-    actions.append(toggle, edit, remove);
+    const restore = document.createElement('button');
+    restore.className = 'rule-edit';
+    restore.textContent = t('restoreRule');
+    restore.addEventListener('click', () => request({ type: 'restore', id }));
+    actions.append(restore);
     item.append(actions);
+    list.append(item);
   }
 }
 
@@ -137,6 +205,7 @@ function render(value) {
     showRule();
   }
   renderRules();
+  if (isManager) renderTrash(value.trash ?? []);
   updateButton();
 }
 
@@ -165,6 +234,8 @@ function request(message) {
     render(value);
     if (message.type === 'exclude-subdomain' && value.matching) showRule(value.matching);
     if (isManager && (message.type === 'save' || message.type === 'replace-scope')) $('#status').textContent = t('ruleSaved');
+    if (isManager && message.type === 'remove') $('#status').textContent = t('ruleTrashed');
+    if (isManager && message.type === 'restore') $('#status').textContent = t('ruleRestored');
   }, t('saving'));
 }
 
@@ -277,6 +348,14 @@ $('#save').addEventListener('click', () => request({
 }));
 $('#cancel-edit')?.addEventListener('click', () => { editingId = undefined; showRule(); });
 $('#search')?.addEventListener('input', renderRules);
+async function saveListPreferences() {
+  renderRules();
+  try {
+    await chrome.storage.local.set({ ruleListPreferences: { order: $('#sort-rules').value, group: $('#group-domains').checked } });
+  } catch (error) { $('#status').textContent = errorText(error); }
+}
+$('#sort-rules')?.addEventListener('change', saveListPreferences);
+$('#group-domains')?.addEventListener('change', saveListPreferences);
 $('#manage')?.addEventListener('click', async () => {
   try { await chrome.runtime.openOptionsPage(); }
   catch (error) { $('#status').textContent = errorText(error); }
@@ -289,7 +368,13 @@ $('#regional').addEventListener('change', saveCheckboxChange);
 
 try {
   const language = await initializeLanguage();
-  if (isManager) $('#language').value = language;
+  if (isManager) {
+    $('#language').value = language;
+    const { ruleListPreferences } = await chrome.storage.local.get('ruleListPreferences');
+    $('#sort-rules').value = ruleListPreferences?.order ?? 'alphabetical';
+    if (!$('#sort-rules').value) $('#sort-rules').value = 'alphabetical';
+    $('#group-domains').checked = Boolean(ruleListPreferences?.group);
+  }
   translatePage();
   if (!isManager) {
     [tab] = await chrome.tabs.query({ active: true, currentWindow: true });

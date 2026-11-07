@@ -205,5 +205,41 @@
   },
   "errorSubdomainChanged": {
     "message": "O separador já não herda uma regra de subdomínio. Reabra o painel."
+  },
+  "regionalAvailability": {
+    "message": "Disponível para {domains}."
+  },
+  "sortRules": {
+    "message": "Ordenar regras"
+  },
+  "alphabetical": {
+    "message": "Alfabética (A–Z)"
+  },
+  "reverseAlphabetical": {
+    "message": "Alfabética (Z–A)"
+  },
+  "newest": {
+    "message": "Adicionadas mais recentemente"
+  },
+  "oldest": {
+    "message": "Adicionadas primeiro"
+  },
+  "groupDomains": {
+    "message": "Agrupar por domínio"
+  },
+  "trash": {
+    "message": "Reciclagem"
+  },
+  "trashEmpty": {
+    "message": "Não há regras eliminadas."
+  },
+  "restoreRule": {
+    "message": "Restaurar"
+  },
+  "ruleTrashed": {
+    "message": "Regra movida para a reciclagem."
+  },
+  "ruleRestored": {
+    "message": "Regra restaurada."
   }
 }

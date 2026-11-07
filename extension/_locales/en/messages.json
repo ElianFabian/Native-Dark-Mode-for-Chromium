@@ -205,5 +205,41 @@
   },
   "errorSubdomainChanged": {
     "message": "The tab no longer inherits a subdomain rule. Reopen the popup."
+  },
+  "regionalAvailability": {
+    "message": "Available for {domains}."
+  },
+  "sortRules": {
+    "message": "Sort rules"
+  },
+  "alphabetical": {
+    "message": "Alphabetical (A–Z)"
+  },
+  "reverseAlphabetical": {
+    "message": "Alphabetical (Z–A)"
+  },
+  "newest": {
+    "message": "Most recently added"
+  },
+  "oldest": {
+    "message": "Oldest added"
+  },
+  "groupDomains": {
+    "message": "Group by domain"
+  },
+  "trash": {
+    "message": "Trash"
+  },
+  "trashEmpty": {
+    "message": "No deleted rules."
+  },
+  "restoreRule": {
+    "message": "Restore"
+  },
+  "ruleTrashed": {
+    "message": "Rule moved to Trash."
+  },
+  "ruleRestored": {
+    "message": "Rule restored."
   }
 }

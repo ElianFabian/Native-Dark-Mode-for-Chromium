@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRule, matchingRule, subdomainExclusion, RuleManager } from '../extension/rules.js';
+import { normalizeRule, matchingRule, orderRules, subdomainExclusion, RuleManager } from '../extension/rules.js';
 import { DarkModeController } from '../extension/controller.js';
 
 const rule = (url, enabled = true, extra = {}) => normalizeRule({ url, enabled, scope: 'section', ...extra });
@@ -216,4 +216,11 @@ test('a stalled background tab does not prevent the popup request from completin
   await manager.save({ url: 'example.com', enabled: true });
   await manager.applyFromPopup(7);
   assert.equal((await controller.read(7)).enabled, true);
+});
+test('date sorting keeps the saved sequence for legacy rules and tied timestamps', () => {
+  const rules = [rule('c.example'), rule('b.example'), { ...rule('a.example'), createdAt: 10 },
+    { ...rule('d.example'), createdAt: 10 }];
+  assert.deepEqual(orderRules(rules, 'newest', 'en').map(rule => rule.host), ['d.example', 'a.example', 'b.example', 'c.example']);
+  assert.deepEqual(orderRules(rules, 'oldest', 'en'), rules);
+  assert.deepEqual(orderRules(rules, 'alphabetical', 'en').map(rule => rule.host), ['a.example', 'b.example', 'c.example', 'd.example']);
 });

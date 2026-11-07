@@ -205,5 +205,41 @@
   },
   "errorSubdomainChanged": {
     "message": "このタブはサブドメインのルールを継承していません。ポップアップを開き直してください。"
+  },
+  "regionalAvailability": {
+    "message": "{domains}で利用できます。"
+  },
+  "sortRules": {
+    "message": "ルールの並べ替え"
+  },
+  "alphabetical": {
+    "message": "アルファベット順（A–Z）"
+  },
+  "reverseAlphabetical": {
+    "message": "アルファベット順（Z–A）"
+  },
+  "newest": {
+    "message": "追加が新しい順"
+  },
+  "oldest": {
+    "message": "追加が古い順"
+  },
+  "groupDomains": {
+    "message": "ドメインでグループ化"
+  },
+  "trash": {
+    "message": "ゴミ箱"
+  },
+  "trashEmpty": {
+    "message": "削除済みのルールはありません。"
+  },
+  "restoreRule": {
+    "message": "復元"
+  },
+  "ruleTrashed": {
+    "message": "ルールをゴミ箱に移動しました。"
+  },
+  "ruleRestored": {
+    "message": "ルールを復元しました。"
   }
 }

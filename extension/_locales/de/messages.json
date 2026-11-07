@@ -205,5 +205,41 @@
   },
   "errorSubdomainChanged": {
     "message": "Der Tab erbt keine Subdomain-Regel mehr. Öffne das Popup erneut."
+  },
+  "regionalAvailability": {
+    "message": "Verfügbar für {domains}."
+  },
+  "sortRules": {
+    "message": "Regeln sortieren"
+  },
+  "alphabetical": {
+    "message": "Alphabetisch (A–Z)"
+  },
+  "reverseAlphabetical": {
+    "message": "Alphabetisch (Z–A)"
+  },
+  "newest": {
+    "message": "Zuletzt hinzugefügt"
+  },
+  "oldest": {
+    "message": "Zuerst hinzugefügt"
+  },
+  "groupDomains": {
+    "message": "Nach Domain gruppieren"
+  },
+  "trash": {
+    "message": "Papierkorb"
+  },
+  "trashEmpty": {
+    "message": "Keine gelöschten Regeln."
+  },
+  "restoreRule": {
+    "message": "Wiederherstellen"
+  },
+  "ruleTrashed": {
+    "message": "Regel in den Papierkorb verschoben."
+  },
+  "ruleRestored": {
+    "message": "Regel wiederhergestellt."
   }
 }

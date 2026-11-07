@@ -205,5 +205,41 @@
   },
   "errorSubdomainChanged": {
     "message": "Cet onglet n’hérite plus d’une règle de sous-domaine. Rouvrez le panneau."
+  },
+  "regionalAvailability": {
+    "message": "Disponible pour {domains}."
+  },
+  "sortRules": {
+    "message": "Trier les règles"
+  },
+  "alphabetical": {
+    "message": "Alphabétique (A–Z)"
+  },
+  "reverseAlphabetical": {
+    "message": "Alphabétique (Z–A)"
+  },
+  "newest": {
+    "message": "Ajouts les plus récents"
+  },
+  "oldest": {
+    "message": "Ajouts les plus anciens"
+  },
+  "groupDomains": {
+    "message": "Grouper par domaine"
+  },
+  "trash": {
+    "message": "Corbeille"
+  },
+  "trashEmpty": {
+    "message": "Aucune règle supprimée."
+  },
+  "restoreRule": {
+    "message": "Restaurer"
+  },
+  "ruleTrashed": {
+    "message": "Règle déplacée dans la corbeille."
+  },
+  "ruleRestored": {
+    "message": "Règle restaurée."
   }
 }

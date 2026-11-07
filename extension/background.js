@@ -8,7 +8,7 @@ const report = error => console.warn('Native Dark Mode:', error);
 
 async function snapshot(tabId) {
   const rules = await manager.list();
-  if (tabId === undefined) return { state: {}, rules };
+  if (tabId === undefined) return { state: {}, rules, trash: await manager.listTrash() };
   const tab = await chrome.tabs.get(tabId);
   return { state: await controller.read(tabId), rules, matching: matchingRule(rules, tab.url ?? '') };
 }
@@ -34,6 +34,7 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
     else if (message.type === 'replace-scope') await manager.replaceScope(message.id, message.rule);
     else if (message.type === 'update') await manager.update(message.id, message.patch ?? {});
     else if (message.type === 'remove') await manager.remove(message.id);
+    else if (message.type === 'restore') await manager.restore(message.id);
     else if (message.type !== 'status') throw new Error('Unknown request.');
     if (message.type !== 'status') {
       if (fromManager) void manager.applyAll().catch(report);

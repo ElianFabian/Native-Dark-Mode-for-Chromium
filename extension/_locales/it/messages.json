@@ -205,5 +205,41 @@
   },
   "errorSubdomainChanged": {
     "message": "La scheda non eredita più una regola per sottodomini. Riapri il pannello."
+  },
+  "regionalAvailability": {
+    "message": "Disponibile per {domains}."
+  },
+  "sortRules": {
+    "message": "Ordina regole"
+  },
+  "alphabetical": {
+    "message": "Alfabetico (A–Z)"
+  },
+  "reverseAlphabetical": {
+    "message": "Alfabetico (Z–A)"
+  },
+  "newest": {
+    "message": "Aggiunte di recente"
+  },
+  "oldest": {
+    "message": "Aggiunte per prime"
+  },
+  "groupDomains": {
+    "message": "Raggruppa per dominio"
+  },
+  "trash": {
+    "message": "Cestino"
+  },
+  "trashEmpty": {
+    "message": "Nessuna regola eliminata."
+  },
+  "restoreRule": {
+    "message": "Ripristina"
+  },
+  "ruleTrashed": {
+    "message": "Regola spostata nel cestino."
+  },
+  "ruleRestored": {
+    "message": "Regola ripristinata."
   }
 }

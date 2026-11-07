@@ -205,5 +205,41 @@
   },
   "errorSubdomainChanged": {
     "message": "此标签页已不再继承子域名规则。请重新打开面板。"
+  },
+  "regionalAvailability": {
+    "message": "适用于 {domains}。"
+  },
+  "sortRules": {
+    "message": "排序规则"
+  },
+  "alphabetical": {
+    "message": "字母顺序（A–Z）"
+  },
+  "reverseAlphabetical": {
+    "message": "字母倒序（Z–A）"
+  },
+  "newest": {
+    "message": "最近添加"
+  },
+  "oldest": {
+    "message": "最早添加"
+  },
+  "groupDomains": {
+    "message": "按域名分组"
+  },
+  "trash": {
+    "message": "回收站"
+  },
+  "trashEmpty": {
+    "message": "没有已删除的规则。"
+  },
+  "restoreRule": {
+    "message": "恢复"
+  },
+  "ruleTrashed": {
+    "message": "规则已移至回收站。"
+  },
+  "ruleRestored": {
+    "message": "规则已恢复。"
   }
 }

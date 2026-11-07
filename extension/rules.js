@@ -1,4 +1,4 @@
-const AMAZON_DOMAINS = Object.freeze(['amazon.es', 'amazon.com', 'amazon.com.au']);
+export const AMAZON_DOMAINS = Object.freeze(['amazon.es', 'amazon.com', 'amazon.com.au']);
 
 export function regionalDomainsForHost(host) {
   return AMAZON_DOMAINS.includes(host.replace(/^www\./, '')) ? AMAZON_DOMAINS : [];
@@ -7,6 +7,19 @@ export function regionalDomainsForHost(host) {
 export function ruleAddress({ host, path }) {
   // Use a scheme that preserves an explicitly stored port.
   return `${host.endsWith(':443') ? 'http' : 'https'}://${host}${path}`;
+}
+
+export function orderRules(rules, order, locale) {
+  const ordered = [...rules];
+  if (order === 'newest') {
+    return ordered.reverse().sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+  }
+  if (order === 'oldest') {
+    return ordered.sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+  }
+  const collator = new Intl.Collator(locale);
+  const direction = order === 'reverse-alphabetical' ? -1 : 1;
+  return ordered.sort((a, b) => direction * collator.compare(a.host + a.path, b.host + b.path));
 }
 
 export function normalizeRule(input) {
@@ -79,6 +92,7 @@ export class RuleManager {
       const rule = normalizeRule({ url: ruleAddress(stored),
         scope: 'section', enabled: stored.enabled, includeSubdomains: stored.includeSubdomains,
         includeRegionalDomains: stored.includeRegionalDomains });
+      if (Number.isSafeInteger(stored.createdAt)) rule.createdAt = stored.createdAt;
       const alias = stored.host !== rule.host;
       if (!normalized.has(rule.id) || (!alias && normalized.get(rule.id).alias)) {
         normalized.set(rule.id, { rule, alias });
@@ -87,19 +101,27 @@ export class RuleManager {
     return [...normalized.values()].map(entry => entry.rule);
   }
 
-  mutate(operation) {
-    const result = this.mutations.catch(() => {}).then(async () => {
-      const rules = operation(await this.list());
-      await this.api.storage.local.set({ rules });
-      return rules;
-    });
+  enqueueMutation(operation) {
+    const result = this.mutations.catch(() => {}).then(operation);
     this.mutations = result;
     return result;
   }
 
+  mutate(operation) {
+    return this.enqueueMutation(async () => {
+      const rules = operation(await this.list());
+      await this.api.storage.local.set({ rules });
+      return rules;
+    });
+  }
+
   save(input) {
     const rule = normalizeRule(input);
-    return this.mutate(rules => [...rules.filter(existing => existing.id !== rule.id), rule]);
+    return this.mutate(rules => {
+      const index = rules.findIndex(existing => existing.id === rule.id);
+      if (index === -1) return [...rules, { ...rule, createdAt: Date.now() }];
+      return rules.map((existing, position) => position === index ? { ...existing, ...rule } : existing);
+    });
   }
 
   async excludeSubdomain(tabId, expectedUrl) {
@@ -107,7 +129,7 @@ export class RuleManager {
     return this.mutate(rules => {
       const exclusion = url === expectedUrl && subdomainExclusion(matchingRule(rules, url), url);
       if (!exclusion) throw new Error('The tab no longer inherits a subdomain rule. Reopen the popup.');
-      return [...rules, exclusion];
+      return [...rules, { ...exclusion, createdAt: Date.now() }];
     });
   }
 
@@ -129,7 +151,8 @@ export class RuleManager {
         }
         throw new Error('A rule already exists for this scope. Edit it from the saved list.');
       }
-      return rules.map(rule => rule.id === id ? { ...target, enabled: current.enabled } : rule);
+      return rules.map(rule => rule.id === id ? { ...target, enabled: current.enabled,
+        ...(current.createdAt === undefined ? {} : { createdAt: current.createdAt }) } : rule);
     });
   }
 
@@ -141,7 +164,31 @@ export class RuleManager {
   }
 
   remove(id) {
-    return this.mutate(rules => rules.filter(rule => rule.id !== id));
+    return this.enqueueMutation(async () => {
+      const rules = await this.list();
+      const rule = rules.find(entry => entry.id === id);
+      if (!rule) return;
+      const trash = await this.listTrash();
+      await this.api.storage.local.set({ rules: rules.filter(entry => entry.id !== id),
+        trash: [{ id: crypto.randomUUID(), rule }, ...trash] });
+    });
+  }
+
+  async listTrash() {
+    return (await this.api.storage.local.get('trash')).trash ?? [];
+  }
+
+  restore(id) {
+    return this.enqueueMutation(async () => {
+      const trash = await this.listTrash();
+      const deleted = trash.find(entry => entry.id === id);
+      if (!deleted) return;
+      const rules = await this.list();
+      if (rules.some(rule => rule.id === deleted.rule.id)) {
+        throw new Error('A rule already exists for this scope. Edit it from the saved list.');
+      }
+      await this.api.storage.local.set({ rules: [...rules, deleted.rule], trash: trash.filter(entry => entry.id !== id) });
+    });
   }
 
   async apply(tabId, resume = false) {

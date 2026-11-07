@@ -11,6 +11,7 @@ function validateRule(input, index) {
       /[\s/\\?#@]/.test(input.host) ||
       typeof input.path !== 'string' || !input.path.startsWith('/') || /[\\?#]/.test(input.path) ||
       typeof input.enabled !== 'boolean' || typeof input.includeSubdomains !== 'boolean' ||
+      (input.createdAt !== undefined && (!Number.isSafeInteger(input.createdAt) || input.createdAt < 0)) ||
       (input.includeRegionalDomains !== undefined && typeof input.includeRegionalDomains !== 'boolean')) fail();
   let rule;
   try {
@@ -20,7 +21,7 @@ function validateRule(input, index) {
   } catch { fail(); }
   const parsed = new URL(ruleAddress(input));
   if (parsed.host !== input.host.toLowerCase() || rule.path !== (input.path.replace(/\/+$/, '') || '/')) fail();
-  return rule;
+  return input.createdAt === undefined ? rule : { ...rule, createdAt: input.createdAt };
 }
 
 export function parseBackup(text) {
@@ -45,8 +46,9 @@ export function createBackup(rules) {
   const document = {
     format: FORMAT,
     version: 1,
-    rules: rules.map(({ host, path, enabled, includeSubdomains, includeRegionalDomains }) => ({
+    rules: rules.map(({ host, path, enabled, includeSubdomains, includeRegionalDomains, createdAt }) => ({
       host, path, enabled, includeSubdomains,
+      ...(createdAt === undefined ? {} : { createdAt }),
       ...(includeRegionalDomains ? { includeRegionalDomains: true } : {})
     }))
   };
@@ -64,7 +66,8 @@ export function mergeRules(existing, incoming, conflictPolicy = 'keep') {
       merged.set(rule.id, rule);
       summary.added++;
     } else if (conflictPolicy === 'replace') {
-      merged.set(rule.id, rule);
+      const createdAt = merged.get(rule.id).createdAt ?? rule.createdAt;
+      merged.set(rule.id, createdAt === undefined ? rule : { ...rule, createdAt });
       summary.updated++;
     } else summary.skipped++;
   }
@@ -80,7 +83,9 @@ export async function importBackup(manager, text, conflictPolicy) {
   await manager.mutate(existing => {
     const result = mergeRules(existing, incoming, conflictPolicy);
     summary = result.summary;
-    return result.rules;
+    const existingIds = new Set(existing.map(rule => rule.id));
+    const now = Date.now();
+    return result.rules.map(rule => rule.createdAt === undefined && !existingIds.has(rule.id) ? { ...rule, createdAt: now } : rule);
   });
   return summary;
 }

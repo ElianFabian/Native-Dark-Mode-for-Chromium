@@ -13,5 +13,9 @@ input[type=text], select { box-sizing: border-box; width: 100%; padding: 8px; ma
 button { margin: 5px 0; }
 h2 { font-size: 16px; }
 .rule { border-top: 1px solid #404957; padding: 12px 0; overflow-wrap: anywhere; }
+.rule-heading { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.rule-address { min-width: 0; }
+.rule-path { color: #b9c1cf; font-size: .9em; }
+.rule-state { font-size: 12px; color: #b9c1cf; }
 #save { background: #303e56; color: white; }
 #exclude-subdomain { background: #30291e; color: #ffd88b; border: 1px solid #a98249; }

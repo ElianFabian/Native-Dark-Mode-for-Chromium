@@ -205,5 +205,41 @@
   },
   "errorSubdomainChanged": {
     "message": "이 탭은 더 이상 하위 도메인 규칙을 상속하지 않습니다. 팝업을 다시 여세요."
+  },
+  "regionalAvailability": {
+    "message": "{domains}에서 사용할 수 있습니다."
+  },
+  "sortRules": {
+    "message": "규칙 정렬"
+  },
+  "alphabetical": {
+    "message": "알파벳순 (A–Z)"
+  },
+  "reverseAlphabetical": {
+    "message": "알파벳 역순 (Z–A)"
+  },
+  "newest": {
+    "message": "최근 추가순"
+  },
+  "oldest": {
+    "message": "오래된 추가순"
+  },
+  "groupDomains": {
+    "message": "도메인별 그룹화"
+  },
+  "trash": {
+    "message": "휴지통"
+  },
+  "trashEmpty": {
+    "message": "삭제된 규칙이 없습니다."
+  },
+  "restoreRule": {
+    "message": "복원"
+  },
+  "ruleTrashed": {
+    "message": "규칙을 휴지통으로 이동했습니다."
+  },
+  "ruleRestored": {
+    "message": "규칙을 복원했습니다."
   }
 }

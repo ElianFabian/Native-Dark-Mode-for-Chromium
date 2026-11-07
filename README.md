@@ -22,13 +22,17 @@ Keep code identifiers, comments, tests and documentation in English. Interface t
 
 Rules are saved in `storage.local` and restored on future visits, including after browser restarts. Disabling retains an inactive rule, which also excludes its scope from a broader enabled rule. The most specific matching path wins. The popup shows up to five rules with their status and a **Manage rules** button. The full-page manager provides search and controls for adding, editing, enabling, disabling and removing rules. To change an existing URL, choose **Edit**, change the address or scope, and select **Save settings**. Editing preserves the rule's enabled state.
 
+On wide screens the editor stays in view while you scroll the list. Its **Backup and restore** controls are inside the same card. The list highlights each hostname and distinguishes the path and state with smaller text. Sort alphabetically in either direction or by date added, and optionally group by the saved hostname without `www`. The manager saves your sort and grouping preferences. Rules created before version 0.5.0 use their saved order when no creation date is available.
+
+**Remove** moves the rule to **Trash**. Open Trash above the list and choose **Restore** to recover its settings and original creation date, where available. A conflicting saved rule keeps its settings and the deleted copy stays in Trash.
+
 Queries and fragments are ignored. A section matches its path and descendants, not similarly named neighboring paths. Subdomains require explicit opt-in. HTTP and HTTPS share rules, while nonstandard ports are distinct. Rules do not sync to other devices.
 
 With **Include subdomains** selected, an initial `www.` is treated as an alias of the remaining hostname. For example, `www.android.com` is saved as `android.com` and covers `developer.android.com`. This also applies to previously saved rules that opted into subdomains. An explicit saved parent rule takes priority if the upgrade merges two equivalent scopes.
 
 When the current site inherits an enabled subdomain rule, the popup offers **Exclude this subdomain**. It saves an inactive rule for the current hostname at the inherited path. The parent rule still applies to siblings. To inherit the parent rule again, remove the exclusion in **Manage rules**.
 
-**Include regional domains** is available for the Amazon group `amazon.es`, `amazon.com` and `amazon.com.au`. It includes their `www` addresses, carries the same section path across the group and supports the separate subdomain option. At the same path, a rule for one domain takes priority over a regional rule. The editor shows the domains that will be covered.
+**Include regional domains** is available for the Amazon group `amazon.es`, `amazon.com` and `amazon.com.au`. The manager shows the option alongside a list of eligible domains when the current URL cannot use it. The group includes their `www` addresses, carries the same section path across the group and supports the separate subdomain option. At the same path, a rule for one domain takes priority over a regional rule. The editor shows the domains that will be covered.
 
 When a saved rule is selected, changing **Include subdomains** or **Include regional domains** saves immediately. This replaces the original scope and preserves its enabled state. If unchecking either option narrows the scope to a rule that already exists, that rule keeps its settings and the broader rule is removed. Other scope conflicts require editing the existing rule from the saved list. For new rules, the checkboxes are saved when you choose **Save settings** or **Enable and save**.
 
@@ -38,7 +42,7 @@ Opening DevTools may disconnect the session. If another debugger is already atta
 
 ## Back up and restore rules
 
-Open **Manage rules** and choose **Export JSON** under **Backup and restore**. The downloaded file contains enabled rules, exclusions, sections, subdomain settings and regional settings. It uses a versioned format and contains only rules.
+Open **Manage rules** and choose **Export JSON** under **Backup and restore**. The downloaded file contains saved rules with exclusions, sections, subdomain settings, regional settings and creation dates where available. The backup covers the main list. Trash and list preferences are stored locally.
 
 Choose **Import JSON**, select a backup, review the number of new and matching rules, and confirm. By default, matching scopes keep their existing settings. Select **Use settings from the file** to update those scopes. Rules absent from the file are kept. Invalid files leave the existing rules untouched. The import limit is 1 MiB and 1,000 rules. Imported enabled rules are applied to matching tabs, respecting paused tabs.
 
