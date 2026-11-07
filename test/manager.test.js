@@ -42,6 +42,9 @@ test('the full-page manager can change a saved URL and export it without a websi
     assert.equal(restored.trash.length, 1);
     assert.deepEqual((await send({ type: 'export' })).backup.rules, [rule]);
     const another = await send({ type: 'save', rule: { url: 'example.net', enabled: false } });
+    const preview = await send({ type: 'preview-import', text: JSON.stringify(backup) });
+    assert.deepEqual(preview.removedRules, another.rules.filter(entry => entry.host === 'example.net'));
+    assert.equal((await send({ type: 'status' })).rules.length, 2);
     await send({ type: 'remove', id: another.rules.find(entry => entry.host === 'example.net').id });
     const cleared = await send({ type: 'empty-trash', ids: restored.trash.map(entry => entry.id) });
     assert.deepEqual(cleared.trash.map(entry => entry.rule.host), ['example.net']);

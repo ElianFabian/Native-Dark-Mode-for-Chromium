@@ -522,8 +522,15 @@ $('#import-file')?.addEventListener('change', async () => {
     pendingImport = undefined;
     if (file.size > MAX_BACKUP_BYTES) throw new Error('Choose a JSON backup smaller than 1 MiB.');
     const text = await file.text();
-    const { summary, removedIds } = await backupRequest({ type: 'preview-import', text });
-    pendingImport = { text, removedIds };
+    const { summary, removedRules } = await backupRequest({ type: 'preview-import', text });
+    pendingImport = { text, removedRules };
+    const removals = $('#import-removals');
+    removals.replaceChildren(...removedRules.map(rule => {
+      const entry = document.createElement('li');
+      entry.textContent = `${rule.includeSubdomains ? '*.' : ''}${displayHost(rule)}${rule.path}`;
+      return entry;
+    }));
+    removals.scrollTop = 0;
     writeChoice($('#conflict-policy'), 'keep');
     $('#import-summary').textContent = t('previewSummary', { added: summary.added, matching: summary.updated });
     $('#import-status').textContent = '';
@@ -537,10 +544,12 @@ $('#import-file')?.addEventListener('change', async () => {
 function updateImportImpact() {
   const policy = readChoice($('#conflict-policy'));
   const replacing = policy === 'replace-all';
+  const removedCount = pendingImport?.removedRules.length ?? 0;
   $('#confirm-import').toggleAttribute('data-destructive', replacing);
   $('#import-impact').textContent = replacing
-    ? t('importRemovalImpact', { count: pendingImport?.removedIds.length ?? 0 })
+    ? t('importRemovalImpact', { count: removedCount })
     : t('importKeepImpact');
+  $('#import-removals').hidden = !replacing || !removedCount;
 }
 
 function cancelImport() {
@@ -563,7 +572,7 @@ $('#confirm-import')?.addEventListener('click', async () => {
   if (!pendingImport || busy) return;
   const imported = await withBusy(async () => {
     const value = await backupRequest({ type: 'import', text: pendingImport.text,
-      confirmedRemovalIds: pendingImport.removedIds, conflictPolicy: readChoice($('#conflict-policy')) });
+      confirmedRemovalIds: pendingImport.removedRules.map(rule => rule.id), conflictPolicy: readChoice($('#conflict-policy')) });
     render(value);
     const { added, updated, skipped } = value.importSummary;
     pendingImport = undefined;

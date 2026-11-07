@@ -55,7 +55,7 @@ More specific paths take priority. At the same path, a rule for a single domain 
 
 **Remove** moves a rule to **Trash**, below the editor. You can restore a rule with its settings or choose **Empty trash** and confirm permanent deletion. If a saved rule already occupies the same scope, the deleted copy stays in Trash when you try to restore it.
 
-The manager also offers **Export JSON** and **Import JSON**. The import dialog previews new and matching rules. By default it adds only new rules. You can also update matching rules or replace the entire list. The replacement option shows how many current rules will be deleted. The JSON covers the main rule list. Trash and display preferences stay in local storage.
+The manager also offers **Export JSON** and **Import JSON**. The import dialog previews new and matching rules. By default it adds only new rules. You can also update matching rules or replace the entire list. The replacement option shows a scrollable list of the current rules it will delete. The JSON covers the main rule list. Trash and display preferences stay in local storage.
 
 The interface follows the browser language by default. The **Language** selector in the manager lets you choose English, Spanish, French, European Portuguese, Italian, Simplified Chinese, Japanese, Korean, or German.
 

@@ -146,6 +146,17 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 }
 #import-preview::backdrop { background: rgb(0 0 0 / .55); }
 #import-preview h2 { margin-block-start: 0; }
+#import-removals {
+  max-block-size: min(10rem, 30dvh);
+  overflow-y: auto;
+  margin-block: 0 1rem;
+  padding: .35rem .7rem .35rem 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  background: var(--page);
+}
+#import-removals li { padding-block: .25rem; overflow-wrap: anywhere; }
+#import-removals li + li { border-top: 1px solid var(--border); }
 #import-status:empty { display: none; }
 .import-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .import-actions button { flex: 1 1 10rem; width: auto; }

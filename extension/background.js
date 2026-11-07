@@ -24,8 +24,10 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
     }
     if (message.type === 'export') return { backup: createBackup(await manager.list()) };
     if (message.type === 'preview-import') {
-      const { summary, removedIds } = mergeRules(await manager.list(), parseBackup(message.text), 'replace-all');
-      return { summary, removedIds };
+      const existing = await manager.list();
+      const { summary, removedIds } = mergeRules(existing, parseBackup(message.text), 'replace-all');
+      const removalSet = new Set(removedIds);
+      return { summary, removedRules: existing.filter(rule => removalSet.has(rule.id)) };
     }
     if (message.type === 'import') {
       const summary = await importBackup(manager, message.text, message.conflictPolicy, message.confirmedRemovalIds);
