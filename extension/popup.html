@@ -5,7 +5,10 @@
 <title>Native Dark Mode</title>
 <link rel="stylesheet" href="popup.css">
 <main>
-  <h1 data-i18n="title">Native Dark Mode</h1>
+  <header class="popup-header">
+    <h1 data-i18n="title">Native Dark Mode</h1>
+    <button id="manage-extension" type="button" data-i18n="manageExtension">Manage extension</button>
+  </header>
   <details class="appearance">
     <summary data-i18n="appearance">Appearance and accessibility</summary>
     <fieldset>
@@ -69,7 +72,6 @@
   </header>
   <div id="rules"></div>
   <p id="rule-count" class="note"></p>
-  <button id="manage-extension" type="button" data-i18n="manageExtension">Manage extension</button>
   <p class="note" data-i18n="debugNote">Your browser may show a debugging banner. Closing it or opening DevTools may disconnect dark mode.</p>
   <details><summary data-i18n="diagnostics">Diagnostics</summary><pre id="diagnostic"></pre></details>
 </main>
