@@ -5,6 +5,15 @@
 <title>Manage rules</title>
 <link rel="stylesheet" href="popup.css">
 <link rel="stylesheet" href="options.css">
+<div class="text-size-toolbar" role="group" aria-labelledby="text-size-title">
+  <div class="text-size">
+    <button type="button" id="text-smaller" data-i18n-label="smallerText" aria-label="Decrease text size">A−</button>
+    <output id="text-scale">100%</output>
+    <button type="button" id="text-larger" data-i18n-label="largerText" aria-label="Increase text size">A+</button>
+  </div>
+  <span id="text-size-title" data-i18n="textSize">Text size</span>
+  <p id="appearance-status" role="status"></p>
+</div>
 <main>
   <header><h1 data-i18n="manageRules">Manage rules</h1>
   <label class="language-control"><span class="language-label"><span class="language-flag-icon" aria-hidden="true"></span><span data-i18n="language">Language</span></span><select id="language"><option value="auto" data-i18n="automatic">Automatic (browser)</option></select></label>
@@ -12,16 +21,6 @@
   </header>
   <details class="appearance">
     <summary><span class="accessibility-icon" aria-hidden="true"></span><span data-i18n="appearance">Appearance and accessibility</span></summary>
-    <fieldset>
-      <legend data-i18n="textSize">Text size</legend>
-      <div class="text-size-slot">
-        <div class="text-size">
-          <button type="button" id="text-smaller" data-i18n-label="smallerText" aria-label="Decrease text size">A−</button>
-          <output id="text-scale">100%</output>
-          <button type="button" id="text-larger" data-i18n-label="largerText" aria-label="Increase text size">A+</button>
-        </div>
-      </div>
-    </fieldset>
     <fieldset id="ui-theme" class="choice-group">
       <legend data-i18n="theme">Theme</legend>
       <div class="choices">
@@ -31,7 +30,6 @@
       </div>
     </fieldset>
     <label><input id="high-contrast" type="checkbox"> <span data-i18n="highContrast">High contrast</span></label>
-    <p id="appearance-status" role="status"></p>
   </details>
   <p id="status" role="status" aria-live="polite"></p>
   <div class="workspace-container">

@@ -10,7 +10,7 @@ header #manage-extension { width: auto; }
 .workspace-container { container-type: inline-size; }
 #status { min-block-size: 1.5em; }
 .workspace { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 1.7fr); gap: 20px; align-items: start; }
-.editor-column { min-width: 0; position: sticky; top: 24px; max-height: calc(100dvh - 48px); overflow-y: auto; }
+.editor-column { min-width: 0; position: sticky; top: calc(var(--text-toolbar-height) + 24px); max-height: calc(100dvh - var(--text-toolbar-height) - 48px); overflow-y: auto; }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
 .panel h2 { margin-top: 0; }
 .backup-panel { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 12px; }

@@ -12,8 +12,6 @@ export async function initializeAppearance() {
   const smaller = document.querySelector('#text-smaller');
   const larger = document.querySelector('#text-larger');
   const output = document.querySelector('#text-scale');
-  const sizeControls = output.parentElement;
-  const sizeSlot = sizeControls.parentElement;
   const status = document.querySelector('#appearance-status');
   const preferences = { ...defaults };
 
@@ -51,30 +49,6 @@ export async function initializeAppearance() {
     if (next !== undefined) void save('uiTextScale', next);
   }
 
-  function pinSizeControls(event) {
-    if (event.pointerType !== 'mouse' || sizeControls.hasAttribute('data-pinned')) return;
-    const bounds = sizeControls.getBoundingClientRect();
-    const fontSize = getComputedStyle(sizeControls).fontSize;
-    if (root.dataset.page !== 'options') {
-      root.style.setProperty('--popup-width', getComputedStyle(document.body).width);
-    }
-    sizeSlot.style.minBlockSize = `${bounds.height}px`;
-    Object.assign(sizeControls.style, {
-      top: `${bounds.top}px`,
-      left: `${bounds.left}px`,
-      width: `${bounds.width}px`,
-      fontSize
-    });
-    sizeControls.setAttribute('data-pinned', '');
-  }
-
-  function unpinSizeControls() {
-    sizeControls.removeAttribute('data-pinned');
-    sizeControls.removeAttribute('style');
-    sizeSlot.style.removeProperty('min-block-size');
-    root.style.removeProperty('--popup-width');
-  }
-
   render();
   try {
     Object.assign(preferences, await chrome.storage.local.get(defaults));
@@ -92,10 +66,6 @@ export async function initializeAppearance() {
   });
   theme.addEventListener('change', () => save('uiTheme', readChoice(theme)));
   contrast.addEventListener('change', () => save('uiHighContrast', contrast.checked));
-  smaller.addEventListener('pointerdown', pinSizeControls);
-  larger.addEventListener('pointerdown', pinSizeControls);
-  sizeControls.addEventListener('pointerleave', unpinSizeControls);
-  window.addEventListener('blur', unpinSizeControls);
   smaller.addEventListener('click', () => step(-1));
   larger.addEventListener('click', () => step(1));
   return render;

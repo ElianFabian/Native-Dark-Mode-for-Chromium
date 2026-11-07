@@ -1,6 +1,8 @@
 :root {
   color-scheme: light;
   font: 100%/1.5 system-ui, sans-serif;
+  --text-toolbar-height: 61px;
+  scroll-padding-top: calc(var(--text-toolbar-height) + 8px);
   --page: #f4f6fb;
   --panel: #fff;
   --text: #192538;
@@ -69,7 +71,7 @@
   --focus: var(--text);
 }
 [hidden] { display: none !important; }
-body { margin: 0; width: var(--popup-width, clamp(500px, 34rem, 660px)); max-width: 100%; background: var(--page); color: var(--text); font-size: .875rem; }
+body { margin: 0; width: 544px; max-width: 100%; background: var(--page); color: var(--text); font-size: .875rem; }
 main { padding: 20px; }
 .popup-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
 .popup-header h1 { margin: 0; overflow-wrap: anywhere; }
@@ -265,11 +267,29 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
   font-size: 1rem;
   font-weight: 700;
 }
-.text-size { display: flex; flex-wrap: wrap; gap: .57em; align-items: center; width: fit-content; max-width: 100%; }
-.text-size button { width: auto; min-inline-size: 3.15em; }
-.text-size output { min-inline-size: 5ch; text-align: center; font-variant-numeric: tabular-nums; }
-.text-size[data-pinned] { position: fixed; z-index: 5; max-width: none; border-radius: .5em; background: var(--panel); }
-#appearance-status:empty { margin: 0; }
+.text-size-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  font-size: 16px;
+}
+.text-size {
+  display: grid;
+  grid-template-columns: 44px 60px 44px;
+  gap: 4px;
+  align-items: center;
+}
+.text-size button { min-height: 44px; padding: 0; margin: 0; }
+.text-size output { text-align: center; font-variant-numeric: tabular-nums; }
+#text-size-title { font-weight: 650; }
+#appearance-status { margin: 0; }
 
 .choice-group { min-inline-size: 0; border: 0; padding: 0; margin: .65rem 0; }
 .choices { display: flex; flex-wrap: wrap; gap: .4rem; margin-block-start: .25rem; }

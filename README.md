@@ -51,7 +51,7 @@ The manager also offers **Export JSON** and **Import JSON**. The import dialog p
 
 The interface follows the browser language by default. The **Language** selector in the manager lets you choose English, Spanish, French, European Portuguese, Italian, Simplified Chinese, Japanese, Korean, or German.
 
-Open **Appearance and accessibility** in the popup or rule manager to adjust text size from 75% to 200%, enable high contrast, or choose a light or dark theme. The theme follows your system by default. The extension saves these preferences locally and shares them between its two interfaces. Website dark mode is controlled separately by your rules.
+Use the text size controls at the top left of the popup or rule manager to adjust text from 75% to 200%. Open **Appearance and accessibility** to enable high contrast or choose a light or dark theme. The theme follows your system by default. The extension saves these preferences locally and shares them between its two interfaces. Website dark mode is controlled separately by your rules.
 
 ## How it works
 
