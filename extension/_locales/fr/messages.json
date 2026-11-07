@@ -283,5 +283,26 @@
   },
   "trashEmptied": {
     "message": "Règles supprimées définitivement."
+  },
+  "importMode": {
+    "message": "Comment importer la sauvegarde ?"
+  },
+  "importAddOnly": {
+    "message": "Ajouter uniquement les nouvelles règles"
+  },
+  "importUpdateMatches": {
+    "message": "Ajouter les nouvelles et mettre à jour les correspondances"
+  },
+  "importReplaceAll": {
+    "message": "Remplacer toute la liste"
+  },
+  "importRemovalImpact": {
+    "message": "Les règles absentes de la sauvegarde seront supprimées définitivement ({count})."
+  },
+  "importKeepImpact": {
+    "message": "Les règles absentes de la sauvegarde seront conservées."
+  },
+  "errorStaleImport": {
+    "message": "Les règles enregistrées ont changé. Annulez et sélectionnez de nouveau la sauvegarde pour actualiser l’aperçu."
   }
 }

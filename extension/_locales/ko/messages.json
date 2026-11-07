@@ -283,5 +283,26 @@
   },
   "trashEmptied": {
     "message": "규칙을 영구 삭제했습니다."
+  },
+  "importMode": {
+    "message": "백업을 어떻게 가져올까요?"
+  },
+  "importAddOnly": {
+    "message": "새 규칙만 추가"
+  },
+  "importUpdateMatches": {
+    "message": "새 규칙을 추가하고 일치하는 규칙 업데이트"
+  },
+  "importReplaceAll": {
+    "message": "전체 목록 바꾸기"
+  },
+  "importRemovalImpact": {
+    "message": "백업에 없는 기존 규칙은 영구 삭제됩니다({count}개)."
+  },
+  "importKeepImpact": {
+    "message": "백업에 없는 기존 규칙은 유지됩니다."
+  },
+  "errorStaleImport": {
+    "message": "저장된 규칙이 변경되었습니다. 취소하고 백업을 다시 선택해 미리보기를 확인하세요."
   }
 }

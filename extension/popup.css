@@ -168,3 +168,38 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
 .text-size { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .text-size button { width: auto; min-inline-size: 2.75rem; }
 #appearance-status:empty { margin: 0; }
+
+.choice-group { min-inline-size: 0; border: 0; padding: 0; margin: .65rem 0; }
+.choices { display: flex; flex-wrap: wrap; gap: .4rem; margin-block-start: .25rem; }
+.choices label { position: relative; min-inline-size: 0; margin: 0; }
+.choices input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; }
+.choices span {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-block-size: 2.5rem;
+  padding: .35rem .7rem;
+  border: 2px solid var(--border);
+  border-radius: 1.25rem;
+  background: var(--panel);
+  color: var(--text);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.choices input:enabled:not(:checked):hover + span { background: var(--secondary-hover); }
+.choices input:checked + span {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-text);
+  font-weight: 700;
+}
+.choices input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
+.choices input:disabled + span { opacity: .55; cursor: default; }
+@media (forced-colors: active) {
+  .choices input:checked + span {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+}

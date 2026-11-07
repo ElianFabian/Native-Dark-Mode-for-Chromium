@@ -19,11 +19,14 @@
         <button type="button" id="text-larger" data-i18n-label="largerText" aria-label="Increase text size">A+</button>
       </div>
     </fieldset>
-    <label><span data-i18n="theme">Theme</span><select id="ui-theme">
-      <option value="system" data-i18n="systemTheme">Follow system</option>
-      <option value="light" data-i18n="lightTheme">Light</option>
-      <option value="dark" data-i18n="darkTheme">Dark</option>
-    </select></label>
+    <fieldset id="ui-theme" class="choice-group">
+      <legend data-i18n="theme">Theme</legend>
+      <div class="choices">
+        <label><input type="radio" name="ui-theme" value="system" checked><span data-i18n="systemTheme">Follow system</span></label>
+        <label><input type="radio" name="ui-theme" value="light"><span data-i18n="lightTheme">Light</span></label>
+        <label><input type="radio" name="ui-theme" value="dark"><span data-i18n="darkTheme">Dark</span></label>
+      </div>
+    </fieldset>
     <label><input id="high-contrast" type="checkbox"> <span data-i18n="highContrast">High contrast</span></label>
     <p id="appearance-status" role="status"></p>
   </details>
@@ -33,7 +36,13 @@
       <section class="panel rule-editor" aria-labelledby="editor-title">
         <h2 id="editor-title" data-i18n="ruleEditor">Rule editor</h2>
         <label><span data-i18n="address">Website or section URL</span><input id="address" type="text" placeholder="https://example.com/articles/"></label>
-        <label><span data-i18n="scope">Scope</span><select id="scope"><option value="website" data-i18n="website">Entire website</option><option value="section" data-i18n="section">Path section</option></select></label>
+        <fieldset id="scope" class="choice-group">
+          <legend data-i18n="scope">Scope</legend>
+          <div class="choices">
+            <label><input type="radio" name="scope" value="website" checked><span data-i18n="website">Entire website</span></label>
+            <label><input type="radio" name="scope" value="section"><span data-i18n="section">Path section</span></label>
+          </div>
+        </fieldset>
         <label><input id="subdomains" type="checkbox"> <span data-i18n="subdomains">Include subdomains</span></label>
         <label id="regional-option"><input id="regional" type="checkbox" disabled aria-describedby="regional-help"> <span data-i18n="regionalDomains">Include regional domains</span></label>
         <p class="note" id="regional-help"></p>
@@ -48,18 +57,6 @@
           <button id="import" disabled data-i18n="import">Import JSON</button>
           <input id="import-file" type="file" accept=".json,application/json" hidden>
           <p id="backup-status" role="status" aria-live="polite"></p>
-          <section id="import-preview" hidden aria-label="Import preview">
-            <p id="import-summary"></p>
-            <label><span data-i18n="matchingRules">Matching website and section rules</span>
-              <select id="conflict-policy">
-                <option value="keep" data-i18n="keep">Keep my existing settings</option>
-                <option value="replace" data-i18n="replace">Use settings from the file</option>
-              </select>
-            </label>
-            <p class="note" data-i18n="importNote">Rules absent from the file are kept. Enabled rules may activate dark mode in matching open tabs.</p>
-            <button id="confirm-import" data-i18n="confirmImport">Import rules</button>
-            <button id="cancel-import" data-i18n="cancel">Cancel</button>
-          </section>
         </section>
       </section>
       <section class="panel trash-panel" aria-labelledby="trash-title">
@@ -77,20 +74,39 @@
       <h2 id="rules-title" data-i18n="savedRules">Saved websites and sections</h2>
       <label><span data-i18n="searchRules">Search rules</span><input id="search" type="text"></label>
       <div class="list-controls">
-        <label><span data-i18n="sortRules">Sort rules</span>
-          <select id="sort-rules">
-            <option value="alphabetical" data-i18n="alphabetical">Alphabetical (A–Z)</option>
-            <option value="reverse-alphabetical" data-i18n="reverseAlphabetical">Alphabetical (Z–A)</option>
-            <option value="newest" data-i18n="newest">Most recently added</option>
-            <option value="oldest" data-i18n="oldest">Oldest added</option>
-          </select>
-        </label>
+        <fieldset id="sort-rules" class="choice-group">
+          <legend data-i18n="sortRules">Sort rules</legend>
+          <div class="choices">
+            <label><input type="radio" name="sort-rules" value="alphabetical" checked><span data-i18n="alphabetical">Alphabetical (A–Z)</span></label>
+            <label><input type="radio" name="sort-rules" value="reverse-alphabetical"><span data-i18n="reverseAlphabetical">Alphabetical (Z–A)</span></label>
+            <label><input type="radio" name="sort-rules" value="newest"><span data-i18n="newest">Most recently added</span></label>
+            <label><input type="radio" name="sort-rules" value="oldest"><span data-i18n="oldest">Oldest added</span></label>
+          </div>
+        </fieldset>
         <label><input id="group-domains" type="checkbox"> <span data-i18n="groupDomains">Group by domain</span></label>
       </div>
       <p id="rule-count" class="note"></p>
       <div id="rules"></div>
     </section>
   </div>
+  <dialog id="import-preview" aria-labelledby="import-title">
+    <h2 id="import-title" data-i18n="confirmImport">Import rules</h2>
+    <p id="import-summary"></p>
+    <fieldset id="conflict-policy" class="choice-group">
+      <legend data-i18n="importMode">How should the backup be imported?</legend>
+      <div class="choices">
+        <label><input type="radio" name="conflict-policy" value="keep" checked autofocus><span data-i18n="importAddOnly">Add new rules only</span></label>
+        <label><input type="radio" name="conflict-policy" value="replace"><span data-i18n="importUpdateMatches">Add new rules and update matches</span></label>
+        <label><input type="radio" name="conflict-policy" value="replace-all"><span data-i18n="importReplaceAll">Replace the entire list</span></label>
+      </div>
+    </fieldset>
+    <p id="import-impact" role="status"></p>
+    <p id="import-status" role="status"></p>
+    <div class="import-actions">
+      <button id="cancel-import" type="button" data-i18n="cancel">Cancel</button>
+      <button id="confirm-import" type="button" data-i18n="confirmImport">Import rules</button>
+    </div>
+  </dialog>
   <details><summary data-i18n="diagnostics">Diagnostics</summary><pre id="diagnostic"></pre></details>
 </main>
 <script src="popup.js" type="module"></script>

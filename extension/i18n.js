@@ -57,7 +57,6 @@ export function translatePage() {
     element.setAttribute('aria-label', t(element.dataset.i18nLabel));
   });
   document.title = t(document.documentElement.dataset.page === 'options' ? 'manageRules' : 'title');
-  document.querySelector('#import-preview')?.setAttribute('aria-label', t('importPreview'));
 }
 
 export function errorText(error) {
@@ -71,6 +70,7 @@ export function errorText(error) {
   if (rule) return t('errorRule', { count: rule[1] });
   if (/taking too long/.test(text)) return t('errorTimeout');
   if (/already exists for this scope/.test(text)) return t('errorScopeConflict');
+  if (/Saved rules changed since the import preview/.test(text)) return t('errorStaleImport');
   if (/no longer inherits a rule/.test(text)) return t('errorInheritedRuleChanged');
   if (/HTTP or HTTPS/.test(text)) return t('errorPage');
   const detached = /^Connection ended \((.*?)\)/.exec(text);

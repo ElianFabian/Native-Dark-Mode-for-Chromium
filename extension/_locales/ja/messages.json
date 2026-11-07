@@ -283,5 +283,26 @@
   },
   "trashEmptied": {
     "message": "ルールを完全に削除しました。"
+  },
+  "importMode": {
+    "message": "バックアップをどのようにインポートしますか？"
+  },
+  "importAddOnly": {
+    "message": "新しいルールのみ追加"
+  },
+  "importUpdateMatches": {
+    "message": "新しいルールを追加し、一致するルールを更新"
+  },
+  "importReplaceAll": {
+    "message": "一覧全体を置き換える"
+  },
+  "importRemovalImpact": {
+    "message": "バックアップに含まれない既存ルールは完全に削除されます（{count} 件）。"
+  },
+  "importKeepImpact": {
+    "message": "バックアップに含まれない既存ルールは保持されます。"
+  },
+  "errorStaleImport": {
+    "message": "保存済みのルールが変更されました。キャンセルしてバックアップを選択し直し、プレビューを確認してください。"
   }
 }

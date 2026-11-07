@@ -283,5 +283,26 @@
   },
   "trashEmptied": {
     "message": "Regole eliminate definitivamente."
+  },
+  "importMode": {
+    "message": "Come vuoi importare il backup?"
+  },
+  "importAddOnly": {
+    "message": "Aggiungi solo le nuove regole"
+  },
+  "importUpdateMatches": {
+    "message": "Aggiungi le nuove regole e aggiorna le corrispondenze"
+  },
+  "importReplaceAll": {
+    "message": "Sostituisci l’intero elenco"
+  },
+  "importRemovalImpact": {
+    "message": "Le regole assenti dal backup verranno eliminate definitivamente ({count})."
+  },
+  "importKeepImpact": {
+    "message": "Le regole assenti dal backup verranno conservate."
+  },
+  "errorStaleImport": {
+    "message": "Le regole salvate sono cambiate. Annulla e seleziona di nuovo il backup per aggiornare l’anteprima."
   }
 }

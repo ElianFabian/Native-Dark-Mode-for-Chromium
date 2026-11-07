@@ -1,4 +1,5 @@
 import { errorText } from './i18n.js';
+import { readChoice, writeChoice } from './choices.js';
 
 const scales = [75, 90, 100, 115, 130, 150, 175, 200];
 const defaults = { uiTheme: 'system', uiTextScale: 100, uiHighContrast: false };
@@ -16,14 +17,13 @@ export async function initializeAppearance() {
 
   function render() {
     const { uiTheme, uiTextScale, uiHighContrast } = preferences;
-    theme.value = uiTheme;
-    if (!theme.value) theme.value = defaults.uiTheme;
-    root.dataset.theme = theme.value === 'system' ? (systemDark.matches ? 'dark' : 'light') : theme.value;
+    writeChoice(theme, uiTheme);
+    const selectedTheme = readChoice(theme);
+    root.dataset.theme = selectedTheme === 'system' ? (systemDark.matches ? 'dark' : 'light') : selectedTheme;
     contrast.checked = uiHighContrast === true;
     root.toggleAttribute('data-high-contrast', contrast.checked);
     const scale = scales.includes(uiTextScale) ? uiTextScale : defaults.uiTextScale;
     root.style.fontSize = `${scale}%`;
-    root.toggleAttribute('data-large-text', scale >= 150);
     output.value = new Intl.NumberFormat(document.documentElement.lang, { style: 'percent' }).format(scale / 100);
     smaller.setAttribute('aria-disabled', String(scale === scales[0]));
     larger.setAttribute('aria-disabled', String(scale === scales.at(-1)));
@@ -64,7 +64,7 @@ export async function initializeAppearance() {
     }
     render();
   });
-  theme.addEventListener('change', () => save('uiTheme', theme.value));
+  theme.addEventListener('change', () => save('uiTheme', readChoice(theme)));
   contrast.addEventListener('change', () => save('uiHighContrast', contrast.checked));
   smaller.addEventListener('click', () => step(-1));
   larger.addEventListener('click', () => step(1));

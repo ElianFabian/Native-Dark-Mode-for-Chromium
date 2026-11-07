@@ -283,5 +283,26 @@
   },
   "trashEmptied": {
     "message": "Regras eliminadas definitivamente."
+  },
+  "importMode": {
+    "message": "Como pretende importar a cópia de segurança?"
+  },
+  "importAddOnly": {
+    "message": "Adicionar apenas regras novas"
+  },
+  "importUpdateMatches": {
+    "message": "Adicionar novas regras e atualizar as correspondentes"
+  },
+  "importReplaceAll": {
+    "message": "Substituir toda a lista"
+  },
+  "importRemovalImpact": {
+    "message": "As regras ausentes da cópia serão eliminadas definitivamente ({count})."
+  },
+  "importKeepImpact": {
+    "message": "As regras ausentes da cópia serão mantidas."
+  },
+  "errorStaleImport": {
+    "message": "As regras guardadas mudaram. Cancele e selecione novamente a cópia para rever a pré-visualização."
   }
 }

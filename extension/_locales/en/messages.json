@@ -283,5 +283,26 @@
   },
   "trashEmptied": {
     "message": "Deleted rules permanently removed."
+  },
+  "importMode": {
+    "message": "How should the backup be imported?"
+  },
+  "importAddOnly": {
+    "message": "Add new rules only"
+  },
+  "importUpdateMatches": {
+    "message": "Add new rules and update matches"
+  },
+  "importReplaceAll": {
+    "message": "Replace the entire list"
+  },
+  "importRemovalImpact": {
+    "message": "Current rules absent from the backup will be permanently deleted ({count})."
+  },
+  "importKeepImpact": {
+    "message": "Current rules absent from the backup will be kept."
+  },
+  "errorStaleImport": {
+    "message": "Saved rules changed. Cancel and select the backup again to review the updated preview."
   }
 }

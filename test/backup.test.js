@@ -79,3 +79,24 @@ test('invalid imports and storage failures preserve existing rules', async () =>
   ]);
   assert.equal(saved.length, 3);
 });
+
+test('replacing a backup only removes rules covered by the import preview', async () => {
+  const current = rule('example.com', false);
+  const obsolete = rule('obsolete.example');
+  const incoming = [rule('example.com'), rule('new.example')];
+  let saved = [current, obsolete];
+  const manager = new RuleManager({ storage: { local: {
+    get: async () => ({ rules: saved }),
+    set: async value => { saved = value.rules; }
+  } } }, {});
+  const preview = mergeRules(saved, incoming, 'replace-all');
+  assert.deepEqual(preview.removedIds, [obsolete.id]);
+  assert.deepEqual(preview.summary, { added: 1, updated: 1, skipped: 0 });
+  await manager.save({ url: 'other.example', enabled: true });
+  const before = saved;
+  await assert.rejects(importBackup(manager, encode(incoming), 'replace-all', preview.removedIds), /changed since/);
+  assert.deepEqual(saved, before);
+  const updatedPreview = mergeRules(saved, incoming, 'replace-all');
+  await importBackup(manager, encode(incoming), 'replace-all', updatedPreview.removedIds);
+  assert.deepEqual(saved.map(rule => [rule.host, rule.enabled]), [['example.com', true], ['new.example', true]]);
+});

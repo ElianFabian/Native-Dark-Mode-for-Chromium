@@ -58,6 +58,14 @@ export function createBackup(rules) {
 }
 
 export function mergeRules(existing, incoming, conflictPolicy = 'keep') {
+  if (conflictPolicy === 'replace-all') {
+    const existingIds = new Set(existing.map(rule => rule.id));
+    const incomingIds = new Set(incoming.map(rule => rule.id));
+    const removedIds = existing.filter(rule => !incomingIds.has(rule.id)).map(rule => rule.id);
+    const updated = incoming.filter(rule => existingIds.has(rule.id)).length;
+    return { rules: incoming, removedIds,
+      summary: { added: incoming.length - updated, updated, skipped: 0 } };
+  }
   if (!['keep', 'replace'].includes(conflictPolicy)) throw new Error('Choose how matching rules should be handled.');
   const merged = new Map(existing.map(rule => [rule.id, rule]));
   const summary = { added: 0, updated: 0, skipped: 0 };
@@ -75,13 +83,19 @@ export function mergeRules(existing, incoming, conflictPolicy = 'keep') {
   return { rules: [...merged.values()], summary };
 }
 
-export async function importBackup(manager, text, conflictPolicy) {
+export async function importBackup(manager, text, conflictPolicy, confirmedRemovalIds) {
   // Validate everything before the first write. Use the manager queue so other
   // popup changes cannot be lost between reading and saving the merged list.
   const incoming = parseBackup(text);
   let summary;
   await manager.mutate(existing => {
     const result = mergeRules(existing, incoming, conflictPolicy);
+    if (result.removedIds) {
+      const confirmed = new Set(Array.isArray(confirmedRemovalIds) ? confirmedRemovalIds : []);
+      if (result.removedIds.some(id => !confirmed.has(id))) {
+        throw new Error('Saved rules changed since the import preview.');
+      }
+    }
     summary = result.summary;
     const existingIds = new Set(existing.map(rule => rule.id));
     const now = Date.now();

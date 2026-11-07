@@ -283,5 +283,26 @@
   },
   "trashEmptied": {
     "message": "已永久删除规则。"
+  },
+  "importMode": {
+    "message": "如何导入备份？"
+  },
+  "importAddOnly": {
+    "message": "仅添加新规则"
+  },
+  "importUpdateMatches": {
+    "message": "添加新规则并更新匹配规则"
+  },
+  "importReplaceAll": {
+    "message": "替换整个列表"
+  },
+  "importRemovalImpact": {
+    "message": "备份中没有的现有规则将被永久删除（{count} 条）。"
+  },
+  "importKeepImpact": {
+    "message": "备份中没有的现有规则将保留。"
+  },
+  "errorStaleImport": {
+    "message": "已保存的规则发生变化。请取消并重新选择备份以查看最新预览。"
   }
 }

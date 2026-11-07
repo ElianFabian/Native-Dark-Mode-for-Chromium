@@ -24,10 +24,11 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
     }
     if (message.type === 'export') return { backup: createBackup(await manager.list()) };
     if (message.type === 'preview-import') {
-      return { summary: mergeRules(await manager.list(), parseBackup(message.text), 'keep').summary };
+      const { summary, removedIds } = mergeRules(await manager.list(), parseBackup(message.text), 'replace-all');
+      return { summary, removedIds };
     }
     if (message.type === 'import') {
-      const summary = await importBackup(manager, message.text, message.conflictPolicy);
+      const summary = await importBackup(manager, message.text, message.conflictPolicy, message.confirmedRemovalIds);
       // Imported settings respect tabs paused by the user. Do not wait for all
       // debugger operations before acknowledging the saved configuration.
       void manager.applyAll().catch(report);

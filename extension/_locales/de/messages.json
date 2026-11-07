@@ -283,5 +283,26 @@
   },
   "trashEmptied": {
     "message": "Regeln endgültig gelöscht."
+  },
+  "importMode": {
+    "message": "Wie soll die Sicherung importiert werden?"
+  },
+  "importAddOnly": {
+    "message": "Nur neue Regeln hinzufügen"
+  },
+  "importUpdateMatches": {
+    "message": "Neue Regeln hinzufügen und passende aktualisieren"
+  },
+  "importReplaceAll": {
+    "message": "Gesamte Liste ersetzen"
+  },
+  "importRemovalImpact": {
+    "message": "Regeln, die in der Sicherung fehlen, werden endgültig gelöscht ({count})."
+  },
+  "importKeepImpact": {
+    "message": "Regeln, die in der Sicherung fehlen, bleiben erhalten."
+  },
+  "errorStaleImport": {
+    "message": "Die gespeicherten Regeln wurden geändert. Brich ab und wähle die Sicherung erneut aus, um die Vorschau zu prüfen."
   }
 }

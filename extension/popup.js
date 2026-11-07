@@ -4,6 +4,7 @@ import { requestWithTimeout } from './request.js';
 import { MAX_BACKUP_BYTES } from './backup.js';
 import { LANGUAGES, initializeLanguage, setLanguage, translatePage, t, errorText } from './i18n.js';
 import { initializeAppearance } from './appearance.js';
+import { readChoice, writeChoice } from './choices.js';
 
 const $ = selector => document.querySelector(selector);
 const isManager = document.documentElement.dataset.page === 'options';
@@ -12,7 +13,6 @@ let tab;
 let snapshot;
 let busy = false;
 let pendingImport;
-let pendingPreviewSummary;
 let displayedRule;
 let editingId;
 let refreshAppearance;
@@ -26,7 +26,7 @@ for (const [code, name] of Object.entries(LANGUAGES)) {
 
 function draft(enabled) {
   return {
-    url: $('#address').value.trim(), scope: $('#scope').value,
+    url: $('#address').value.trim(), scope: readChoice($('#scope')),
     includeSubdomains: $('#subdomains').checked,
     includeRegionalDomains: $('#regional').checked,
     enabled
@@ -123,7 +123,7 @@ function groupRules(rules) {
     if (!groups.has(domain)) groups.set(domain, []);
     groups.get(domain).push(rule);
   }
-  const order = $('#sort-rules').value;
+  const order = readChoice($('#sort-rules'));
   if (order === 'newest' || order === 'oldest') return groups;
   const collator = new Intl.Collator(document.documentElement.lang);
   const direction = order === 'reverse-alphabetical' ? -1 : 1;
@@ -132,7 +132,7 @@ function groupRules(rules) {
 
 function showRule(rule) {
   $('#address').value = rule ? ruleAddress(rule) : '';
-  $('#scope').value = rule && rule.path !== '/' ? 'section' : 'website';
+  writeChoice($('#scope'), rule && rule.path !== '/' ? 'section' : 'website');
   $('#subdomains').checked = Boolean(rule?.includeSubdomains);
   $('#regional').checked = Boolean(rule?.includeRegionalDomains);
   updateButton();
@@ -143,7 +143,7 @@ function renderRules() {
   const query = $('#search')?.value.trim().toLowerCase() ?? '';
   const visible = isManager
     ? orderRules(rules.filter(rule => matchesSearch(rule, query)),
-      $('#sort-rules').value, document.documentElement.lang)
+      readChoice($('#sort-rules')), document.documentElement.lang)
     : rules.slice(0, popupRuleLimit);
   $('#rules').replaceChildren();
   $('#rule-count').textContent = visible.length < rules.length
@@ -308,54 +308,70 @@ $('#import')?.addEventListener('click', () => {
   $('#import-file').click();
 });
 
-$('#import-file')?.addEventListener('change', () => {
+$('#import-file')?.addEventListener('change', async () => {
   const file = $('#import-file').files[0];
   if (!file) return;
-  void withBusy(async () => {
+  const ready = await withBusy(async () => {
     pendingImport = undefined;
-    pendingPreviewSummary = undefined;
-    $('#import-preview').hidden = true;
     if (file.size > MAX_BACKUP_BYTES) throw new Error('Choose a JSON backup smaller than 1 MiB.');
     const text = await file.text();
-    const { summary } = await backupRequest({ type: 'preview-import', text });
-    pendingImport = text;
-    $('#conflict-policy').value = 'keep';
-    pendingPreviewSummary = summary;
-    $('#import-summary').textContent = t('previewSummary', { added: summary.added, matching: summary.skipped });
-    $('#import-preview').hidden = false;
+    const { summary, removedIds } = await backupRequest({ type: 'preview-import', text });
+    pendingImport = { text, removedIds };
+    writeChoice($('#conflict-policy'), 'keep');
+    $('#import-summary').textContent = t('previewSummary', { added: summary.added, matching: summary.updated });
+    $('#import-status').textContent = '';
+    updateImportImpact();
     $('#backup-status').textContent = t('fileValidated');
+    return true;
   }, t('validating'), $('#backup-status'));
+  if (ready) $('#import-preview').showModal();
 });
 
-$('#cancel-import')?.addEventListener('click', () => {
+function updateImportImpact() {
+  const policy = readChoice($('#conflict-policy'));
+  const replacing = policy === 'replace-all';
+  $('#confirm-import').toggleAttribute('data-destructive', replacing);
+  $('#import-impact').textContent = replacing
+    ? t('importRemovalImpact', { count: pendingImport?.removedIds.length ?? 0 })
+    : t('importKeepImpact');
+}
+
+function cancelImport() {
   pendingImport = undefined;
-  pendingPreviewSummary = undefined;
-  $('#import-preview').hidden = true;
   $('#backup-status').textContent = t('importCanceled');
   updateButton();
+}
+
+$('#conflict-policy')?.addEventListener('change', updateImportImpact);
+$('#cancel-import')?.addEventListener('click', () => {
+  $('#import-preview').close();
+  cancelImport();
+});
+$('#import-preview')?.addEventListener('cancel', event => {
+  if (busy) event.preventDefault();
+  else cancelImport();
 });
 
-$('#confirm-import')?.addEventListener('click', () => withBusy(async () => {
-  if (pendingImport === undefined) throw new Error('Select a JSON backup first.');
-  const value = await backupRequest({ type: 'import', text: pendingImport, conflictPolicy: $('#conflict-policy').value });
-  render(value);
-  const { added, updated, skipped } = value.importSummary;
-  pendingImport = undefined;
-  pendingPreviewSummary = undefined;
-  $('#import-preview').hidden = true;
-  $('#backup-status').textContent = t('importSaved', { added, updated, skipped });
-}, t('importing'), $('#backup-status')));
+$('#confirm-import')?.addEventListener('click', async () => {
+  if (!pendingImport || busy) return;
+  const imported = await withBusy(async () => {
+    const value = await backupRequest({ type: 'import', text: pendingImport.text,
+      confirmedRemovalIds: pendingImport.removedIds, conflictPolicy: readChoice($('#conflict-policy')) });
+    render(value);
+    const { added, updated, skipped } = value.importSummary;
+    pendingImport = undefined;
+    $('#import-preview').close();
+    $('#backup-status').textContent = t('importSaved', { added, updated, skipped });
+    return true;
+  }, t('importing'), $('#import-status'));
+  (imported ? $('#import') : $('#confirm-import')).focus();
+});
 
 $('#language')?.addEventListener('change', () => withBusy(async () => {
   await setLanguage($('#language').value);
   translatePage();
   refreshAppearance?.();
   if (snapshot) render(snapshot);
-  if (pendingPreviewSummary) {
-    $('#import-summary').textContent = t('previewSummary', {
-      added: pendingPreviewSummary.added, matching: pendingPreviewSummary.skipped
-    });
-  }
   $('#backup-status').textContent = '';
 }, t('changingLanguage'), $('#backup-status')));
 
@@ -371,7 +387,7 @@ $('#search')?.addEventListener('input', renderRules);
 async function saveListPreferences() {
   renderRules();
   try {
-    await chrome.storage.local.set({ ruleListPreferences: { order: $('#sort-rules').value, group: $('#group-domains').checked } });
+    await chrome.storage.local.set({ ruleListPreferences: { order: readChoice($('#sort-rules')), group: $('#group-domains').checked } });
   } catch (error) { $('#status').textContent = errorText(error); }
 }
 $('#sort-rules')?.addEventListener('change', saveListPreferences);
@@ -402,8 +418,7 @@ try {
   if (isManager) {
     $('#language').value = language;
     const { ruleListPreferences } = await chrome.storage.local.get('ruleListPreferences');
-    $('#sort-rules').value = ruleListPreferences?.order ?? 'alphabetical';
-    if (!$('#sort-rules').value) $('#sort-rules').value = 'alphabetical';
+    writeChoice($('#sort-rules'), ruleListPreferences?.order ?? 'alphabetical');
     $('#group-domains').checked = Boolean(ruleListPreferences?.group);
   }
   if (!isManager) {

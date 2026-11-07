@@ -283,5 +283,26 @@
   },
   "trashEmptied": {
     "message": "Reglas eliminadas definitivamente."
+  },
+  "importMode": {
+    "message": "¿Cómo quieres importar la copia?"
+  },
+  "importAddOnly": {
+    "message": "Solo añadir reglas nuevas"
+  },
+  "importUpdateMatches": {
+    "message": "Añadir nuevas y actualizar coincidencias"
+  },
+  "importReplaceAll": {
+    "message": "Reemplazar toda la lista"
+  },
+  "importRemovalImpact": {
+    "message": "Las reglas actuales que no estén en la copia se eliminarán definitivamente ({count})."
+  },
+  "importKeepImpact": {
+    "message": "Se conservarán las reglas actuales que no estén en la copia."
+  },
+  "errorStaleImport": {
+    "message": "Las reglas guardadas han cambiado. Cancela y vuelve a seleccionar la copia para revisar la vista previa."
   }
 }
