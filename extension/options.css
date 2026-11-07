@@ -11,6 +11,9 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .language-control { box-sizing: border-box; padding: .5rem .65rem .65rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--panel); }
 .language-label { display: inline-flex; align-items: center; gap: .45em; color: var(--accent-text); font-size: 1rem; font-weight: 700; }
 .language-flag-icon { mask-image: url("language-flag.svg"); }
+.toolbar-appearance { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.toolbar-appearance .choice-group, .toolbar-appearance .choices, .toolbar-appearance > label { margin: 0; }
+.toolbar-appearance .choices label > span { min-block-size: 44px; padding: 6px 10px; }
 .language-option-flag {
   flex: none;
   inline-size: 1.4em;
@@ -46,7 +49,10 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 :root[data-high-contrast] {
   --positive-highlight-bg: var(--panel);
   --positive-highlight-border: var(--text);
-  --disabled-rule-bg: rgb(0 0 0 / .12);
+  --disabled-rule-bg: #dedede;
+}
+:root[data-high-contrast][data-theme="dark"] {
+  --disabled-rule-bg: #242424;
 }
 .rule-editor.is-highlighted {
   background: var(--positive-highlight-bg);
@@ -158,7 +164,11 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
   background: var(--warning-bg);
   color: var(--warning);
 }
-:root[data-high-contrast] .rule-state[data-disabled] { border-style: dashed; }
+:root[data-high-contrast] .rule-state[data-disabled] {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--page);
+}
 .rule-added {
   display: inline-flex;
   align-items: center;
@@ -183,8 +193,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 }
 #rules .rule[data-rule-disabled] { background: var(--disabled-rule-bg); }
 :root[data-high-contrast] #rules .rule[data-rule-disabled]:not(.is-highlighted) {
-  outline: 2px dotted var(--text);
-  outline-offset: -3px;
+  box-shadow: inset 4px 0 var(--text);
 }
 #rules .rule.is-highlighted { background: var(--positive-highlight-bg); }
 :root[data-high-contrast] #rules .rule.is-highlighted {

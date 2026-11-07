@@ -331,5 +331,8 @@
   },
   "collapseAllGroups": {
     "message": "Comprimi tutti"
+  },
+  "closeAppearance": {
+    "message": "Chiudi aspetto"
   }
 }

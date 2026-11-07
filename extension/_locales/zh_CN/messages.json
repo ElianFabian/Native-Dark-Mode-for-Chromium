@@ -331,5 +331,8 @@
   },
   "collapseAllGroups": {
     "message": "全部折叠"
+  },
+  "closeAppearance": {
+    "message": "关闭外观设置"
   }
 }

@@ -331,5 +331,8 @@
   },
   "collapseAllGroups": {
     "message": "Recolher todos"
+  },
+  "closeAppearance": {
+    "message": "Fechar aparência"
   }
 }

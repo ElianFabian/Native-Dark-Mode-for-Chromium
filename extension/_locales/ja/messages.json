@@ -331,5 +331,8 @@
   },
   "collapseAllGroups": {
     "message": "すべて折りたたむ"
+  },
+  "closeAppearance": {
+    "message": "外観設定を閉じる"
   }
 }

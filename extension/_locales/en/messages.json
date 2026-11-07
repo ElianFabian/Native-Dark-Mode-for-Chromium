@@ -331,5 +331,8 @@
   },
   "collapseAllGroups": {
     "message": "Collapse all"
+  },
+  "closeAppearance": {
+    "message": "Close appearance"
   }
 }

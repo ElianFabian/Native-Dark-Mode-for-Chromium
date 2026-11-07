@@ -331,5 +331,8 @@
   },
   "collapseAllGroups": {
     "message": "Tout réduire"
+  },
+  "closeAppearance": {
+    "message": "Fermer les réglages d’apparence"
   }
 }

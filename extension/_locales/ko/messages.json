@@ -331,5 +331,8 @@
   },
   "collapseAllGroups": {
     "message": "모두 접기"
+  },
+  "closeAppearance": {
+    "message": "모양 설정 닫기"
   }
 }

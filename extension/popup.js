@@ -30,6 +30,10 @@ function closeAppearanceMenu() {
 }
 
 if (appearanceMenu) {
+  $('#close-appearance').addEventListener('click', () => {
+    closeAppearanceMenu();
+    appearanceTrigger.focus();
+  });
   appearanceTrigger.addEventListener('pointerenter', event => {
     if (event.pointerType !== 'mouse' || appearanceMenu.open) return;
     appearanceMenu.open = true;
@@ -76,10 +80,14 @@ const languageFlags = {
 
 if (isManager) {
   const editorColumn = $('.editor-column');
+  const toolbar = $('.text-size-toolbar');
   // A tall column scrolls with the page until its bottom fits in the viewport.
   new ResizeObserver(([entry]) => {
     editorColumn.style.setProperty('--editor-column-height', `${entry.borderBoxSize[0].blockSize}px`);
   }).observe(editorColumn);
+  new ResizeObserver(([entry]) => {
+    document.documentElement.style.setProperty('--text-toolbar-height', `${entry.borderBoxSize[0].blockSize}px`);
+  }).observe(toolbar);
   for (const [code, name] of Object.entries(LANGUAGES)) {
     const option = document.createElement('option');
     const flag = document.createElement('img');

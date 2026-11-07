@@ -331,5 +331,8 @@
   },
   "collapseAllGroups": {
     "message": "Contraer todos"
+  },
+  "closeAppearance": {
+    "message": "Cerrar apariencia"
   }
 }

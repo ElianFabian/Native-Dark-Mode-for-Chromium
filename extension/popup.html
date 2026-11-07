@@ -10,12 +10,13 @@
     <output id="text-scale">100%</output>
     <button type="button" id="text-larger" data-i18n-label="largerText" aria-label="Increase text size">A+</button>
   </div>
-  <span id="text-size-title" class="popup-text-size-label" data-i18n="textSize">Text size</span>
+  <span id="text-size-title" class="visually-hidden" data-i18n="textSize">Text size</span>
   <div class="toolbar-actions">
     <button id="manage-extension" type="button" class="opens-tab"><span data-i18n="manageExtension">Manage extension</span><span class="external-link-icon" aria-hidden="true"></span></button>
     <details class="appearance appearance-menu">
       <summary><span data-i18n="appearanceMenu">Appearance</span><span class="accessibility-icon" aria-hidden="true"></span></summary>
       <div class="appearance-menu-content">
+        <button id="close-appearance" type="button" data-i18n-label="closeAppearance" aria-label="Close appearance"><span aria-hidden="true">×</span></button>
         <fieldset id="ui-theme" class="choice-group">
           <legend data-i18n="theme">Theme</legend>
           <div class="choices">

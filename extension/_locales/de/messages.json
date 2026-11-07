@@ -331,5 +331,8 @@
   },
   "collapseAllGroups": {
     "message": "Alle einklappen"
+  },
+  "closeAppearance": {
+    "message": "Darstellung schließen"
   }
 }

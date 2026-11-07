@@ -53,7 +53,7 @@ The interface follows the browser language by default. The **Language** selector
 
 The language selector uses bundled SVGs from [flag-icons](https://github.com/lipis/flag-icons), distributed under the [MIT license](extension/flags/LICENSE).
 
-Use the text size controls at the top left of the popup or rule manager to adjust text from 75% to 200%. Open **Appearance** on the right side of either toolbar to enable high contrast or choose a light or dark theme. The theme follows your system by default. The extension saves these preferences locally and shares them between its two interfaces. Website dark mode is controlled separately by your rules.
+Use the text size controls at the top left of the popup or rule manager to adjust text from 75% to 200%. Open **Appearance** in the popup or use the controls directly in the rule manager toolbar to enable high contrast or choose a light or dark theme. The theme follows your system by default. The extension saves these preferences locally and shares them between its two interfaces. Website dark mode is controlled separately by your rules.
 
 ## How it works
 
