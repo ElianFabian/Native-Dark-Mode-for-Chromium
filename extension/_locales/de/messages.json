@@ -334,5 +334,11 @@
   },
   "closeAppearance": {
     "message": "Darstellung schließen"
+  },
+  "contrastOff": {
+    "message": "Hoher Kontrast aus"
+  },
+  "contrastOn": {
+    "message": "Hoher Kontrast an"
   }
 }

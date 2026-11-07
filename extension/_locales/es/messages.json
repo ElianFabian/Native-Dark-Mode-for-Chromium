@@ -334,5 +334,11 @@
   },
   "closeAppearance": {
     "message": "Cerrar apariencia"
+  },
+  "contrastOff": {
+    "message": "Alto contraste desactivado"
+  },
+  "contrastOn": {
+    "message": "Alto contraste activado"
   }
 }

@@ -24,7 +24,14 @@
             <label><input type="radio" name="ui-theme" value="dark"><span data-i18n="darkTheme">Dark</span></label>
           </div>
         </fieldset>
-        <label><input id="high-contrast" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="highContrast">High contrast</span></label>
+        <label class="contrast-chip">
+          <input id="high-contrast" class="toggle-switch" type="checkbox" role="switch" aria-labelledby="high-contrast-label">
+          <span id="high-contrast-label" class="visually-hidden" data-i18n="highContrast">High contrast</span>
+          <span class="contrast-chip-labels" aria-hidden="true">
+            <span class="contrast-off" data-i18n="contrastOff">High contrast off</span>
+            <span class="contrast-on" data-i18n="contrastOn">High contrast on</span>
+          </span>
+        </label>
       </div>
     </details>
     <button id="manage-extension" type="button" class="opens-tab"><span data-i18n="manageExtension">Manage extension</span><span class="external-link-icon" aria-hidden="true"></span></button>

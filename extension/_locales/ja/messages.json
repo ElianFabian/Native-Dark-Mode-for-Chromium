@@ -334,5 +334,11 @@
   },
   "closeAppearance": {
     "message": "外観設定を閉じる"
+  },
+  "contrastOff": {
+    "message": "ハイコントラスト：オフ"
+  },
+  "contrastOn": {
+    "message": "ハイコントラスト：オン"
   }
 }

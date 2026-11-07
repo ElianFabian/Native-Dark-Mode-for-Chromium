@@ -14,7 +14,14 @@
   <span id="text-size-title" data-i18n="textSize">Text size</span>
   <div class="toolbar-actions">
     <div class="toolbar-appearance">
-      <label><input id="high-contrast" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="highContrast">High contrast</span></label>
+      <label class="contrast-chip">
+        <input id="high-contrast" class="toggle-switch" type="checkbox" role="switch" aria-labelledby="high-contrast-label">
+        <span id="high-contrast-label" class="visually-hidden" data-i18n="highContrast">High contrast</span>
+        <span class="contrast-chip-labels" aria-hidden="true">
+          <span class="contrast-off" data-i18n="contrastOff">High contrast off</span>
+          <span class="contrast-on" data-i18n="contrastOn">High contrast on</span>
+        </span>
+      </label>
       <fieldset id="ui-theme" class="choice-group">
         <legend class="visually-hidden" data-i18n="theme">Theme</legend>
         <div class="choices">

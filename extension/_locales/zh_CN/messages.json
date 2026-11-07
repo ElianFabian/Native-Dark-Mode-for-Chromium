@@ -334,5 +334,11 @@
   },
   "closeAppearance": {
     "message": "关闭外观设置"
+  },
+  "contrastOff": {
+    "message": "高对比度已关闭"
+  },
+  "contrastOn": {
+    "message": "高对比度已开启"
   }
 }

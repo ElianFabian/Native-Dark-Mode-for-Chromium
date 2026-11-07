@@ -173,6 +173,34 @@ input.toggle-switch {
   color: var(--text);
   cursor: pointer;
 }
+label.contrast-chip {
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: 100%;
+  min-block-size: 44px;
+  padding: 6px 12px;
+  border: 2px solid var(--border);
+  border-radius: 24px;
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 650;
+}
+.contrast-chip:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-text);
+}
+.contrast-chip input.toggle-switch:checked {
+  border-color: var(--primary-text);
+  background: var(--primary-text);
+  color: var(--primary);
+}
+.contrast-chip:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.contrast-chip input:focus-visible { outline: none; }
+.contrast-chip-labels { display: grid; min-width: 0; overflow-wrap: anywhere; }
+.contrast-chip-labels > span { grid-area: 1 / 1; }
+.contrast-chip input:not(:checked) ~ .contrast-chip-labels .contrast-on,
+.contrast-chip input:checked ~ .contrast-chip-labels .contrast-off { visibility: hidden; }
 .toggle-switch::before {
   content: '';
   position: absolute;
@@ -190,6 +218,8 @@ input.toggle-switch {
 @media (forced-colors: active) {
   input.toggle-switch { forced-color-adjust: none; border-color: CanvasText; background: Canvas; color: CanvasText; }
   input.toggle-switch:checked { border-color: Highlight; background: Highlight; color: HighlightText; }
+  .contrast-chip:has(input:checked) { forced-color-adjust: none; border-color: Highlight; background: Highlight; color: HighlightText; }
+  .contrast-chip input.toggle-switch:checked { border-color: HighlightText; background: HighlightText; color: Highlight; }
 }
 
 @media (forced-colors: none) {
@@ -387,7 +417,19 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
   color: var(--primary-text);
   font-weight: 700;
 }
-#ui-theme .choices label > span { font-weight: 650; }
+#ui-theme .choices label > span { gap: .4em; font-weight: 650; }
+#ui-theme input + span::before {
+  content: '';
+  flex: none;
+  inline-size: 1.2em;
+  block-size: 1.2em;
+  background: currentColor;
+  mask: var(--theme-icon) center / contain no-repeat;
+  forced-color-adjust: none;
+}
+#ui-theme input[value="system"] + span { --theme-icon: url("theme-system.svg"); }
+#ui-theme input[value="light"] + span { --theme-icon: url("theme-light.svg"); }
+#ui-theme input[value="dark"] + span { --theme-icon: url("theme-dark.svg"); }
 .choices input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
 .choices input:disabled + span { opacity: .55; cursor: default; }
 @media (forced-colors: active) {

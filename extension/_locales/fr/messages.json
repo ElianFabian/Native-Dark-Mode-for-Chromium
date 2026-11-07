@@ -334,5 +334,11 @@
   },
   "closeAppearance": {
     "message": "Fermer les réglages d’apparence"
+  },
+  "contrastOff": {
+    "message": "Contraste élevé désactivé"
+  },
+  "contrastOn": {
+    "message": "Contraste élevé activé"
   }
 }

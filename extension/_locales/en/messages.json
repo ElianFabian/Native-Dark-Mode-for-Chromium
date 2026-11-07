@@ -334,5 +334,11 @@
   },
   "closeAppearance": {
     "message": "Close appearance"
+  },
+  "contrastOff": {
+    "message": "High contrast off"
+  },
+  "contrastOn": {
+    "message": "High contrast on"
   }
 }

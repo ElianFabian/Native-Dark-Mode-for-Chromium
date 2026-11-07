@@ -334,5 +334,11 @@
   },
   "closeAppearance": {
     "message": "모양 설정 닫기"
+  },
+  "contrastOff": {
+    "message": "고대비 꺼짐"
+  },
+  "contrastOn": {
+    "message": "고대비 켜짐"
   }
 }
