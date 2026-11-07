@@ -1,6 +1,19 @@
 # Native Dark Mode for Chromium
 
+[Read in Spanish](README.es.md)
+
 Use Chromium's built-in dark mode on the websites and sections you choose. Save a rule once and the extension applies it when you return.
+
+## Install the extension
+
+You only need a desktop Chromium-based browser. Brave has been tested hands-on. The browser loads the extension directly from the downloaded folder. You can install it without Node.js, npm, Python, or a build step.
+
+1. Download the project as a ZIP. On GitHub, choose **Code → Download ZIP**. Extract the ZIP to a folder you can keep.
+2. In your browser's address bar, open `brave://extensions` (Brave), `chrome://extensions` (Chrome or Chromium), or `edge://extensions` (Edge).
+3. Turn on **Developer mode**, click **Load unpacked**, and select the **`extension`** folder inside the extracted project. This is the folder that contains `manifest.json`.
+4. Open **Native Dark Mode** from the browser's extensions menu. You can pin it to the toolbar.
+
+To update, replace the files in the loaded folder with the new version and click **Reload** on the extension's card. Refresh any page you want to test again.
 
 ## Motivation
 
@@ -12,22 +25,11 @@ This project started with a practical goal. Use the browser's own darkening engi
 
 ### Extension popup
 
-![Extension popup showing an Amazon rule with subdomains and regional domains selected](docs/screenshots/popup.png)
+![Extension popup showing an Amazon regional rule, text size controls, and quick access to the rule manager](docs/screenshots/popup.png)
 
 ### Rule manager
 
-![Rule manager showing saved websites grouped by domain, with search, sorting, trash, and JSON backup controls](docs/screenshots/rule-manager.png)
-
-## Install in a Chromium-based browser
-
-The extension uses Manifest V3 and Chromium's native darkening command. It is designed for desktop browsers that expose both the [extension debugger API](https://developer.chrome.com/docs/extensions/reference/api/debugger) and [`Emulation.setAutoDarkModeOverride`](https://chromedevtools.github.io/devtools-protocol/tot/Emulation/#method-setAutoDarkModeOverride). Brave is the browser used for hands-on testing. Chrome, Edge, and other Chromium builds still need end-to-end verification.
-
-1. Download or clone this repository. If you downloaded a ZIP, extract it first.
-2. Open your browser's **Extensions** page and enable **Developer mode**. Use `chrome://extensions` in Chrome or Chromium, `edge://extensions` in Edge, or `brave://extensions` in Brave.
-3. Click **Load unpacked** and select the [extension](extension/) folder. It contains `manifest.json`.
-4. Open the **Extensions** menu and select **Native Dark Mode**. You can pin it to the toolbar for quick access.
-
-The browser loads the extension directly from the folder. Installing and using it requires no build step, Node.js, npm, or Python. To update your local copy, update the files and click **Reload** on the extension card. Refresh open pages if you want to retry them with the updated extension.
+![Rule manager showing the editor, search and sorting controls, rule status and dates, JSON backups, and trash](docs/screenshots/rule-manager.png)
 
 ## Use the extension
 
@@ -35,6 +37,8 @@ The browser loads the extension directly from the folder. Installing and using i
 2. Select **Entire website** or **Path section**. The URL field lets you adjust the scope before saving.
 3. Click **Enable and save**. The browser applies its native darkening to the current page, and the extension remembers the rule for future visits.
 4. Use **Disable and save** to keep a rule as an exclusion, or open **Manage rules** to edit, search, or remove saved rules.
+
+**Save settings** saves the selected scope without changing an existing rule's enabled state. A new rule saved this way starts disabled.
 
 | Option | What it covers |
 | --- | --- |
@@ -45,7 +49,9 @@ The browser loads the extension directly from the folder. Installing and using i
 
 More specific paths take priority. At the same path, a rule for a single domain takes priority over a regional pattern. Regional patterns match names across suffixes. Use a single-domain rule when you want to limit the scope to one domain. When a page inherits an enabled rule, the popup can offer **Exclude this subdomain** or **Exclude this hostname** to save an exception for the current hostname and inherited path.
 
-**Manage rules** opens the saved rule list in a full tab with editing, sorting, grouping, and search. **Remove** moves a rule to **Trash**, in a card below the rule editor. You can restore a rule with its settings or choose **Empty trash** and confirm permanent deletion. If a saved rule already occupies the same scope, the deleted copy stays in Trash when you try to restore it.
+**Manage rules** opens a full tab where you can search and sort by name or date added, in either direction. **Group by domain** shows collapsible groups with an **Expand all / Collapse all** button. Dates are shown for rules with a saved creation date.
+
+**Remove** moves a rule to **Trash**, below the editor. You can restore a rule with its settings or choose **Empty trash** and confirm permanent deletion. If a saved rule already occupies the same scope, the deleted copy stays in Trash when you try to restore it.
 
 The manager also offers **Export JSON** and **Import JSON**. The import dialog previews new and matching rules. By default it adds only new rules. You can also update matching rules or replace the entire list. The replacement option shows how many current rules will be deleted. The JSON covers the main rule list. Trash and display preferences stay in local storage.
 
@@ -57,7 +63,7 @@ Use the text size controls at the top left of the popup or rule manager to adjus
 
 ## How it works
 
-The [Manifest V3 extension](extension/manifest.json) has a popup, a full-page rule manager, and a [background service worker](extension/background.js).
+The [Manifest V3 extension](extension/manifest.json) has a popup, a full-page rule manager, and a [background service worker](extension/background.js). It requires the [extension debugger API](https://developer.chrome.com/docs/extensions/reference/api/debugger) and Chromium's experimental [native darkening command](https://chromedevtools.github.io/devtools-protocol/tot/Emulation/#method-setAutoDarkModeOverride).
 
 1. The worker checks the current URL against the rules saved in `chrome.storage.local` when tabs load or navigate. The rule matcher handles hosts, paths, subdomains, exclusions, and regional patterns. Regional matching uses a bundled snapshot of the ICANN section of the [Public Suffix List](https://publicsuffix.org/list/).
 2. On a matching enabled tab, the [controller](extension/controller.js) attaches through `chrome.debugger` and sends `Emulation.setAutoDarkModeOverride` with `enabled: true`. Chromium renders the dark theme. The extension uses the browser's image handling too.
@@ -67,7 +73,7 @@ The extension uses `debugger` to send the native emulation command, HTTP and HTT
 
 ## Optional launcher for the debugging banner
 
-Your browser may show a debugging banner while the extension is attached. Closing the banner or opening DevTools can disconnect the session. The optional launchers pass `--silent-debugger-extension-api`. When the browser honors this flag, it suppresses banners for **all** debugger extensions in that session.
+You can use the extension as soon as it is loaded. If the browser shows a debugging banner and you want to hide it, use the optional launcher below. It passes `--silent-debugger-extension-api`, which suppresses banners for **all** debugger extensions in that session when the browser supports it. Closing the banner or opening DevTools can disconnect the session.
 
 Run the installer for your system from the project folder. The three installers are at the top level of `scripts/`, and their helpers stay in `scripts/internal/`. Each installer looks for Brave, Google Chrome, Chromium, Microsoft Edge, Vivaldi, and Opera in the usual locations for that platform. It creates one set of shortcuts per browser it finds, using the name **Browser Name - Native Dark Mode**.
 
@@ -90,6 +96,7 @@ The installer was tested on Windows 11, where banner suppression was confirmed i
 ## Current limits
 
 - The extension uses an experimental Chromium DevTools Protocol command. Rendering can vary by site and browser version.
+- Chrome, Edge, and other Chromium builds still need end-to-end verification.
 - Rules apply to HTTP and HTTPS websites. Internal browser pages are outside the rule scope.
 - Chromium controls image treatment. Per-site image preservation is deferred. See [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md) for the experimental launch-time option and its limits.
 
