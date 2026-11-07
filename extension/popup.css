@@ -69,8 +69,11 @@
   --focus: var(--text);
 }
 [hidden] { display: none !important; }
-body { margin: 0; width: 390px; max-width: 100%; background: var(--page); color: var(--text); font-size: .875rem; }
+body { margin: 0; width: clamp(500px, 34rem, 660px); max-width: 100%; background: var(--page); color: var(--text); font-size: .875rem; }
 main { padding: 20px; }
+.popup-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: .5rem; }
+.popup-row > * { flex: 1 1 12rem; min-inline-size: 0; margin: 0; }
+.popup-scope-options span { overflow-wrap: anywhere; }
 h1 { font-size: 1.2rem; margin: 0 0 8px; }
 #site { overflow-wrap: anywhere; color: var(--accent-text); }
 button { width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--primary); color: var(--primary-text); overflow-wrap: anywhere; font: inherit; font-weight: 650; cursor: pointer; }

@@ -37,18 +37,24 @@
       <label><input type="radio" name="scope" value="section"><span data-i18n="section">Path section</span></label>
     </div>
   </fieldset>
-  <label><input id="subdomains" type="checkbox"> <span data-i18n="subdomains">Include subdomains</span></label>
-  <label id="regional-option" hidden><input id="regional" type="checkbox"> <span data-i18n="regionalDomains">Include regional domains</span></label>
+  <div class="popup-row popup-scope-options">
+    <label><input id="subdomains" type="checkbox"> <span data-i18n="subdomains">Include subdomains</span></label>
+    <label id="regional-option" hidden><input id="regional" type="checkbox"> <span data-i18n="regionalDomains">Include regional domains</span></label>
+  </div>
   <button id="exclude-host" hidden>Exclude this subdomain</button>
   <p class="note" id="scope-hint"></p>
-  <button id="toggle" disabled>Please wait…</button>
-  <button id="save" disabled data-i18n="save">Save settings</button>
+  <div class="popup-row">
+    <button id="toggle" disabled>Please wait…</button>
+    <button id="save" disabled data-i18n="save">Save settings</button>
+  </div>
   <p class="note" data-i18n="rulesNote">Saved locally. Disabled rules remain as exclusions. More specific sections take priority. Queries and fragments are ignored.</p>
   <h2 data-i18n="savedRules">Saved websites and sections</h2>
   <div id="rules"></div>
   <p id="rule-count" class="note"></p>
-  <button id="manage" data-i18n="manageRules">Manage rules</button>
-  <button id="manage-extension" type="button" data-i18n="manageExtension">Manage extension</button>
+  <div class="popup-row">
+    <button id="manage" data-i18n="manageRules">Manage rules</button>
+    <button id="manage-extension" type="button" data-i18n="manageExtension">Manage extension</button>
+  </div>
   <p class="note" data-i18n="debugNote">Your browser may show a debugging banner. Closing it or opening DevTools may disconnect dark mode.</p>
   <details><summary data-i18n="diagnostics">Diagnostics</summary><pre id="diagnostic"></pre></details>
 </main>
