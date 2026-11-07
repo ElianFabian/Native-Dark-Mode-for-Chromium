@@ -307,5 +307,14 @@
   },
   "manageExtension": {
     "message": "管理扩展程序"
+  },
+  "toggleHelp": {
+    "message": "开启或关闭此范围的深色模式并保存规则。"
+  },
+  "saveHelp": {
+    "message": "保存范围和设置，保持规则的启用状态。新规则保存时默认为停用。"
+  },
+  "excludeHostHelp": {
+    "message": "为当前主机创建例外，同时保留范围更广的规则。"
   }
 }

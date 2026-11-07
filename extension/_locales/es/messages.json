@@ -307,5 +307,14 @@
   },
   "manageExtension": {
     "message": "Gestionar extensión"
+  },
+  "toggleHelp": {
+    "message": "Activa o desactiva el modo oscuro para este alcance y guarda la regla."
+  },
+  "saveHelp": {
+    "message": "Guarda el alcance y sus ajustes sin cambiar el estado de la regla. Las reglas nuevas se guardan desactivadas."
+  },
+  "excludeHostHelp": {
+    "message": "Crea una excepción para el sitio actual y conserva la regla más general."
   }
 }

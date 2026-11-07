@@ -17,6 +17,19 @@ let displayedRule;
 let editingId;
 let refreshAppearance;
 
+for (const trigger of document.querySelectorAll('.has-tooltip')) {
+  const reset = () => trigger.removeAttribute('data-tooltip-dismissed');
+  trigger.addEventListener('pointerenter', reset);
+  trigger.addEventListener('focusin', reset);
+}
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || $('#import-preview')?.open) return;
+  const visible = document.querySelectorAll('.has-tooltip:not([data-tooltip-dismissed]):is(:hover, :focus-within)');
+  if (!visible.length) return;
+  event.preventDefault();
+  visible.forEach(trigger => trigger.setAttribute('data-tooltip-dismissed', ''));
+});
+
 for (const [code, name] of Object.entries(LANGUAGES)) {
   const option = document.createElement('option');
   option.value = code;

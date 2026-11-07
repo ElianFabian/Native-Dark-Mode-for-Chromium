@@ -307,5 +307,14 @@
   },
   "manageExtension": {
     "message": "확장 프로그램 관리"
+  },
+  "toggleHelp": {
+    "message": "이 범위의 다크 모드를 켜거나 끄고 규칙을 저장합니다."
+  },
+  "saveHelp": {
+    "message": "규칙의 활성 상태를 바꾸지 않고 범위와 설정을 저장합니다. 새 규칙은 비활성 상태로 저장됩니다."
+  },
+  "excludeHostHelp": {
+    "message": "더 넓은 범위의 규칙은 유지하고 현재 호스트를 예외로 추가합니다."
   }
 }

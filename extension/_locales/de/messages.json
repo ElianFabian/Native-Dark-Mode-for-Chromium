@@ -307,5 +307,14 @@
   },
   "manageExtension": {
     "message": "Erweiterung verwalten"
+  },
+  "toggleHelp": {
+    "message": "Schaltet den Dunkelmodus für diesen Bereich um und speichert die Regel."
+  },
+  "saveHelp": {
+    "message": "Speichert Bereich und Einstellungen, ohne den Status der Regel zu ändern. Neue Regeln werden deaktiviert gespeichert."
+  },
+  "excludeHostHelp": {
+    "message": "Erstellt eine Ausnahme für den aktuellen Host und behält die übergeordnete Regel bei."
   }
 }

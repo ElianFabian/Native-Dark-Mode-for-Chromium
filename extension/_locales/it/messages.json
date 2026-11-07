@@ -307,5 +307,14 @@
   },
   "manageExtension": {
     "message": "Gestisci estensione"
+  },
+  "toggleHelp": {
+    "message": "Attiva o disattiva la modalità scura per questo ambito e salva la regola."
+  },
+  "saveHelp": {
+    "message": "Salva l’ambito e le impostazioni senza cambiare lo stato della regola. Le nuove regole vengono salvate come disattivate."
+  },
+  "excludeHostHelp": {
+    "message": "Crea un’eccezione per l’host corrente e mantiene la regola più ampia."
   }
 }

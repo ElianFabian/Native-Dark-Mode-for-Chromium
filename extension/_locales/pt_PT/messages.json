@@ -307,5 +307,14 @@
   },
   "manageExtension": {
     "message": "Gerir extensão"
+  },
+  "toggleHelp": {
+    "message": "Ativa ou desativa o modo escuro neste âmbito e guarda a regra."
+  },
+  "saveHelp": {
+    "message": "Guarda o âmbito e as definições sem alterar o estado da regra. As novas regras são guardadas desativadas."
+  },
+  "excludeHostHelp": {
+    "message": "Cria uma exceção para o anfitrião atual e mantém a regra mais abrangente."
   }
 }

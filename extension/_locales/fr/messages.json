@@ -307,5 +307,14 @@
   },
   "manageExtension": {
     "message": "Gérer l’extension"
+  },
+  "toggleHelp": {
+    "message": "Active ou désactive le mode sombre pour cette portée et enregistre la règle."
+  },
+  "saveHelp": {
+    "message": "Enregistre la portée et ses paramètres sans changer l’état de la règle. Les nouvelles règles sont enregistrées désactivées."
+  },
+  "excludeHostHelp": {
+    "message": "Crée une exception pour l’hôte actuel et conserve la règle plus générale."
   }
 }

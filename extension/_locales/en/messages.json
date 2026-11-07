@@ -307,5 +307,14 @@
   },
   "manageExtension": {
     "message": "Manage extension"
+  },
+  "toggleHelp": {
+    "message": "Changes whether dark mode is enabled for this scope and saves the rule."
+  },
+  "saveHelp": {
+    "message": "Saves this scope and its settings without switching the rule on or off. New rules are saved disabled."
+  },
+  "excludeHostHelp": {
+    "message": "Creates an exception for the current host while keeping the broader rule."
   }
 }

@@ -74,6 +74,25 @@ main { padding: 20px; }
 .popup-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: .5rem; }
 .popup-row > * { flex: 1 1 12rem; min-inline-size: 0; margin: 0; }
 .popup-scope-options span { overflow-wrap: anywhere; }
+.has-tooltip { position: relative; }
+.has-tooltip:has(> button[hidden]) { display: none; }
+.popup-row .has-tooltip > button { display: block; height: 100%; margin: 0; }
+.tooltip {
+  visibility: hidden;
+  position: absolute;
+  z-index: 1;
+  inset-block-start: 100%;
+  inset-inline: 0;
+  padding: .5rem .65rem;
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  background: var(--panel);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.has-tooltip:not([data-tooltip-dismissed]):is(:hover, :focus-within) > .tooltip {
+  visibility: visible;
+}
 h1 { font-size: 1.2rem; margin: 0 0 8px; }
 #site { overflow-wrap: anywhere; color: var(--accent-text); }
 button { width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--primary); color: var(--primary-text); overflow-wrap: anywhere; font: inherit; font-weight: 650; cursor: pointer; }

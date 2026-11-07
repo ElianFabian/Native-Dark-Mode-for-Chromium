@@ -48,8 +48,14 @@
         <label id="regional-option"><input id="regional" type="checkbox" disabled aria-describedby="regional-help"> <span data-i18n="regionalDomains">Include regional domains</span></label>
         <p class="note" id="regional-help"></p>
         <p class="note" id="scope-hint"></p>
-        <button id="toggle" disabled>Please wait…</button>
-        <button id="save" disabled data-i18n="save">Save settings</button>
+        <div class="has-tooltip">
+          <button id="toggle" aria-describedby="toggle-help" disabled>Please wait…</button>
+          <span id="toggle-help" class="tooltip" role="tooltip" data-i18n="toggleHelp">Changes whether dark mode is enabled for this scope and saves the rule.</span>
+        </div>
+        <div class="has-tooltip">
+          <button id="save" aria-describedby="save-help" disabled data-i18n="save">Save settings</button>
+          <span id="save-help" class="tooltip" role="tooltip" data-i18n="saveHelp">Saves this scope and its settings without switching the rule on or off. New rules are saved disabled.</span>
+        </div>
         <button id="cancel-edit" hidden data-i18n="cancel">Cancel</button>
         <p class="note" data-i18n="rulesNote">Saved locally. Disabled rules remain as exclusions. More specific sections take priority. Queries and fragments are ignored.</p>
         <section class="backup-panel">
