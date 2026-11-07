@@ -137,9 +137,6 @@
   "importSaved": {
     "message": "保存しました：追加{added}件、更新{updated}件、変更なし{skipped}件。一致するタブを更新しています。"
   },
-  "changingLanguage": {
-    "message": "表示言語を変更しています…"
-  },
   "errorJson": {
     "message": "有効なJSONファイルではありません。"
   },

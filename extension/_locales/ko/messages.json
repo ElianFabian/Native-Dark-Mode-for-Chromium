@@ -137,9 +137,6 @@
   "importSaved": {
     "message": "가져오기 저장 완료: 추가 {added}개, 수정 {updated}개, 유지 {skipped}개. 일치하는 탭을 업데이트 중입니다."
   },
-  "changingLanguage": {
-    "message": "인터페이스 언어 변경 중…"
-  },
   "errorJson": {
     "message": "올바른 JSON 파일이 아닙니다."
   },

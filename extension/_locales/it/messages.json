@@ -137,9 +137,6 @@
   "importSaved": {
     "message": "Importazione salvata: {added} aggiunte, {updated} aggiornate, {skipped} invariate. Aggiornamento delle schede corrispondenti."
   },
-  "changingLanguage": {
-    "message": "Cambio della lingua dell’interfaccia…"
-  },
   "errorJson": {
     "message": "Il file non contiene JSON valido."
   },

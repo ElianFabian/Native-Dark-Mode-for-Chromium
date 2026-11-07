@@ -137,9 +137,6 @@
   "importSaved": {
     "message": "Importación guardada: {added} añadidas, {updated} actualizadas y {skipped} sin cambios. Se están actualizando las pestañas coincidentes."
   },
-  "changingLanguage": {
-    "message": "Cambiando el idioma de la interfaz…"
-  },
   "errorJson": {
     "message": "El archivo no contiene JSON válido."
   },

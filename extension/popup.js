@@ -422,7 +422,7 @@ function render(value, toggledButton, previousEditedId) {
 async function withBusy(operation, progress, statusElement = $('#status'), retainedButton) {
   if (busy) return;
   busy = true;
-  statusElement.textContent = progress;
+  if (progress) statusElement.textContent = progress;
   document.querySelectorAll('button, input, select').forEach(element => {
     if (element !== retainedButton) element.disabled = true;
   });
@@ -596,7 +596,7 @@ $('#language')?.addEventListener('change', async event => {
         { width: `${width}px`, height: `${height}px` }
       ], { duration: 200, easing: 'ease-out' });
     }
-  }, t('changingLanguage'));
+  });
   if (hadFocus) select.focus({ preventScroll: true });
   requestAnimationFrame(() => root.removeAttribute('data-changing-language'));
 });

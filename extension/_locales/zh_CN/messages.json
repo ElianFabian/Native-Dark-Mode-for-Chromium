@@ -137,9 +137,6 @@
   "importSaved": {
     "message": "导入已保存：新增 {added} 条，更新 {updated} 条，保留 {skipped} 条。正在更新匹配的标签页。"
   },
-  "changingLanguage": {
-    "message": "正在切换界面语言…"
-  },
   "errorJson": {
     "message": "文件不是有效的 JSON。"
   },

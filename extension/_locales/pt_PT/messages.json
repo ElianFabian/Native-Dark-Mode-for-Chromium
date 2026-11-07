@@ -137,9 +137,6 @@
   "importSaved": {
     "message": "Importação guardada: {added} adicionadas, {updated} atualizadas e {skipped} sem alterações. A atualizar os separadores correspondentes."
   },
-  "changingLanguage": {
-    "message": "A alterar o idioma da interface…"
-  },
   "errorJson": {
     "message": "O ficheiro não contém JSON válido."
   },

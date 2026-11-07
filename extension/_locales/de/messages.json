@@ -137,9 +137,6 @@
   "importSaved": {
     "message": "Import gespeichert: {added} hinzugefügt, {updated} aktualisiert, {skipped} unverändert. Passende Tabs werden aktualisiert."
   },
-  "changingLanguage": {
-    "message": "Sprache wird geändert…"
-  },
   "errorJson": {
     "message": "Die Datei enthält kein gültiges JSON."
   },

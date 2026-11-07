@@ -137,9 +137,6 @@
   "importSaved": {
     "message": "Import enregistré : {added} ajouts, {updated} mises à jour, {skipped} inchangées. Mise à jour des onglets correspondants."
   },
-  "changingLanguage": {
-    "message": "Changement de langue…"
-  },
   "errorJson": {
     "message": "Le fichier n’est pas un JSON valide."
   },
