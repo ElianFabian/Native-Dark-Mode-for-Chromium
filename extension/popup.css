@@ -310,7 +310,7 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.toolbar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-inline-start: auto; }
+.toolbar-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px 8px; margin-inline-start: auto; }
 .text-size-toolbar #manage-extension {
   width: auto;
   max-width: 100%;
