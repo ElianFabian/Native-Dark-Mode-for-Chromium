@@ -1,8 +1,8 @@
 body { width: auto; min-width: 0; }
-main { max-width: 78rem; margin: 0 auto; padding: 32px clamp(16px, 2.5vw, 48px); }
-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
-h1 { font-size: 2.2rem; line-height: 1.2; overflow-wrap: anywhere; }
-header label { min-width: min(190px, 100%); max-width: 100%; }
+main { max-width: 78rem; margin: 0 auto; padding: 48px clamp(16px, 2.5vw, 48px) 32px; }
+header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; }
+h1 { margin: 0; font-size: 2.65rem; line-height: 1.15; overflow-wrap: anywhere; }
+header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .language-control { box-sizing: border-box; padding: .5rem .65rem .65rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--panel); }
 .language-label { display: inline-flex; align-items: center; gap: .45em; color: var(--accent-text); font-size: 1rem; font-weight: 700; }
 .language-flag-icon { mask-image: url("language-flag.svg"); }
@@ -14,7 +14,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; }
 }
 #language option { gap: .5em; }
 .workspace-container { container-type: inline-size; }
-#status { min-block-size: 1.5em; }
+#status { min-block-size: 1.5em; margin: 0; }
 .workspace { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 1.7fr); gap: 20px; align-items: start; }
 .editor-column { min-width: 0; }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
@@ -139,7 +139,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; }
 .rule-actions .rule-remove { margin-inline-start: auto; background: transparent; color: var(--danger); font-weight: 500; }
 .rule-remove:enabled:hover { background: var(--danger-bg); text-decoration: underline; }
 @media (max-width: 650px) {
-  main { padding: 16px; }
+  main { padding: 24px 16px 16px; }
   header { align-items: stretch; flex-direction: column; gap: 4px; }
 }
 @container (max-width: 46em) {
