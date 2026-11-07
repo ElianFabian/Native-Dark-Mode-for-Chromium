@@ -118,6 +118,26 @@ select:enabled { cursor: pointer; }
 select:enabled:hover { background: var(--secondary-hover); border-color: var(--focus); }
 button { margin: 5px 0; }
 h2 { font-size: 1rem; }
+.saved-rules-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem 1rem;
+  margin-block: 1rem .6rem;
+  padding: .65rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: .6rem;
+  background: var(--secondary);
+}
+.saved-rules-header h2 {
+  flex: 1 1 12rem;
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.saved-rules-header button { width: auto; max-width: 100%; margin: 0; }
 .rule { border-top: 1px solid var(--border); padding: 12px 0; overflow-wrap: anywhere; }
 .rule-heading { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
 .rule-address { min-width: 0; }
