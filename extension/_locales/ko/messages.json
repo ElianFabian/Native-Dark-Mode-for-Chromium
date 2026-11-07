@@ -316,5 +316,8 @@
   },
   "sortDescending": {
     "message": "내림차순"
+  },
+  "appearanceMenu": {
+    "message": "모양"
   }
 }

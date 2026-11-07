@@ -316,5 +316,8 @@
   },
   "sortDescending": {
     "message": "Descending"
+  },
+  "appearanceMenu": {
+    "message": "Appearance"
   }
 }

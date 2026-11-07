@@ -16,6 +16,13 @@ let displayedRule;
 let editingId;
 let refreshAppearance;
 
+const appearanceMenu = $('.appearance-menu');
+if (appearanceMenu) {
+  document.addEventListener('pointerdown', event => {
+    if (appearanceMenu.open && !appearanceMenu.contains(event.target)) appearanceMenu.open = false;
+  });
+}
+
 for (const trigger of document.querySelectorAll('.has-tooltip')) {
   const reset = () => trigger.removeAttribute('data-tooltip-dismissed');
   trigger.addEventListener('pointerenter', reset);
@@ -23,6 +30,12 @@ for (const trigger of document.querySelectorAll('.has-tooltip')) {
 }
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || $('#import-preview')?.open) return;
+  if (appearanceMenu?.open) {
+    event.preventDefault();
+    appearanceMenu.open = false;
+    appearanceMenu.querySelector('summary').focus();
+    return;
+  }
   const visible = document.querySelectorAll('.has-tooltip:not([data-tooltip-dismissed]):is(:hover, :focus-within)');
   if (!visible.length) return;
   event.preventDefault();

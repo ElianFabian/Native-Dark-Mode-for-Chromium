@@ -316,5 +316,8 @@
   },
   "sortDescending": {
     "message": "降順"
+  },
+  "appearanceMenu": {
+    "message": "外観"
   }
 }

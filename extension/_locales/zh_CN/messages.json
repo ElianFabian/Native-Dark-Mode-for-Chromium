@@ -316,5 +316,8 @@
   },
   "sortDescending": {
     "message": "降序"
+  },
+  "appearanceMenu": {
+    "message": "外观"
   }
 }
