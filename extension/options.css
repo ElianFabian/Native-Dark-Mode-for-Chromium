@@ -16,7 +16,11 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .workspace-container { container-type: inline-size; }
 #status { min-block-size: 1.5em; margin: 0; }
 .workspace { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 1.7fr); gap: 20px; align-items: start; }
-.editor-column { min-width: 0; }
+.editor-column {
+  min-width: 0;
+  position: sticky;
+  top: min(calc(var(--text-toolbar-height) + 24px), calc(100dvh - var(--editor-column-height, 0px) - 24px));
+}
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
 .panel h2 { margin-top: 0; }
 :root {
@@ -160,6 +164,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 }
 @container (max-width: 46em) {
   .workspace { grid-template-columns: minmax(0, 1fr); }
+  .editor-column { position: static; }
 }
 
 .panel { min-width: 0; overflow-wrap: anywhere; }

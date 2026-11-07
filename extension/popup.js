@@ -78,6 +78,11 @@ const languageFlags = {
 };
 
 if (isManager) {
+  const editorColumn = $('.editor-column');
+  // A tall column scrolls with the page until its bottom fits in the viewport.
+  new ResizeObserver(([entry]) => {
+    editorColumn.style.setProperty('--editor-column-height', `${entry.borderBoxSize[0].blockSize}px`);
+  }).observe(editorColumn);
   for (const [code, name] of Object.entries(LANGUAGES)) {
     const option = document.createElement('option');
     const flag = document.createElement('img');
