@@ -55,23 +55,12 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 }
 .domain-group.is-highlighted { border-color: var(--positive-highlight-border); }
 .domain-group.is-highlighted summary { background: var(--positive-highlight-bg); }
-#rules .rule-address {
-  border-radius: .25em;
-  transition: background-color 180ms ease-out, box-shadow 180ms ease-out;
-}
-#rules .rule.is-highlighted .rule-address {
-  background: var(--positive-highlight-bg);
-  box-shadow: 0 0 0 .2em var(--positive-highlight-bg);
-  text-decoration: underline var(--positive-highlight-border);
-  text-underline-offset: .2em;
-}
 @media (prefers-reduced-motion: reduce) {
-  .rule-editor, .trash-panel, .domain-group, .domain-group summary, #rules .rule-address { transition: none; }
+  .rule-editor, .trash-panel, .domain-group, .domain-group summary { transition: none; }
 }
 @media (forced-colors: active) {
   .rule-editor.is-highlighted, .trash-panel.is-highlighted,
   .domain-group.is-highlighted { outline: 2px solid Highlight; outline-offset: -3px; }
-  #rules .rule.is-highlighted .rule-address { text-decoration-color: Highlight; }
 }
 .backup-panel { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 12px; }
 .backup-panel h3 { margin: 0 0 5px; font-size: .95rem; }
@@ -157,10 +146,22 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .rule-address { font-size: 1rem; }
 .rule-added { color: var(--muted); font-size: .8125rem; }
 .rule { padding: 10px 0; }
-#rules .rule { padding-inline: .55rem; }
-#rules .rule[data-rule-disabled] {
+#rules .rule {
+  padding-inline: .55rem;
   border-radius: .4rem;
-  background: var(--disabled-rule-bg);
+  transition: background-color 180ms ease-out;
+}
+#rules .rule[data-rule-disabled] { background: var(--disabled-rule-bg); }
+#rules .rule.is-highlighted { background: var(--positive-highlight-bg); }
+:root[data-high-contrast] #rules .rule.is-highlighted {
+  outline: 1px dashed var(--text);
+  outline-offset: -2px;
+}
+@media (forced-colors: active) {
+  #rules .rule.is-highlighted { outline: 1px dashed Highlight; outline-offset: -2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #rules .rule { transition: none; }
 }
 .rule-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 .rule-actions button { width: auto; min-height: 34px; padding: 5px 12px; margin: 0; border: 1px solid var(--border); }
