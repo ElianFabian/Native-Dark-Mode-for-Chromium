@@ -182,9 +182,13 @@ function renderRule(rule) {
   const actions = document.createElement('div');
   actions.className = 'rule-actions';
   const toggle = document.createElement('button');
-  toggle.className = rule.enabled ? 'rule-disable' : 'rule-enable';
-  toggle.textContent = t(rule.enabled ? 'disable' : 'enable');
-  toggle.addEventListener('click', () => request({ type: 'update', id: rule.id, patch: { enabled: !rule.enabled } }));
+  toggle.dataset.ruleId = rule.id;
+  toggle.append(document.createElement('span'));
+  renderRuleToggle(toggle, rule.enabled, item);
+  toggle.addEventListener('click', () => {
+    const current = snapshot.rules.find(entry => entry.id === rule.id);
+    if (current) void request({ type: 'update', id: rule.id, patch: { enabled: !current.enabled } }, toggle);
+  });
   const edit = document.createElement('button');
   edit.className = 'rule-edit';
   edit.textContent = t('edit');
@@ -199,6 +203,13 @@ function renderRule(rule) {
   remove.addEventListener('click', () => request({ type: 'remove', id: rule.id }));
   actions.append(toggle, edit, remove);
   item.append(actions);
+}
+
+function renderRuleToggle(button, enabled, item = button.closest('.rule')) {
+  button.className = enabled ? 'rule-toggle rule-disable' : 'rule-toggle rule-enable';
+  button.firstElementChild.textContent = t(enabled ? 'disable' : 'enable');
+  button.dataset.alternateLabel = t(enabled ? 'enable' : 'disable');
+  item.querySelector('.rule-state').textContent = t(enabled ? 'enabled' : 'disabled');
 }
 
 function renderTrash(entries) {
@@ -226,8 +237,9 @@ function renderTrash(entries) {
   }
 }
 
-function render(value) {
+function render(value, toggledButton) {
   if (value.error) throw new Error(value.error);
+  const previous = snapshot;
   snapshot = value;
   const state = value.state;
   $('#status').textContent = state.error ? errorText(state.error) : isManager ? '' : t(state.enabled ? 'active' : 'inactive');
@@ -236,16 +248,28 @@ function render(value) {
     editingId = undefined;
     showRule();
   }
-  renderRules();
-  if (isManager) renderTrash(value.trash ?? []);
+  const toggledRule = toggledButton && value.rules.find(rule => rule.id === toggledButton.dataset.ruleId);
+  const listUnchanged = toggledRule && previous.rules.length === value.rules.length &&
+    value.rules.every((rule, index) => {
+      const old = previous.rules[index];
+      const comparable = rule === toggledRule ? { ...rule, enabled: old.enabled } : rule;
+      return JSON.stringify(comparable) === JSON.stringify(old);
+    });
+  if (listUnchanged) renderRuleToggle(toggledButton, toggledRule.enabled);
+  else renderRules();
+  if (isManager && (!toggledButton || JSON.stringify(previous.trash) !== JSON.stringify(value.trash))) {
+    renderTrash(value.trash ?? []);
+  }
   updateButton();
 }
 
-async function withBusy(operation, progress, statusElement = $('#status')) {
+async function withBusy(operation, progress, statusElement = $('#status'), retainedButton) {
   if (busy) return;
   busy = true;
   statusElement.textContent = progress;
-  document.querySelectorAll('button, input, select').forEach(element => { element.disabled = true; });
+  document.querySelectorAll('button, input, select').forEach(element => {
+    if (element !== retainedButton) element.disabled = true;
+  });
   try {
     return await operation();
   } catch (error) {
@@ -258,17 +282,21 @@ async function withBusy(operation, progress, statusElement = $('#status')) {
   }
 }
 
-function request(message) {
-  return withBusy(async () => {
+async function request(message, retainedButton) {
+  const hadFocus = retainedButton && document.activeElement === retainedButton;
+  await withBusy(async () => {
     const value = await send(message);
     if (value.error) throw new Error(value.error);
     if (editingId && message.type === 'replace-scope') editingId = normalizeRule(message.rule).id;
-    render(value);
+    render(value, retainedButton);
     if (message.type === 'exclude-inherited-host' && value.matching) showRule(value.matching);
     if (isManager && (message.type === 'save' || message.type === 'replace-scope')) $('#status').textContent = t('ruleSaved');
     if (isManager && message.type === 'remove') $('#status').textContent = t('ruleTrashed');
     if (isManager && message.type === 'restore') $('#status').textContent = t('ruleRestored');
-  }, t('saving'));
+  }, t('saving'), $('#status'), retainedButton);
+  if (hadFocus && !retainedButton.isConnected) {
+    $(`[data-rule-id="${CSS.escape(message.id)}"]`)?.focus({ preventScroll: true });
+  }
 }
 
 function send(message) {

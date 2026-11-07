@@ -7,16 +7,18 @@
 <main>
   <header class="popup-header">
     <h1 data-i18n="title">Native Dark Mode</h1>
-    <button id="manage-extension" type="button" data-i18n="manageExtension">Manage extension</button>
+    <button id="manage-extension" type="button" class="opens-tab"><span data-i18n="manageExtension">Manage extension</span><span class="external-link-icon" aria-hidden="true"></span></button>
   </header>
   <details class="appearance">
     <summary data-i18n="appearance">Appearance and accessibility</summary>
     <fieldset>
       <legend data-i18n="textSize">Text size</legend>
-      <div class="text-size">
-        <button type="button" id="text-smaller" data-i18n-label="smallerText" aria-label="Decrease text size">A−</button>
-        <output id="text-scale">100%</output>
-        <button type="button" id="text-larger" data-i18n-label="largerText" aria-label="Increase text size">A+</button>
+      <div class="text-size-slot">
+        <div class="text-size">
+          <button type="button" id="text-smaller" data-i18n-label="smallerText" aria-label="Decrease text size">A−</button>
+          <output id="text-scale">100%</output>
+          <button type="button" id="text-larger" data-i18n-label="largerText" aria-label="Increase text size">A+</button>
+        </div>
       </div>
     </fieldset>
     <fieldset id="ui-theme" class="choice-group">
@@ -68,7 +70,7 @@
   <p class="note" data-i18n="rulesNote">Saved locally. Disabled rules remain as exclusions. More specific sections take priority. Queries and fragments are ignored.</p>
   <header class="saved-rules-header">
     <h2 data-i18n="savedRules">Saved websites and sections</h2>
-    <button id="manage" data-i18n="manageRules">Manage rules</button>
+    <button id="manage" class="opens-tab"><span data-i18n="manageRules">Manage rules</span><span class="external-link-icon" aria-hidden="true"></span></button>
   </header>
   <div id="rules"></div>
   <p id="rule-count" class="note"></p>
