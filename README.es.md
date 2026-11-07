@@ -1,8 +1,12 @@
 # Modo oscuro nativo para Chromium
 
+<img src="extension/icons/icon128.png" width="72" alt="Icono de Modo oscuro nativo, una brocha clara sobre fondo índigo">
+
 [Read in English](README.md)
 
 Usa el modo oscuro integrado en Chromium en las webs y secciones que elijas. Guarda una regla una vez y la extensión la aplicará cuando vuelvas.
+
+La **versión 0.6.0** incorpora un icono inspirado en DevTools, una interfaz más accesible, grupos de dominios plegables y una vista previa con confirmación al reemplazar reglas.
 
 ## Instalar la extensión
 
@@ -50,6 +54,8 @@ Haz clic en una captura para abrirla a resolución completa.
 | **Incluir dominios regionales** | El mismo nombre bajo sufijos reconocidos. `amazon.es` pasa a `amazon.*` y puede cubrir `amazon.com.au` y `amazon.co.uk`. Activa también los subdominios para obtener `*.amazon.*`. |
 
 Las rutas más específicas tienen prioridad. Para la misma ruta, un dominio concreto tiene prioridad sobre una regla regional. Si la página hereda una regla activa, el panel puede ofrecer **Excluir este subdominio** o **Excluir este nombre de host** para guardar una excepción.
+
+Para excluir una ruta dentro de una web o sección activa, introduce la URL más específica, elige **Sección por ruta** y pulsa **Guardar ajustes** para crear una regla desactivada. Por ejemplo, una regla desactivada para `example.com/blog/privado` excluye esa ruta y sus subrutas de una regla activa para `example.com/blog`. Si ya hay una regla activa para esa ruta exacta, desactívala desde el listado.
 
 **Gestionar reglas** abre la lista completa en otra pestaña. Puedes buscar y ordenar por nombre o fecha de añadido, en orden ascendente o descendente. **Agrupar por dominio** muestra grupos plegables con el botón **Expandir todos / Contraer todos**. La fecha aparece cuando está guardada en la regla.
 

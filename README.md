@@ -1,8 +1,12 @@
 # Native Dark Mode for Chromium
 
+<img src="extension/icons/icon128.png" width="72" alt="Native Dark Mode icon, a light paintbrush on an indigo background">
+
 [Read in Spanish](README.es.md)
 
 Use Chromium's built-in dark mode on the websites and sections you choose. Save a rule once and the extension applies it when you return.
+
+**Version 0.6.0** adds a DevTools-inspired icon, a more accessible interface, collapsible domain groups, and a preview and confirmation for replacement imports.
 
 ## Install the extension
 
@@ -50,6 +54,8 @@ Click either screenshot to open it at full resolution.
 | **Include regional domains** | The same registered name under recognized public suffixes. `amazon.es` becomes `amazon.*`, which can cover `amazon.com.au` and `amazon.co.uk`. Enable subdomains as well to get `*.amazon.*`. |
 
 More specific paths take priority. At the same path, a rule for a single domain takes priority over a regional pattern. Regional patterns match names across suffixes. Use a single-domain rule when you want to limit the scope to one domain. When a page inherits an enabled rule, the popup can offer **Exclude this subdomain** or **Exclude this hostname** to save an exception for the current hostname and inherited path.
+
+To exclude a path from an enabled site or section, enter the more specific URL, choose **Path section**, and use **Save settings** to create a disabled rule. For example, a disabled rule for `example.com/blog/private` excludes that path and its descendants from an enabled rule for `example.com/blog`. If a rule for the exact path is already enabled, disable it from the list.
 
 **Manage rules** opens a full tab where you can search and sort by name or date added, in either direction. **Group by domain** shows collapsible groups with an **Expand all / Collapse all** button. Dates are shown for rules with a saved creation date.
 
