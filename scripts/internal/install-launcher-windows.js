@@ -56,7 +56,8 @@ try {
       ['Chromium', 'chromium.exe', 'Chromium/Application/chrome.exe'],
       ['Microsoft Edge', 'msedge.exe', 'Microsoft/Edge/Application/msedge.exe'],
       ['Vivaldi', 'vivaldi.exe', 'Vivaldi/Application/vivaldi.exe'],
-      ['Opera', '', 'Programs/Opera/launcher.exe', 'Opera/launcher.exe']
+      ['Opera', '', 'Programs/Opera/opera.exe', 'Programs/Opera/launcher.exe',
+        'Opera/opera.exe', 'Opera/launcher.exe']
     ];
     for (var candidate = 0; candidate < browsers.length; candidate++) {
       var executable = findBrowser(browsers[candidate]);

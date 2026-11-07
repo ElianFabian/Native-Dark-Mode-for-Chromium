@@ -20,6 +20,23 @@ def shell_path(path):
 
 
 class NativeLauncherTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == 'nt', 'Windows Script Host is required.')
+    def test_windows_detects_opera_installed_with_opera_exe(self):
+        with tempfile.TemporaryDirectory(dir=ROOT) as folder:
+            directory = Path(folder)
+            local_data = directory / 'local'
+            opera = local_data / 'Programs' / 'Opera' / 'opera.exe'
+            opera.parent.mkdir(parents=True)
+            opera.touch()
+            output = directory / 'shortcuts'
+            subprocess.run(
+                ['cmd.exe', '/d', '/c', r'scripts\install-launcher-windows.cmd',
+                 '--output-directory', str(output)],
+                cwd=ROOT, env={**os.environ, 'LOCALAPPDATA': str(local_data)},
+                input='\n', check=True, capture_output=True, text=True,
+            )
+            self.assertTrue((output / 'Opera - Native Dark Mode.lnk').is_file())
+
     @unittest.skipUnless(BASH, 'A shell is needed for shell-artifact checks.')
     def test_linux_detects_multiple_browsers_and_copies_entries_to_the_desktop(self):
         with tempfile.TemporaryDirectory(dir=ROOT) as folder:
