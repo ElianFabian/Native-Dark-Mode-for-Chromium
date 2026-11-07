@@ -181,5 +181,23 @@
   },
   "errorScopeConflict": {
     "message": "A rule already exists for this scope. Edit it from the saved list."
+  },
+  "manageRules": {
+    "message": "Manage rules"
+  },
+  "ruleEditor": {
+    "message": "Rule editor"
+  },
+  "searchRules": {
+    "message": "Search rules"
+  },
+  "noSearchResults": {
+    "message": "No matching rules."
+  },
+  "ruleCount": {
+    "message": "Showing {shown} of {total} rules."
+  },
+  "ruleSaved": {
+    "message": "Rule saved."
   }
 }

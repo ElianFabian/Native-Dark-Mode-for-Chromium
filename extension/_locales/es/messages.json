@@ -181,5 +181,23 @@
   },
   "errorScopeConflict": {
     "message": "Ya existe una regla para este alcance. Edítala desde la lista."
+  },
+  "manageRules": {
+    "message": "Gestionar reglas"
+  },
+  "ruleEditor": {
+    "message": "Editor de reglas"
+  },
+  "searchRules": {
+    "message": "Buscar reglas"
+  },
+  "noSearchResults": {
+    "message": "No hay reglas coincidentes."
+  },
+  "ruleCount": {
+    "message": "Se muestran {shown} de {total} reglas."
+  },
+  "ruleSaved": {
+    "message": "Regla guardada."
   }
 }

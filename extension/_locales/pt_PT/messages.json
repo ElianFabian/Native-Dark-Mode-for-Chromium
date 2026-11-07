@@ -181,5 +181,23 @@
   },
   "errorScopeConflict": {
     "message": "Já existe uma regra para este âmbito. Edite-a na lista."
+  },
+  "manageRules": {
+    "message": "Gerir regras"
+  },
+  "ruleEditor": {
+    "message": "Editor de regras"
+  },
+  "searchRules": {
+    "message": "Pesquisar regras"
+  },
+  "noSearchResults": {
+    "message": "Nenhuma regra correspondente."
+  },
+  "ruleCount": {
+    "message": "A mostrar {shown} de {total} regras."
+  },
+  "ruleSaved": {
+    "message": "Regra guardada."
   }
 }

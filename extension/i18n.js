@@ -53,8 +53,8 @@ export function translatePage() {
   document.querySelectorAll('[data-i18n]').forEach(element => {
     element.textContent = t(element.dataset.i18n);
   });
-  document.title = t('title');
-  document.querySelector('#import-preview').setAttribute('aria-label', t('importPreview'));
+  document.title = t(document.documentElement.dataset.page === 'options' ? 'manageRules' : 'title');
+  document.querySelector('#import-preview')?.setAttribute('aria-label', t('importPreview'));
 }
 
 export function errorText(error) {

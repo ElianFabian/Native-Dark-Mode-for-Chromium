@@ -181,5 +181,23 @@
   },
   "errorScopeConflict": {
     "message": "Für diesen Bereich gibt es bereits eine Regel. Bearbeite sie in der Liste."
+  },
+  "manageRules": {
+    "message": "Regeln verwalten"
+  },
+  "ruleEditor": {
+    "message": "Regeleditor"
+  },
+  "searchRules": {
+    "message": "Regeln suchen"
+  },
+  "noSearchResults": {
+    "message": "Keine passenden Regeln."
+  },
+  "ruleCount": {
+    "message": "{shown} von {total} Regeln werden angezeigt."
+  },
+  "ruleSaved": {
+    "message": "Regel gespeichert."
   }
 }

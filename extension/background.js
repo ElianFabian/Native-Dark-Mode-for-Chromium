@@ -7,13 +7,16 @@ const manager = new RuleManager(chrome, controller);
 const report = error => console.warn('Native Dark Mode:', error);
 
 async function snapshot(tabId) {
-  const tab = await chrome.tabs.get(tabId);
   const rules = await manager.list();
+  if (tabId === undefined) return { state: {}, rules };
+  const tab = await chrome.tabs.get(tabId);
   return { state: await controller.read(tabId), rules, matching: matchingRule(rules, tab.url ?? '') };
 }
 
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
-  if (sender.id !== chrome.runtime.id || !Number.isInteger(message?.tabId)) return;
+  if (sender.id !== chrome.runtime.id || !message) return;
+  const fromManager = sender.url === chrome.runtime.getURL('options.html');
+  if (!fromManager && !Number.isInteger(message.tabId)) return;
   const result = (async () => {
     if (message.type === 'export') return { backup: createBackup(await manager.list()) };
     if (message.type === 'preview-import') {
@@ -31,7 +34,10 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
     else if (message.type === 'update') await manager.update(message.id, message.patch ?? {});
     else if (message.type === 'remove') await manager.remove(message.id);
     else if (message.type !== 'status') throw new Error('Unknown request.');
-    if (message.type !== 'status') await manager.applyFromPopup(message.tabId, message.type !== 'replace-scope');
+    if (message.type !== 'status') {
+      if (fromManager) void manager.applyAll().catch(report);
+      else await manager.applyFromPopup(message.tabId, message.type !== 'replace-scope');
+    }
     return snapshot(message.tabId);
   })();
   result.then(reply, error => reply({ error: String(error.message ?? error) }));

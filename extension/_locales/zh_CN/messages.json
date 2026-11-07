@@ -181,5 +181,23 @@
   },
   "errorScopeConflict": {
     "message": "此范围已有规则。请在已保存的列表中编辑。"
+  },
+  "manageRules": {
+    "message": "管理规则"
+  },
+  "ruleEditor": {
+    "message": "规则编辑器"
+  },
+  "searchRules": {
+    "message": "搜索规则"
+  },
+  "noSearchResults": {
+    "message": "没有匹配的规则。"
+  },
+  "ruleCount": {
+    "message": "显示 {total} 条规则中的 {shown} 条。"
+  },
+  "ruleSaved": {
+    "message": "规则已保存。"
   }
 }

@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "minimum_chrome_version": "118",
   "permissions": ["debugger", "storage", "activeTab"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": { "service_worker": "background.js", "type": "module" },
+  "options_page": "options.html",
   "action": { "default_popup": "popup.html", "default_title": "__MSG_title__" }
 }

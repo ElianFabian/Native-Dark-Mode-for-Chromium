@@ -181,5 +181,23 @@
   },
   "errorScopeConflict": {
     "message": "이 범위에 이미 규칙이 있습니다. 저장 목록에서 편집하세요."
+  },
+  "manageRules": {
+    "message": "규칙 관리"
+  },
+  "ruleEditor": {
+    "message": "규칙 편집기"
+  },
+  "searchRules": {
+    "message": "규칙 검색"
+  },
+  "noSearchResults": {
+    "message": "일치하는 규칙이 없습니다."
+  },
+  "ruleCount": {
+    "message": "규칙 {total}개 중 {shown}개 표시."
+  },
+  "ruleSaved": {
+    "message": "규칙이 저장되었습니다."
   }
 }

@@ -4,18 +4,21 @@ import { MAX_BACKUP_BYTES } from './backup.js';
 import { LANGUAGES, initializeLanguage, setLanguage, translatePage, t, errorText } from './i18n.js';
 
 const $ = selector => document.querySelector(selector);
+const isManager = document.documentElement.dataset.page === 'options';
+const popupRuleLimit = 5;
 let tab;
 let snapshot;
 let busy = false;
 let pendingImport;
 let pendingPreviewSummary;
 let displayedRule;
+let editingId;
 
 for (const [code, name] of Object.entries(LANGUAGES)) {
   const option = document.createElement('option');
   option.value = code;
   option.textContent = name;
-  $('#language').append(option);
+  $('#language')?.append(option);
 }
 
 function draft(enabled) {
@@ -44,11 +47,16 @@ function updateButton() {
   const needsResume = snapshot?.state.suspended || snapshot?.state.error;
   displayedRule = selected();
   $('#toggle').textContent = t(displayedRule?.enabled && !needsResume ? 'disableSave' : 'enableSave');
-  $('#toggle').disabled = busy || !tab?.id;
-  $('#save').disabled = busy || !tab?.id;
-  $('#export').disabled = busy || !snapshot;
-  $('#import').disabled = busy || !snapshot;
-  $('#confirm-import').disabled = busy || !pendingImport;
+  const canEdit = isManager ? Boolean(snapshot) : Boolean(tab?.id);
+  $('#toggle').disabled = busy || !canEdit;
+  $('#save').disabled = busy || !canEdit;
+  if (isManager) {
+    $('#toggle').hidden = Boolean(editingId);
+    $('#cancel-edit').hidden = !editingId;
+    $('#export').disabled = busy || !snapshot;
+    $('#import').disabled = busy || !snapshot;
+    $('#confirm-import').disabled = busy || !pendingImport;
+  }
   try {
     const rule = normalizeRule(draft(false));
     $('#scope-hint').textContent = rule.includeRegionalDomains
@@ -61,40 +69,63 @@ function loadSelection() {
   updateButton();
 }
 
-function render(value) {
-  if (value.error) throw new Error(value.error);
-  snapshot = value;
-  const state = value.state;
-  $('#status').textContent = state.error ? errorText(state.error) : t(state.enabled ? 'active' : 'inactive');
-  $('#diagnostic').textContent = JSON.stringify(value, null, 2);
+function scopesFor(rule) {
+  const hosts = rule.includeRegionalDomains ? regionalDomainsForHost(rule.host) : [rule.host];
+  return hosts.map(host => `${rule.includeSubdomains ? '*.' : ''}${host}${rule.path}`).join(', ');
+}
+
+function showRule(rule) {
+  $('#address').value = rule ? ruleAddress(rule) : '';
+  $('#scope').value = rule && rule.path !== '/' ? 'section' : 'website';
+  $('#subdomains').checked = Boolean(rule?.includeSubdomains);
+  $('#regional').checked = Boolean(rule?.includeRegionalDomains);
+  updateButton();
+}
+
+function renderRules() {
+  const rules = snapshot?.rules ?? [];
+  const query = $('#search')?.value.trim().toLowerCase() ?? '';
+  const visible = isManager ? rules.filter(rule => scopesFor(rule).includes(query)) : rules.slice(0, popupRuleLimit);
   $('#rules').replaceChildren();
-  if (!value.rules.length) $('#rules').textContent = t('noRules');
-  for (const rule of value.rules) {
+  $('#rule-count').textContent = visible.length < rules.length
+    ? t('ruleCount', { shown: visible.length, total: rules.length }) : '';
+  if (!visible.length) $('#rules').textContent = t(rules.length ? 'noSearchResults' : 'noRules');
+  for (const rule of visible) {
     const item = document.createElement('div');
     item.className = 'rule';
     const text = document.createElement('div');
-    const hosts = rule.includeRegionalDomains ? regionalDomainsForHost(rule.host) : [rule.host];
-    const scopes = hosts.map(host => `${rule.includeSubdomains ? '*.' : ''}${host}${rule.path}`);
-    text.textContent = `${scopes.join(', ')} — ${t(rule.enabled ? 'enabled' : 'disabled')}`;
+    text.textContent = `${scopesFor(rule)} — ${t(rule.enabled ? 'enabled' : 'disabled')}`;
     item.append(text);
+    $('#rules').append(item);
+    if (!isManager) continue;
     const toggle = document.createElement('button');
     toggle.textContent = t(rule.enabled ? 'disable' : 'enable');
     toggle.addEventListener('click', () => request({ type: 'update', id: rule.id, patch: { enabled: !rule.enabled } }));
     const edit = document.createElement('button');
     edit.textContent = t('edit');
     edit.addEventListener('click', () => {
-      $('#address').value = ruleAddress(rule);
-      $('#scope').value = rule.path === '/' ? 'website' : 'section';
-      $('#subdomains').checked = rule.includeSubdomains;
-      $('#regional').checked = Boolean(rule.includeRegionalDomains);
-      updateButton();
+      editingId = rule.id;
+      showRule(rule);
+      $('#address').focus();
     });
     const remove = document.createElement('button');
     remove.textContent = t('remove');
     remove.addEventListener('click', () => request({ type: 'remove', id: rule.id }));
     item.append(toggle, edit, remove);
-    $('#rules').append(item);
   }
+}
+
+function render(value) {
+  if (value.error) throw new Error(value.error);
+  snapshot = value;
+  const state = value.state;
+  $('#status').textContent = state.error ? errorText(state.error) : isManager ? '' : t(state.enabled ? 'active' : 'inactive');
+  $('#diagnostic').textContent = JSON.stringify(value, null, 2);
+  if (editingId && !value.rules.some(rule => rule.id === editingId)) {
+    editingId = undefined;
+    showRule();
+  }
+  renderRules();
   updateButton();
 }
 
@@ -117,22 +148,32 @@ async function withBusy(operation, progress, statusElement = $('#status')) {
 
 function request(message) {
   return withBusy(async () => {
-    render(await requestWithTimeout(chrome.runtime, { ...message, tabId: tab.id }));
+    const value = await send(message);
+    if (value.error) throw new Error(value.error);
+    if (editingId && message.type === 'replace-scope') editingId = normalizeRule(message.rule).id;
+    render(value);
+    if (isManager && (message.type === 'save' || message.type === 'replace-scope')) $('#status').textContent = t('ruleSaved');
   }, t('saving'));
+}
+
+function send(message) {
+  return requestWithTimeout(chrome.runtime, isManager ? message : { ...message, tabId: tab.id });
 }
 
 function saveCheckboxChange() {
   const previous = displayedRule;
-  if (!previous || busy) {
+  if (!previous || busy || (isManager && previous.id !== editingId)) {
     updateButton();
     return;
   }
   const rule = draft(previous.enabled);
   void withBusy(async () => {
     try {
-      render(await requestWithTimeout(chrome.runtime, {
-        type: 'replace-scope', id: previous.id, rule, tabId: tab.id
-      }));
+      const value = await send({ type: 'replace-scope', id: previous.id, rule });
+      if (value.error) throw new Error(value.error);
+      if (editingId) editingId = normalizeRule(rule).id;
+      render(value);
+      if (isManager) $('#status').textContent = t('ruleSaved');
     } catch (error) {
       $('#subdomains').checked = previous.includeSubdomains;
       $('#regional').checked = Boolean(previous.includeRegionalDomains);
@@ -142,12 +183,12 @@ function saveCheckboxChange() {
 }
 
 async function backupRequest(message) {
-  const value = await requestWithTimeout(chrome.runtime, { ...message, tabId: tab.id });
+  const value = await send(message);
   if (value.error) throw new Error(value.error);
   return value;
 }
 
-$('#export').addEventListener('click', () => withBusy(async () => {
+$('#export')?.addEventListener('click', () => withBusy(async () => {
   const { backup } = await backupRequest({ type: 'export' });
   const blob = new Blob([JSON.stringify(backup, null, 2) + '\n'], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -160,12 +201,12 @@ $('#export').addEventListener('click', () => withBusy(async () => {
   $('#backup-status').textContent = t('exportPrepared', { count: backup.rules.length });
 }, t('exportPreparing'), $('#backup-status')));
 
-$('#import').addEventListener('click', () => {
+$('#import')?.addEventListener('click', () => {
   $('#import-file').value = '';
   $('#import-file').click();
 });
 
-$('#import-file').addEventListener('change', () => {
+$('#import-file')?.addEventListener('change', () => {
   const file = $('#import-file').files[0];
   if (!file) return;
   void withBusy(async () => {
@@ -184,7 +225,7 @@ $('#import-file').addEventListener('change', () => {
   }, t('validating'), $('#backup-status'));
 });
 
-$('#cancel-import').addEventListener('click', () => {
+$('#cancel-import')?.addEventListener('click', () => {
   pendingImport = undefined;
   pendingPreviewSummary = undefined;
   $('#import-preview').hidden = true;
@@ -192,7 +233,7 @@ $('#cancel-import').addEventListener('click', () => {
   updateButton();
 });
 
-$('#confirm-import').addEventListener('click', () => withBusy(async () => {
+$('#confirm-import')?.addEventListener('click', () => withBusy(async () => {
   if (pendingImport === undefined) throw new Error('Select a JSON backup first.');
   const value = await backupRequest({ type: 'import', text: pendingImport, conflictPolicy: $('#conflict-policy').value });
   render(value);
@@ -203,7 +244,7 @@ $('#confirm-import').addEventListener('click', () => withBusy(async () => {
   $('#backup-status').textContent = t('importSaved', { added, updated, skipped });
 }, t('importing'), $('#backup-status')));
 
-$('#language').addEventListener('change', () => withBusy(async () => {
+$('#language')?.addEventListener('change', () => withBusy(async () => {
   await setLanguage($('#language').value);
   translatePage();
   if (snapshot) render(snapshot);
@@ -219,29 +260,33 @@ $('#toggle').addEventListener('click', () => {
   const needsResume = snapshot?.state.suspended || snapshot?.state.error;
   void request({ type: 'save', rule: draft(!selected()?.enabled || Boolean(needsResume)) });
 });
-$('#save').addEventListener('click', () => request({ type: 'save', rule: draft(selected()?.enabled ?? false) }));
+$('#save').addEventListener('click', () => request({
+  type: editingId ? 'replace-scope' : 'save', id: editingId, rule: draft(selected()?.enabled ?? false)
+}));
+$('#cancel-edit')?.addEventListener('click', () => { editingId = undefined; showRule(); });
+$('#search')?.addEventListener('input', renderRules);
+$('#manage')?.addEventListener('click', async () => {
+  try { await chrome.runtime.openOptionsPage(); }
+  catch (error) { $('#status').textContent = errorText(error); }
+});
 $('#address').addEventListener('input', loadSelection);
 $('#scope').addEventListener('change', loadSelection);
 $('#subdomains').addEventListener('change', saveCheckboxChange);
 $('#regional').addEventListener('change', saveCheckboxChange);
 
 try {
-  $('#language').value = await initializeLanguage();
+  const language = await initializeLanguage();
+  if (isManager) $('#language').value = language;
   translatePage();
-  [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) throw new Error('The active tab could not be found.');
-  if (!/^https?:\/\//i.test(tab.url ?? '')) throw new Error('Open an HTTP or HTTPS page to manage rules.');
-  $('#site').textContent = new URL(tab.url).hostname;
-  $('#address').value = tab.url;
-  render(await requestWithTimeout(chrome.runtime, { type: 'status', tabId: tab.id }));
-  // Start with the rule currently responsible for this URL, if any.
-  if (snapshot.matching) {
-    const rule = snapshot.matching;
-    $('#address').value = ruleAddress(rule);
-    $('#scope').value = rule.path === '/' ? 'website' : 'section';
-    $('#subdomains').checked = rule.includeSubdomains;
-    $('#regional').checked = Boolean(rule.includeRegionalDomains);
+  if (!isManager) {
+    [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) throw new Error('The active tab could not be found.');
+    if (!/^https?:\/\//i.test(tab.url ?? '')) throw new Error('Open an HTTP or HTTPS page to manage rules.');
+    $('#site').textContent = new URL(tab.url).hostname;
+    $('#address').value = tab.url;
   }
+  render(await send({ type: 'status' }));
+  if (snapshot.matching) showRule(snapshot.matching);
   updateButton();
 } catch (error) {
   tab = undefined;

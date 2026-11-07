@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en" data-page="options">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manage rules</title>
+<link rel="stylesheet" href="popup.css">
+<link rel="stylesheet" href="options.css">
+<main>
+  <header><h1 data-i18n="manageRules">Manage rules</h1>
+  <label><span data-i18n="language">Language</span><select id="language"><option value="auto" data-i18n="automatic">Automatic (browser)</option></select></label>
+  </header>
+  <p id="status" role="status" aria-live="polite"></p>
+  <div class="workspace">
+    <section class="panel" aria-labelledby="editor-title">
+      <h2 id="editor-title" data-i18n="ruleEditor">Rule editor</h2>
+  <label><span data-i18n="address">Website or section URL</span><input id="address" type="text" placeholder="https://example.com/articles/"></label>
+  <label><span data-i18n="scope">Scope</span><select id="scope"><option value="website" data-i18n="website">Entire website</option><option value="section" data-i18n="section">Path section</option></select></label>
+  <label><input id="subdomains" type="checkbox"> <span data-i18n="subdomains">Include subdomains</span></label>
+  <label id="regional-option" hidden><input id="regional" type="checkbox"> <span data-i18n="regionalDomains">Include regional domains</span></label>
+  <p class="note" id="scope-hint"></p>
+  <button id="toggle" disabled>Please wait…</button>
+  <button id="save" disabled data-i18n="save">Save settings</button>
+  <button id="cancel-edit" hidden data-i18n="cancel">Cancel</button>
+  <p class="note" data-i18n="rulesNote">Saved locally. Disabled rules remain as exclusions. More specific sections take priority. Queries and fragments are ignored.</p>
+    </section>
+    <section class="panel" aria-labelledby="rules-title">
+      <h2 id="rules-title" data-i18n="savedRules">Saved websites and sections</h2>
+      <label><span data-i18n="searchRules">Search rules</span><input id="search" type="text"></label>
+      <p id="rule-count" class="note"></p>
+      <div id="rules"></div>
+    </section>
+  </div>
+  <section class="panel backup-panel">
+  <h2 data-i18n="backup">Backup and restore</h2>
+  <button id="export" disabled data-i18n="export">Export JSON</button>
+  <button id="import" disabled data-i18n="import">Import JSON</button>
+  <input id="import-file" type="file" accept=".json,application/json" hidden>
+  <p id="backup-status" role="status" aria-live="polite"></p>
+  <section id="import-preview" hidden aria-label="Import preview">
+    <p id="import-summary"></p>
+    <label><span data-i18n="matchingRules">Matching website and section rules</span>
+      <select id="conflict-policy">
+        <option value="keep" data-i18n="keep">Keep my existing settings</option>
+        <option value="replace" data-i18n="replace">Use settings from the file</option>
+      </select>
+    </label>
+    <p class="note" data-i18n="importNote">Rules absent from the file are kept. Enabled rules may activate dark mode in matching open tabs.</p>
+    <button id="confirm-import" data-i18n="confirmImport">Import rules</button>
+    <button id="cancel-import" data-i18n="cancel">Cancel</button>
+  </section>
+  </section>
+  <details><summary data-i18n="diagnostics">Diagnostics</summary><pre id="diagnostic"></pre></details>
+</main>
+<script src="popup.js" type="module"></script>
+</html>

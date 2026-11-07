@@ -181,5 +181,23 @@
   },
   "errorScopeConflict": {
     "message": "Une règle existe déjà pour cette portée. Modifiez-la dans la liste."
+  },
+  "manageRules": {
+    "message": "Gérer les règles"
+  },
+  "ruleEditor": {
+    "message": "Éditeur de règles"
+  },
+  "searchRules": {
+    "message": "Rechercher des règles"
+  },
+  "noSearchResults": {
+    "message": "Aucune règle correspondante."
+  },
+  "ruleCount": {
+    "message": "{shown} règles sur {total} affichées."
+  },
+  "ruleSaved": {
+    "message": "Règle enregistrée."
   }
 }

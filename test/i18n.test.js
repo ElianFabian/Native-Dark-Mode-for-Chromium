@@ -17,8 +17,9 @@ test('automatic language handles variants and a manual choice takes priority', (
 test('each supported language has all popup and manifest messages with matching variables', () => {
   const english = catalog('en');
   const popup = readFileSync(new URL('../extension/popup.html', import.meta.url), 'utf8');
+  const options = readFileSync(new URL('../extension/options.html', import.meta.url), 'utf8');
   const manifest = readFileSync(new URL('../extension/manifest.json', import.meta.url), 'utf8');
-  for (const [, key] of [...popup.matchAll(/data-i18n="(\w+)"/g), ...manifest.matchAll(/__MSG_(\w+)__/g)]) {
+  for (const [, key] of [...(popup + options).matchAll(/data-i18n="(\w+)"/g), ...manifest.matchAll(/__MSG_(\w+)__/g)]) {
     assert.ok(english[key], `Missing UI message ${key}`);
   }
   const variables = message => [...message.matchAll(/\{\w+\}/g)].map(match => match[0]).sort();

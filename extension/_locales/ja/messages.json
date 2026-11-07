@@ -181,5 +181,23 @@
   },
   "errorScopeConflict": {
     "message": "この範囲には既にルールがあります。保存済みの一覧から編集してください。"
+  },
+  "manageRules": {
+    "message": "ルールを管理"
+  },
+  "ruleEditor": {
+    "message": "ルールエディタ"
+  },
+  "searchRules": {
+    "message": "ルールを検索"
+  },
+  "noSearchResults": {
+    "message": "一致するルールはありません。"
+  },
+  "ruleCount": {
+    "message": "{total}件中{shown}件を表示。"
+  },
+  "ruleSaved": {
+    "message": "ルールを保存しました。"
   }
 }
