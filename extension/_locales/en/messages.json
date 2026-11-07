@@ -210,16 +210,7 @@
     "message": "Sort rules"
   },
   "alphabetical": {
-    "message": "Alphabetical (A–Z)"
-  },
-  "reverseAlphabetical": {
-    "message": "Alphabetical (Z–A)"
-  },
-  "newest": {
-    "message": "Most recently added"
-  },
-  "oldest": {
-    "message": "Oldest added"
+    "message": "Alphabetical"
   },
   "groupDomains": {
     "message": "Group by domain"
@@ -322,5 +313,11 @@
   },
   "scopeSectionHelp": {
     "message": "Covers the selected path and its subpaths. For example, example.com/blog includes example.com/blog/post, but excludes example.com/shop."
+  },
+  "sortByDate": {
+    "message": "Date added"
+  },
+  "sortDescending": {
+    "message": "Descending"
   }
 }

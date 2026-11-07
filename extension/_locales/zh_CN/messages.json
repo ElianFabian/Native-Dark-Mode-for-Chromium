@@ -210,16 +210,7 @@
     "message": "排序规则"
   },
   "alphabetical": {
-    "message": "字母顺序（A–Z）"
-  },
-  "reverseAlphabetical": {
-    "message": "字母倒序（Z–A）"
-  },
-  "newest": {
-    "message": "最近添加"
-  },
-  "oldest": {
-    "message": "最早添加"
+    "message": "按字母顺序"
   },
   "groupDomains": {
     "message": "按域名分组"
@@ -322,5 +313,11 @@
   },
   "scopeSectionHelp": {
     "message": "覆盖所选路径及其子路径。例如，example.com/blog 包含 example.com/blog/post，但不包含 example.com/shop。"
+  },
+  "sortByDate": {
+    "message": "添加日期"
+  },
+  "sortDescending": {
+    "message": "降序"
   }
 }

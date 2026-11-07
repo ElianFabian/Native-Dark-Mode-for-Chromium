@@ -210,16 +210,7 @@
     "message": "Regeln sortieren"
   },
   "alphabetical": {
-    "message": "Alphabetisch (A–Z)"
-  },
-  "reverseAlphabetical": {
-    "message": "Alphabetisch (Z–A)"
-  },
-  "newest": {
-    "message": "Zuletzt hinzugefügt"
-  },
-  "oldest": {
-    "message": "Zuerst hinzugefügt"
+    "message": "Alphabetisch"
   },
   "groupDomains": {
     "message": "Nach Domain gruppieren"
@@ -322,5 +313,11 @@
   },
   "scopeSectionHelp": {
     "message": "Gilt für den gewählten Pfad und seine Unterpfade. Beispiel: example.com/blog umfasst example.com/blog/post und schließt example.com/shop aus."
+  },
+  "sortByDate": {
+    "message": "Hinzufügedatum"
+  },
+  "sortDescending": {
+    "message": "Absteigend"
   }
 }

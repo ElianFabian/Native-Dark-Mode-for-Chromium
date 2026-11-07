@@ -210,16 +210,7 @@
     "message": "Ordina regole"
   },
   "alphabetical": {
-    "message": "Alfabetico (A–Z)"
-  },
-  "reverseAlphabetical": {
-    "message": "Alfabetico (Z–A)"
-  },
-  "newest": {
-    "message": "Aggiunte di recente"
-  },
-  "oldest": {
-    "message": "Aggiunte per prime"
+    "message": "Alfabetico"
   },
   "groupDomains": {
     "message": "Raggruppa per dominio"
@@ -322,5 +313,11 @@
   },
   "scopeSectionHelp": {
     "message": "Copre il percorso scelto e i suoi sottopercorsi. Ad esempio, example.com/blog include example.com/blog/post ed esclude example.com/shop."
+  },
+  "sortByDate": {
+    "message": "Data di aggiunta"
+  },
+  "sortDescending": {
+    "message": "Decrescente"
   }
 }

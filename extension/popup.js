@@ -128,7 +128,13 @@ function ruleHeading(rule) {
   return heading;
 }
 
-function groupRules(rules) {
+function selectedSortOrder() {
+  const descending = $('#sort-descending').checked;
+  if (readChoice($('#sort-rules')) === 'date') return descending ? 'newest' : 'oldest';
+  return descending ? 'reverse-alphabetical' : 'alphabetical';
+}
+
+function groupRules(rules, order) {
   if (!isManager || !$('#group-domains').checked) return [[null, rules]];
   const groups = new Map();
   for (const rule of rules) {
@@ -136,7 +142,6 @@ function groupRules(rules) {
     if (!groups.has(domain)) groups.set(domain, []);
     groups.get(domain).push(rule);
   }
-  const order = readChoice($('#sort-rules'));
   if (order === 'newest' || order === 'oldest') return groups;
   const collator = new Intl.Collator(document.documentElement.lang);
   const direction = order === 'reverse-alphabetical' ? -1 : 1;
@@ -154,15 +159,16 @@ function showRule(rule) {
 function renderRules() {
   const rules = snapshot?.rules ?? [];
   const query = $('#search')?.value.trim().toLowerCase() ?? '';
+  const order = isManager ? selectedSortOrder() : undefined;
   const visible = isManager
     ? orderRules(rules.filter(rule => matchesSearch(rule, query)),
-      readChoice($('#sort-rules')), document.documentElement.lang)
+      order, document.documentElement.lang)
     : rules.slice(0, popupRuleLimit);
   $('#rules').replaceChildren();
   $('#rule-count').textContent = visible.length < rules.length
     ? t('ruleCount', { shown: visible.length, total: rules.length }) : '';
   if (!visible.length) $('#rules').textContent = t(rules.length ? 'noSearchResults' : 'noRules');
-  for (const [domain, group] of groupRules(visible)) {
+  for (const [domain, group] of groupRules(visible, order)) {
     if (domain) {
       const title = document.createElement('h3');
       title.className = 'domain-group';
@@ -428,10 +434,11 @@ $('#search')?.addEventListener('input', renderRules);
 async function saveListPreferences() {
   renderRules();
   try {
-    await chrome.storage.local.set({ ruleListPreferences: { order: readChoice($('#sort-rules')), group: $('#group-domains').checked } });
+    await chrome.storage.local.set({ ruleListPreferences: { order: selectedSortOrder(), group: $('#group-domains').checked } });
   } catch (error) { $('#status').textContent = errorText(error); }
 }
 $('#sort-rules')?.addEventListener('change', saveListPreferences);
+$('#sort-descending')?.addEventListener('change', saveListPreferences);
 $('#group-domains')?.addEventListener('change', saveListPreferences);
 $('#empty-trash')?.addEventListener('click', async () => {
   const ids = snapshot?.trash?.map(entry => entry.id) ?? [];
@@ -467,7 +474,9 @@ try {
   if (isManager) {
     $('#language').value = language;
     const { ruleListPreferences } = await chrome.storage.local.get('ruleListPreferences');
-    writeChoice($('#sort-rules'), ruleListPreferences?.order ?? 'alphabetical');
+    const order = ruleListPreferences?.order;
+    writeChoice($('#sort-rules'), order === 'newest' || order === 'oldest' ? 'date' : 'alphabetical');
+    $('#sort-descending').checked = order === 'newest' || order === 'reverse-alphabetical';
     $('#group-domains').checked = Boolean(ruleListPreferences?.group);
   }
   if (!isManager) {

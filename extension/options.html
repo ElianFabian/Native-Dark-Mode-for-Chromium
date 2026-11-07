@@ -11,7 +11,7 @@
   <button id="manage-extension" type="button" class="opens-tab"><span data-i18n="manageExtension">Manage extension</span><span class="external-link-icon" aria-hidden="true"></span></button>
   </header>
   <details class="appearance">
-    <summary data-i18n="appearance">Appearance and accessibility</summary>
+    <summary><span class="accessibility-icon" aria-hidden="true"></span><span data-i18n="appearance">Appearance and accessibility</span></summary>
     <fieldset>
       <legend data-i18n="textSize">Text size</legend>
       <div class="text-size-slot">
@@ -93,12 +93,11 @@
           <fieldset id="sort-rules" class="choice-group">
             <legend data-i18n="sortRules">Sort rules</legend>
             <div class="choices">
-              <label><input type="radio" name="sort-rules" value="alphabetical" checked><span data-i18n="alphabetical">Alphabetical (A–Z)</span></label>
-              <label><input type="radio" name="sort-rules" value="reverse-alphabetical"><span data-i18n="reverseAlphabetical">Alphabetical (Z–A)</span></label>
-              <label><input type="radio" name="sort-rules" value="newest"><span data-i18n="newest">Most recently added</span></label>
-              <label><input type="radio" name="sort-rules" value="oldest"><span data-i18n="oldest">Oldest added</span></label>
+              <label><input type="radio" name="sort-rules" value="alphabetical" checked><span data-i18n="alphabetical">Alphabetical</span></label>
+              <label><input type="radio" name="sort-rules" value="date"><span data-i18n="sortByDate">Date added</span></label>
             </div>
           </fieldset>
+          <label><input id="sort-descending" type="checkbox"> <span data-i18n="sortDescending">Descending</span></label>
           <label><input id="group-domains" type="checkbox"> <span data-i18n="groupDomains">Group by domain</span></label>
         </div>
         <p id="rule-count" class="note"></p>

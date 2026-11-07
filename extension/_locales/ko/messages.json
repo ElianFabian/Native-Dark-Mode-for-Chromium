@@ -210,16 +210,7 @@
     "message": "규칙 정렬"
   },
   "alphabetical": {
-    "message": "알파벳순 (A–Z)"
-  },
-  "reverseAlphabetical": {
-    "message": "알파벳 역순 (Z–A)"
-  },
-  "newest": {
-    "message": "최근 추가순"
-  },
-  "oldest": {
-    "message": "오래된 추가순"
+    "message": "이름순"
   },
   "groupDomains": {
     "message": "도메인별 그룹화"
@@ -322,5 +313,11 @@
   },
   "scopeSectionHelp": {
     "message": "선택한 경로와 하위 경로에 적용됩니다. 예를 들어 example.com/blog에는 example.com/blog/post가 포함되고 example.com/shop은 제외됩니다."
+  },
+  "sortByDate": {
+    "message": "추가 날짜"
+  },
+  "sortDescending": {
+    "message": "내림차순"
   }
 }
