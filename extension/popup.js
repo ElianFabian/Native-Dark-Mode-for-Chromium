@@ -9,6 +9,7 @@ let snapshot;
 let busy = false;
 let pendingImport;
 let pendingPreviewSummary;
+let displayedRule;
 
 for (const [code, name] of Object.entries(LANGUAGES)) {
   const option = document.createElement('option');
@@ -41,7 +42,8 @@ function updateButton() {
   if (!domains.length) $('#regional').checked = false;
   $('#regional').disabled = busy || !domains.length;
   const needsResume = snapshot?.state.suspended || snapshot?.state.error;
-  $('#toggle').textContent = t(selected()?.enabled && !needsResume ? 'disableSave' : 'enableSave');
+  displayedRule = selected();
+  $('#toggle').textContent = t(displayedRule?.enabled && !needsResume ? 'disableSave' : 'enableSave');
   $('#toggle').disabled = busy || !tab?.id;
   $('#save').disabled = busy || !tab?.id;
   $('#export').disabled = busy || !snapshot;
@@ -116,6 +118,26 @@ async function withBusy(operation, progress, statusElement = $('#status')) {
 function request(message) {
   return withBusy(async () => {
     render(await requestWithTimeout(chrome.runtime, { ...message, tabId: tab.id }));
+  }, t('saving'));
+}
+
+function saveCheckboxChange() {
+  const previous = displayedRule;
+  if (!previous || busy) {
+    updateButton();
+    return;
+  }
+  const rule = draft(previous.enabled);
+  void withBusy(async () => {
+    try {
+      render(await requestWithTimeout(chrome.runtime, {
+        type: 'replace-scope', id: previous.id, rule, tabId: tab.id
+      }));
+    } catch (error) {
+      $('#subdomains').checked = previous.includeSubdomains;
+      $('#regional').checked = Boolean(previous.includeRegionalDomains);
+      throw error;
+    }
   }, t('saving'));
 }
 
@@ -200,8 +222,8 @@ $('#toggle').addEventListener('click', () => {
 $('#save').addEventListener('click', () => request({ type: 'save', rule: draft(selected()?.enabled ?? false) }));
 $('#address').addEventListener('input', loadSelection);
 $('#scope').addEventListener('change', loadSelection);
-$('#subdomains').addEventListener('change', loadSelection);
-$('#regional').addEventListener('change', loadSelection);
+$('#subdomains').addEventListener('change', saveCheckboxChange);
+$('#regional').addEventListener('change', saveCheckboxChange);
 
 try {
   $('#language').value = await initializeLanguage();

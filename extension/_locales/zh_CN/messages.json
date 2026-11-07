@@ -178,5 +178,8 @@
   },
   "scopeRegionalFamily": {
     "message": "保存范围为 {scope} 及其子域名。"
+  },
+  "errorScopeConflict": {
+    "message": "此范围已有规则。请在已保存的列表中编辑。"
   }
 }

@@ -178,5 +178,8 @@
   },
   "scopeRegionalFamily": {
     "message": "Portée enregistrée sur {scope} et leurs sous-domaines."
+  },
+  "errorScopeConflict": {
+    "message": "Une règle existe déjà pour cette portée. Modifiez-la dans la liste."
   }
 }

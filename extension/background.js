@@ -27,10 +27,11 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
       return { ...await snapshot(message.tabId), importSummary: summary };
     }
     if (message.type === 'save') await manager.save(message.rule);
+    else if (message.type === 'replace-scope') await manager.replaceScope(message.id, message.rule);
     else if (message.type === 'update') await manager.update(message.id, message.patch ?? {});
     else if (message.type === 'remove') await manager.remove(message.id);
     else if (message.type !== 'status') throw new Error('Unknown request.');
-    if (message.type !== 'status') await manager.applyFromPopup(message.tabId);
+    if (message.type !== 'status') await manager.applyFromPopup(message.tabId, message.type !== 'replace-scope');
     return snapshot(message.tabId);
   })();
   result.then(reply, error => reply({ error: String(error.message ?? error) }));

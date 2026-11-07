@@ -93,6 +93,18 @@ export class RuleManager {
     return this.mutate(rules => [...rules.filter(existing => existing.id !== rule.id), rule]);
   }
 
+  replaceScope(id, input) {
+    const target = normalizeRule(input);
+    return this.mutate(rules => {
+      const current = rules.find(rule => rule.id === id);
+      if (!current) throw new Error('The original rule changed. Reopen the popup to edit it.');
+      if (target.id !== id && rules.some(rule => rule.id === target.id)) {
+        throw new Error('A rule already exists for this scope. Edit it from the saved list.');
+      }
+      return rules.map(rule => rule.id === id ? { ...target, enabled: current.enabled } : rule);
+    });
+  }
+
   update(id, patch) {
     return this.mutate(rules => rules.map(rule => rule.id === id ? {
       ...rule,
@@ -119,8 +131,8 @@ export class RuleManager {
     await Promise.allSettled(tabs.map(tab => this.apply(tab.id, tab.id === resumeTabId)));
   }
 
-  async applyFromPopup(tabId) {
-    const result = await this.apply(tabId, true);
+  async applyFromPopup(tabId, resume = true) {
+    const result = await this.apply(tabId, resume);
     // A background or loading tab must not hold the current popup open.
     void this.api.tabs.query({}).then(tabs => Promise.allSettled(
       tabs.filter(tab => tab.id !== tabId).map(tab => this.apply(tab.id))

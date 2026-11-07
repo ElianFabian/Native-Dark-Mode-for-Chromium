@@ -178,5 +178,8 @@
   },
   "scopeRegionalFamily": {
     "message": "Saved scope {scope} and their subdomains."
+  },
+  "errorScopeConflict": {
+    "message": "A rule already exists for this scope. Edit it from the saved list."
   }
 }

@@ -178,5 +178,8 @@
   },
   "scopeRegionalFamily": {
     "message": "Âmbito guardado em {scope} e nos seus subdomínios."
+  },
+  "errorScopeConflict": {
+    "message": "Já existe uma regra para este âmbito. Edite-a na lista."
   }
 }

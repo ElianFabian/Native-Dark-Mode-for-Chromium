@@ -149,6 +149,21 @@ test('concurrent rule saves do not overwrite each other', async () => {
   assert.equal((await manager.list()).length, 2);
 });
 
+test('checkbox scope changes preserve state and reject collisions with saved rules', async () => {
+  const { manager } = integration();
+  const [original] = await manager.save({ url: 'amazon.es', enabled: false });
+  const [regional] = await manager.replaceScope(original.id, {
+    url: 'amazon.es', includeRegionalDomains: true, enabled: true
+  });
+  assert.equal(regional.enabled, false);
+  assert.equal(regional.includeRegionalDomains, true);
+  assert.equal((await manager.list()).length, 1);
+  await manager.save({ url: 'amazon.es', enabled: true });
+  const before = await manager.list();
+  await assert.rejects(manager.replaceScope(regional.id, { url: 'amazon.es' }), /already exists/);
+  assert.deepEqual(await manager.list(), before);
+});
+
 test('native activation requires no CSS scripting even with a legacy input field', async () => {
   const { api, manager, controller } = integration();
   api.scripting.removeCSS = () => new Promise(() => {});

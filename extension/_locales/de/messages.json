@@ -178,5 +178,8 @@
   },
   "scopeRegionalFamily": {
     "message": "Gespeicherter Bereich {scope} und deren Subdomains."
+  },
+  "errorScopeConflict": {
+    "message": "Für diesen Bereich gibt es bereits eine Regel. Bearbeite sie in der Liste."
   }
 }

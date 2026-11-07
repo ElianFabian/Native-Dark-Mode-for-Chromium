@@ -178,5 +178,8 @@
   },
   "scopeRegionalFamily": {
     "message": "Alcance guardado en {scope} y sus subdominios."
+  },
+  "errorScopeConflict": {
+    "message": "Ya existe una regla para este alcance. Edítala desde la lista."
   }
 }

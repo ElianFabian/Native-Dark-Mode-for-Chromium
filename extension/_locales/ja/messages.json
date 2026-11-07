@@ -178,5 +178,8 @@
   },
   "scopeRegionalFamily": {
     "message": "保存範囲は{scope}とそのサブドメインです。"
+  },
+  "errorScopeConflict": {
+    "message": "この範囲には既にルールがあります。保存済みの一覧から編集してください。"
   }
 }

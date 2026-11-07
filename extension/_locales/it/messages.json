@@ -178,5 +178,8 @@
   },
   "scopeRegionalFamily": {
     "message": "Ambito salvato per {scope} e relativi sottodomini."
+  },
+  "errorScopeConflict": {
+    "message": "Esiste già una regola per questo ambito. Modificala dall’elenco."
   }
 }
