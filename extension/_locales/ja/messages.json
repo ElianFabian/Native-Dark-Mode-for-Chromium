@@ -65,9 +65,6 @@
   "cancel": {
     "message": "キャンセル"
   },
-  "debugNote": {
-    "message": "ブラウザはデバッグ通知を表示する場合があります。通知を閉じたりDevToolsを開いたりすると、ダークモードの接続が切れる場合があります。"
-  },
   "diagnostics": {
     "message": "診断"
   },

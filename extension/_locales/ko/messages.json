@@ -65,9 +65,6 @@
   "cancel": {
     "message": "취소"
   },
-  "debugNote": {
-    "message": "브라우저에 디버깅 알림이 표시될 수 있습니다. 알림을 닫거나 DevTools를 열면 다크 모드 연결이 끊길 수 있습니다."
-  },
   "diagnostics": {
     "message": "진단"
   },

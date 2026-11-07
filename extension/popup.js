@@ -8,7 +8,6 @@ import { readChoice, writeChoice } from './choices.js';
 
 const $ = selector => document.querySelector(selector);
 const isManager = document.documentElement.dataset.page === 'options';
-const popupRuleLimit = 5;
 let tab;
 let snapshot;
 let busy = false;
@@ -153,7 +152,7 @@ function selectedSortOrder() {
 }
 
 function groupRules(rules, order) {
-  if (!isManager || !$('#group-domains').checked) return [[null, rules]];
+  if (!$('#group-domains').checked) return [[null, rules]];
   const groups = new Map();
   for (const rule of rules) {
     const domain = displayHost(rule).replace(/^www\./, '');
@@ -176,12 +175,9 @@ function showRule(rule) {
 
 function renderRules() {
   const rules = snapshot?.rules ?? [];
-  const query = $('#search')?.value.trim().toLowerCase() ?? '';
-  const order = isManager ? selectedSortOrder() : undefined;
-  const visible = isManager
-    ? orderRules(rules.filter(rule => matchesSearch(rule, query)),
-      order, document.documentElement.lang)
-    : rules.slice(0, popupRuleLimit);
+  const query = $('#search').value.trim().toLowerCase();
+  const order = selectedSortOrder();
+  const visible = orderRules(rules.filter(rule => matchesSearch(rule, query)), order, document.documentElement.lang);
   $('#rules').replaceChildren();
   $('#rule-count').textContent = visible.length < rules.length
     ? t('ruleCount', { shown: visible.length, total: rules.length }) : '';
@@ -202,7 +198,6 @@ function renderRule(rule) {
   item.className = 'rule';
   item.append(ruleHeading(rule));
   $('#rules').append(item);
-  if (!isManager) return;
   const actions = document.createElement('div');
   actions.className = 'rule-actions';
   const toggle = document.createElement('button');
@@ -280,7 +275,7 @@ function render(value, toggledButton) {
       return JSON.stringify(comparable) === JSON.stringify(old);
     });
   if (listUnchanged) renderRuleToggle(toggledButton, toggledRule.enabled);
-  else renderRules();
+  else if (isManager) renderRules();
   if (isManager && (!toggledButton || JSON.stringify(previous.trash) !== JSON.stringify(value.trash))) {
     renderTrash(value.trash ?? []);
   }

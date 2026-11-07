@@ -65,9 +65,6 @@
   "cancel": {
     "message": "Cancelar"
   },
-  "debugNote": {
-    "message": "El navegador puede mostrar un aviso de depuración. Cerrarlo o abrir DevTools puede desconectar el modo oscuro."
-  },
   "diagnostics": {
     "message": "Diagnóstico"
   },

@@ -65,9 +65,6 @@
   "cancel": {
     "message": "Abbrechen"
   },
-  "debugNote": {
-    "message": "Der Browser kann einen Debugging-Hinweis anzeigen. Schließen oder Öffnen von DevTools kann die Dunkelmodus-Verbindung trennen."
-  },
   "diagnostics": {
     "message": "Diagnose"
   },

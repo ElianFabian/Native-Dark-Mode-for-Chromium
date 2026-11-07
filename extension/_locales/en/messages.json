@@ -65,9 +65,6 @@
   "cancel": {
     "message": "Cancel"
   },
-  "debugNote": {
-    "message": "Your browser may show a debugging banner. Closing it or opening DevTools may disconnect dark mode."
-  },
   "diagnostics": {
     "message": "Diagnostics"
   },

@@ -65,9 +65,6 @@
   "cancel": {
     "message": "Annulla"
   },
-  "debugNote": {
-    "message": "Il browser può mostrare un avviso di debug. Chiuderlo o aprire DevTools può disconnettere la modalità scura."
-  },
   "diagnostics": {
     "message": "Diagnostica"
   },
