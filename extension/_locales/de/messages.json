@@ -316,5 +316,11 @@
   },
   "excludeHostHelp": {
     "message": "Erstellt eine Ausnahme für den aktuellen Host und behält die übergeordnete Regel bei."
+  },
+  "scopeWebsiteHelp": {
+    "message": "Gilt für die gesamte Domain. Beispiel: example.com umfasst example.com/blog und example.com/shop."
+  },
+  "scopeSectionHelp": {
+    "message": "Gilt für den gewählten Pfad und seine Unterpfade. Beispiel: example.com/blog umfasst example.com/blog/post und schließt example.com/shop aus."
   }
 }

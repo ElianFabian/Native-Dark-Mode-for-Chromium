@@ -316,5 +316,11 @@
   },
   "excludeHostHelp": {
     "message": "より広い範囲のルールを維持したまま、現在のホストを例外にします。"
+  },
+  "scopeWebsiteHelp": {
+    "message": "ホスト全体が対象です。たとえば example.com には example.com/blog と example.com/shop が含まれます。"
+  },
+  "scopeSectionHelp": {
+    "message": "指定したパスとその配下が対象です。たとえば example.com/blog には example.com/blog/post が含まれますが、example.com/shop は含まれません。"
   }
 }

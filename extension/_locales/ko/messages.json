@@ -316,5 +316,11 @@
   },
   "excludeHostHelp": {
     "message": "더 넓은 범위의 규칙은 유지하고 현재 호스트를 예외로 추가합니다."
+  },
+  "scopeWebsiteHelp": {
+    "message": "호스트 전체에 적용됩니다. 예를 들어 example.com에는 example.com/blog와 example.com/shop이 포함됩니다."
+  },
+  "scopeSectionHelp": {
+    "message": "선택한 경로와 하위 경로에 적용됩니다. 예를 들어 example.com/blog에는 example.com/blog/post가 포함되고 example.com/shop은 제외됩니다."
   }
 }

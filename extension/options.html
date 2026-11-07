@@ -40,8 +40,14 @@
         <fieldset id="scope" class="choice-group">
           <legend data-i18n="scope">Scope</legend>
           <div class="choices">
-            <label><input type="radio" name="scope" value="website" checked><span data-i18n="website">Entire website</span></label>
-            <label><input type="radio" name="scope" value="section"><span data-i18n="section">Path section</span></label>
+            <div class="has-tooltip">
+              <label><input type="radio" name="scope" value="website" aria-describedby="scope-website-help" checked><span data-i18n="website">Entire website</span></label>
+              <span id="scope-website-help" class="tooltip" role="tooltip" data-i18n="scopeWebsiteHelp">Covers the whole hostname. For example, example.com includes example.com/blog and example.com/shop.</span>
+            </div>
+            <div class="has-tooltip">
+              <label><input type="radio" name="scope" value="section" aria-describedby="scope-section-help"><span data-i18n="section">Path section</span></label>
+              <span id="scope-section-help" class="tooltip" role="tooltip" data-i18n="scopeSectionHelp">Covers the selected path and its subpaths. For example, example.com/blog includes example.com/blog/post, but excludes example.com/shop.</span>
+            </div>
           </div>
         </fieldset>
         <label><input id="subdomains" type="checkbox"> <span data-i18n="subdomains">Include subdomains</span></label>

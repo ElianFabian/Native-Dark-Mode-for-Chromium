@@ -216,8 +216,9 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
 .choice-group { min-inline-size: 0; border: 0; padding: 0; margin: .65rem 0; }
 .choices { display: flex; flex-wrap: wrap; gap: .4rem; margin-block-start: .25rem; }
 .choices label { position: relative; min-inline-size: 0; margin: 0; }
+.choices .has-tooltip { flex: 0 1 auto; min-inline-size: min(10rem, 100%); max-inline-size: 100%; }
 .choices input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; }
-.choices span {
+.choices label > span {
   display: flex;
   align-items: center;
   box-sizing: border-box;

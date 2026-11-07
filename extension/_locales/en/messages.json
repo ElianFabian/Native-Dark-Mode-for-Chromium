@@ -316,5 +316,11 @@
   },
   "excludeHostHelp": {
     "message": "Creates an exception for the current host while keeping the broader rule."
+  },
+  "scopeWebsiteHelp": {
+    "message": "Covers the whole hostname. For example, example.com includes example.com/blog and example.com/shop."
+  },
+  "scopeSectionHelp": {
+    "message": "Covers the selected path and its subpaths. For example, example.com/blog includes example.com/blog/post, but excludes example.com/shop."
   }
 }

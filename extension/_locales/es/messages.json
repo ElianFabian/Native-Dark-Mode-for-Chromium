@@ -316,5 +316,11 @@
   },
   "excludeHostHelp": {
     "message": "Crea una excepción para el sitio actual y conserva la regla más general."
+  },
+  "scopeWebsiteHelp": {
+    "message": "Cubre todo el dominio. Por ejemplo, example.com incluye example.com/blog y example.com/shop."
+  },
+  "scopeSectionHelp": {
+    "message": "Cubre la ruta elegida y sus subrutas. Por ejemplo, example.com/blog incluye example.com/blog/post y deja fuera example.com/shop."
   }
 }

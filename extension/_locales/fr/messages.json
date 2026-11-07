@@ -316,5 +316,11 @@
   },
   "excludeHostHelp": {
     "message": "Crée une exception pour l’hôte actuel et conserve la règle plus générale."
+  },
+  "scopeWebsiteHelp": {
+    "message": "Couvre tout le domaine. Par exemple, example.com inclut example.com/blog et example.com/shop."
+  },
+  "scopeSectionHelp": {
+    "message": "Couvre le chemin choisi et ses sous-chemins. Par exemple, example.com/blog inclut example.com/blog/post et exclut example.com/shop."
   }
 }

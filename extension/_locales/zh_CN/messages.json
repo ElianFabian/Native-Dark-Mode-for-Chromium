@@ -316,5 +316,11 @@
   },
   "excludeHostHelp": {
     "message": "为当前主机创建例外，同时保留范围更广的规则。"
+  },
+  "scopeWebsiteHelp": {
+    "message": "覆盖整个域名。例如，example.com 包含 example.com/blog 和 example.com/shop。"
+  },
+  "scopeSectionHelp": {
+    "message": "覆盖所选路径及其子路径。例如，example.com/blog 包含 example.com/blog/post，但不包含 example.com/shop。"
   }
 }
