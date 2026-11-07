@@ -93,6 +93,8 @@ The installer was tested on Windows 11, where banner suppression was confirmed i
 
 ## Development and screenshots
 
+See [AGENTS.md](AGENTS.md) for the repository map, behavior to preserve, and release workflow.
+
 Maintenance tools for the public suffix list and image research live in `scripts/dev/`.
 
 Run `npm run check` and `npm test` with Node.js. The extension runs directly from `extension/` with no build step. For launcher tests, run `python -m unittest discover -s test -p 'test_*.py' -v`. The launcher tests use temporary files and a mock browser where appropriate. See [PLAN.md](PLAN.md) for validation notes.

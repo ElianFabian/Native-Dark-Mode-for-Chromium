@@ -1,0 +1,50 @@
+# Working on Native Dark Mode for Chromium
+
+## Project intent
+
+Native Dark Mode is a Manifest V3 extension for desktop Chromium browsers. It uses Chromium's own rendering engine to darken selected websites and URL sections and remembers those choices across visits. Users can opt in by hostname, path, subdomain, or regional domain and can save explicit exclusions.
+
+Keep the source code, internal identifiers, and project documentation in English. Translate user-facing extension strings into every supported language. Keep installation dependency-free for end users. The browser loads the unpacked `extension/` directory directly, and the optional launcher installers use tools shipped with the operating system.
+
+## Repository map
+
+| Location | Responsibility |
+| --- | --- |
+| [extension/manifest.json](extension/manifest.json) | MV3 entry points, permissions, and extension version. |
+| [extension/background.js](extension/background.js) | Service worker. Dispatches extension messages, responds to tab events, and returns snapshots for the UI. |
+| [extension/controller.js](extension/controller.js) | Per-tab debugger attachment, native dark-mode override, badge, suspension, and serialized session changes. |
+| [extension/rules.js](extension/rules.js) | Canonical rule IDs, matching and precedence, sorting, exclusions, and serialized writes for rules and trash. |
+| [extension/domains.js](extension/domains.js) | Regional domain parsing using the bundled ICANN Public Suffix List snapshot in `icann-suffixes.js`. |
+| [extension/backup.js](extension/backup.js) | Versioned JSON validation, export, import previews, and conflict policies. |
+| [extension/popup.html](extension/popup.html), [extension/options.html](extension/options.html), [extension/popup.js](extension/popup.js) | Toolbar popup and full-page manager. Both use `popup.js`, which distinguishes the views using `data-page="options"`. |
+| [extension/popup.css](extension/popup.css), [extension/options.css](extension/options.css) | Shared UI styling and manager layout overrides. |
+| [extension/appearance.js](extension/appearance.js), [extension/choices.js](extension/choices.js), [extension/i18n.js](extension/i18n.js) | Appearance settings, native radio chip helpers, and translation loading. |
+| [scripts/](scripts/) | User-facing launchers at the top level. Implementation helpers are in `internal/` and developer tools are in `dev/`. |
+| [test/](test/), [fixtures/](fixtures/) | Automated tests and local pages for browser checks. |
+
+## Behavior to preserve
+
+- Native darkening runs through `chrome.debugger` and CDP `Emulation.setAutoDarkModeOverride`. An empty parameter object clears the override before detaching. When a debugger session is canceled, keep automatic attachment paused for that tab until the user explicitly resumes it. Keep slow background tabs from blocking manager acknowledgments.
+- Rules apply to HTTP and HTTPS. A path rule matches the exact path and its descendants at a segment boundary. Query strings and fragments do not contribute to rule identity. Preserve explicit ports and handle old stored rules through the existing normalizer.
+- A longer matching path wins. At the same path, non-regional rules take precedence, followed by more specific host matches and exact rules ahead of subdomain rules. A disabled winning rule is an exclusion. Normalize leading `www.` for ordinary rules when subdomains are enabled. Regional rules match a registered name across recognized suffixes, with `www` treated as an alias. Keep regional matching based on the bundled suffix data.
+- `chrome.storage.local` contains `rules`, `trash`, `ruleListPreferences`, `uiLanguage`, `uiTheme`, `uiTextScale`, and `uiHighContrast`. The controller keeps transient per-tab state in `chrome.storage.session` under `tab:<id>`. Route persistent rule changes through `RuleManager` so concurrent edits, imports, restores, and deletions stay ordered.
+- Removing a rule moves it to the trash. Restoring it preserves its settings and fails safely if the scope already exists. Emptying the trash affects only entries covered by the user's confirmation.
+- Backups use format `native-dark-mode-rules`, version `1`, and cover the rule list. The import default adds new rules and keeps existing matches. Users can also update matches or replace the list. Full replacement previews permanent deletions and rejects newly discovered removals until the user reviews them. Preserve the existing size and rule limits and validate before writing.
+- Appearance affects the extension UI. Website darkening is controlled separately by rules. The UI follows the system theme by default, supports 75% to 200% text scaling, and offers high contrast. Preserve native radio controls behind the chips, keyboard focus, accessible names and descriptions, and wrapping at large text sizes.
+- The nine extension catalogs are `en`, `es`, `fr`, `pt_PT`, `it`, `zh_CN`, `ja`, `ko`, and `de`. Use `data-i18n` for visible text, `data-i18n-label` for accessible labels, and `t()` for dynamic strings. Keep interpolation variables consistent. The launchers have separate English and Spanish messages.
+- The launchers pass `--silent-debugger-extension-api` to the target browser. The flag applies to all debugger extensions in that session when supported. Keep the installers native to each platform, use `--output-directory` for temporary test artifacts, and preserve browser discovery, location reporting, and the interactive Enter prompt.
+- Chromium currently decides how images are darkened. Per-site native image controls are deferred. See [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md) for the experimental launch-time option and its limits.
+
+## Development and verification
+
+1. Check the current branch and worktree with `git status --short --branch`. Preserve existing user changes. Read [README.md](README.md) for the user workflow and [PLAN.md](PLAN.md) for validation history.
+2. Run `npm run check` and `npm test` from the repository root. Node.js and npm are development tools. On Windows, use `npm.cmd` if the PowerShell execution policy blocks the npm wrapper.
+3. For launcher changes, run `python -m unittest discover -s test -p 'test_*.py' -v`. The tests use temporary paths and can use Git Bash on Windows to inspect the shell-generated artifacts. Artifact tests do not verify desktop integration.
+4. For browser behavior, load or reload `extension/` as an unpacked extension. Serve the fixtures using `python -m http.server 8765 --bind 127.0.0.1 --directory fixtures` and open `http://127.0.0.1:8765/test.html`. Check a matching URL, a URL outside the rule, and an exclusion. For UI changes, check both views at normal and large text sizes, with keyboard navigation and light, dark, and high-contrast themes.
+5. Run `git diff --check` and review the patch before committing. Keep changes focused. State which browser, OS, and scenarios were actually checked.
+
+Brave has been used for hands-on extension checks. The launcher was tested on Windows 11 and debugger banner suppression was confirmed in Brave there. Linux and macOS launcher artifacts have automated checks. Testing those installers on actual Linux and macOS desktops is still pending. Chrome, Edge, and other Chromium builds still need end-to-end extension verification.
+
+## Releases
+
+Use [extension/manifest.json](extension/manifest.json) as the extension version source. The npm manifest is private and provides development commands. For an intentional version bump, update the manifest, run the relevant checks, commit the release, and add an annotated tag to the release commit. Use `vX.Y.Z` as the tag name, for example `git tag -a v0.6.0 -m "Release v0.6.0"`. Check whether the tag already exists before creating it. Push commits and tags when requested.
