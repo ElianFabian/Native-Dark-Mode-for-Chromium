@@ -4,19 +4,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Native Dark Mode</title>
 <link rel="stylesheet" href="popup.css">
-<div class="text-size-toolbar" role="group" aria-labelledby="text-size-title">
-  <div class="text-size">
+<div class="text-size-toolbar">
+  <div class="text-size" role="group" aria-labelledby="text-size-title">
     <button type="button" id="text-smaller" data-i18n-label="smallerText" aria-label="Decrease text size">A−</button>
     <output id="text-scale">100%</output>
     <button type="button" id="text-larger" data-i18n-label="largerText" aria-label="Increase text size">A+</button>
   </div>
   <span id="text-size-title" data-i18n="textSize">Text size</span>
+  <button id="manage-extension" type="button" class="opens-tab"><span data-i18n="manageExtension">Manage extension</span><span class="external-link-icon" aria-hidden="true"></span></button>
   <p id="appearance-status" role="status"></p>
 </div>
 <main>
   <header class="popup-header">
     <h1 data-i18n="title">Native Dark Mode</h1>
-    <button id="manage-extension" type="button" class="opens-tab"><span data-i18n="manageExtension">Manage extension</span><span class="external-link-icon" aria-hidden="true"></span></button>
+    <button id="manage" type="button" class="opens-tab"><span data-i18n="manageRules">Manage rules</span><span class="external-link-icon" aria-hidden="true"></span></button>
   </header>
   <details class="appearance">
     <summary><span data-i18n="appearance">Appearance and accessibility</span><span class="accessibility-icon" aria-hidden="true"></span></summary>
@@ -68,7 +69,6 @@
   <p class="note" data-i18n="rulesNote">Saved locally. Disabled rules remain as exclusions. More specific sections take priority. Queries and fragments are ignored.</p>
   <header class="saved-rules-header">
     <h2 data-i18n="savedRules">Saved websites and sections</h2>
-    <button id="manage" class="opens-tab"><span data-i18n="manageRules">Manage rules</span><span class="external-link-icon" aria-hidden="true"></span></button>
   </header>
   <div id="rules"></div>
   <p id="rule-count" class="note"></p>
