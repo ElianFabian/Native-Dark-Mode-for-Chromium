@@ -574,24 +574,32 @@ $('#confirm-import')?.addEventListener('click', async () => {
   (imported ? $('#import') : $('#confirm-import')).focus();
 });
 
-$('#language')?.addEventListener('change', () => withBusy(async () => {
-  const previousSize = languageCardSize ?? languageCard.getBoundingClientRect();
-  await setLanguage($('#language').value);
-  updateLanguageFlag($('#language').value);
-  translatePage();
-  refreshAppearance?.();
-  if (snapshot) render(snapshot);
-  $('#backup-status').textContent = '';
-  languageCardAnimation?.cancel();
-  const { width, height } = languageCard.getBoundingClientRect();
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches &&
-      (Math.abs(width - previousSize.width) > .5 || Math.abs(height - previousSize.height) > .5)) {
-    languageCardAnimation = languageCard.animate([
-      { width: `${previousSize.width}px`, height: `${previousSize.height}px` },
-      { width: `${width}px`, height: `${height}px` }
-    ], { duration: 200, easing: 'ease-out' });
-  }
-}, t('changingLanguage'), $('#backup-status')));
+$('#language')?.addEventListener('change', async event => {
+  if (busy) return;
+  const select = event.currentTarget;
+  const hadFocus = document.activeElement === select;
+  const root = document.documentElement;
+  root.setAttribute('data-changing-language', '');
+  await withBusy(async () => {
+    const previousSize = languageCardSize ?? languageCard.getBoundingClientRect();
+    await setLanguage(select.value);
+    updateLanguageFlag(select.value);
+    translatePage();
+    refreshAppearance?.();
+    if (snapshot) render(snapshot);
+    languageCardAnimation?.cancel();
+    const { width, height } = languageCard.getBoundingClientRect();
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches &&
+        (Math.abs(width - previousSize.width) > .5 || Math.abs(height - previousSize.height) > .5)) {
+      languageCardAnimation = languageCard.animate([
+        { width: `${previousSize.width}px`, height: `${previousSize.height}px` },
+        { width: `${width}px`, height: `${height}px` }
+      ], { duration: 200, easing: 'ease-out' });
+    }
+  }, t('changingLanguage'));
+  if (hadFocus) select.focus({ preventScroll: true });
+  requestAnimationFrame(() => root.removeAttribute('data-changing-language'));
+});
 
 $('#toggle').addEventListener('click', () => {
   const needsResume = snapshot?.state.suspended || snapshot?.state.error;
