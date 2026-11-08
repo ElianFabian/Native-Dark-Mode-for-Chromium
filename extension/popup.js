@@ -688,6 +688,21 @@ function refreshDraftScope() {
 }
 $('#address').addEventListener('input', refreshDraftScope);
 $('#scope').addEventListener('change', refreshDraftScope);
+$('#website-preset').addEventListener('change', () => {
+  const rule = selected();
+  if (!rule || busy) return;
+  void withBusy(async () => {
+    try {
+      const value = await send({ type: 'update', id: rule.id,
+        patch: { preset: readChoice($('#website-preset')) } });
+      render(value);
+      if (isManager) notifyRule('ruleSaved');
+    } catch (error) {
+      writeChoice($('#website-preset'), rule.preset ?? 'native');
+      throw error;
+    }
+  }, t('saving'));
+});
 $('#subdomains').addEventListener('change', saveCheckboxChange);
 $('#regional').addEventListener('change', saveCheckboxChange);
 

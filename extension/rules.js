@@ -184,10 +184,14 @@ export class RuleManager {
   }
 
   update(id, patch) {
-    return this.mutate(rules => rules.map(rule => rule.id === id ? {
-      ...rule,
-      ...(typeof patch.enabled === 'boolean' ? { enabled: patch.enabled } : {})
-    } : rule));
+    return this.mutate(rules => rules.map(rule => {
+      if (rule.id !== id) return rule;
+      const next = { ...rule };
+      if (typeof patch.enabled === 'boolean') next.enabled = patch.enabled;
+      if (CUSTOM_PRESETS.includes(patch.preset)) next.preset = patch.preset;
+      else if (patch.preset === 'native') delete next.preset;
+      return next;
+    }));
   }
 
   remove(id) {

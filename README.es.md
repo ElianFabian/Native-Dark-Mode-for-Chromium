@@ -46,7 +46,7 @@ Haz clic en una captura para abrirla a resolución completa.
 
 **Guardar ajustes** guarda el alcance y el tema elegidos, y conserva el estado de la regla si ya existe. Una regla nueva guardada así queda desactivada.
 
-**Nativo** es el tema predeterminado de las reglas existentes. **Oscuro suave** usa fondos gris carbón y **Alto contraste** resalta el texto, los bordes y los contornos de foco. Los temas se aplican a la web y a los marcos en los que la extensión puede ejecutarse. Si acabas de instalar o recargar la extensión, actualiza la web antes de probar un tema personalizado.
+**Nativo** es el tema predeterminado de las reglas existentes. **Oscuro suave** usa fondos gris carbón y **Alto contraste** resalta el texto, los bordes y los contornos de foco. Los temas se aplican a la web y a los marcos en los que la extensión puede ejecutarse. El cambio de tema de una regla existente se guarda al instante. Para una regla nueva, elige el tema antes de pulsar **Activar y guardar**.
 
 | Opción | Qué cubre |
 | --- | --- |
@@ -77,7 +77,7 @@ La [extensión Manifest V3](extension/manifest.json) tiene un panel, un gestor d
 2. Si la regla nativa está activa, el [controlador](extension/controller.js) se conecta a la pestaña con `chrome.debugger` y ejecuta `Emulation.setAutoDarkModeOverride`. Chromium se encarga del renderizado y de las imágenes. Los temas personalizados usan un [script de contenido](extension/website-theme.js) que aplica estilos reversibles en cada marco compatible y funciona sin una sesión de depuración.
 3. Si la regla deja de aplicarse o se desactiva, el controlador retira el modo oscuro y cierra la conexión. Si cancelas la depuración, la activación automática queda pausada en esa pestaña hasta que pulses **Activar y guardar**.
 
-La extensión usa permisos de depuración para enviar ese comando, acceso a sitios HTTP y HTTPS para evaluar las reglas y almacenamiento para guardarlas en el dispositivo. No hace peticiones a servidores externos.
+La extensión usa permisos de depuración para el modo nativo, acceso a sitios HTTP y HTTPS para evaluar las reglas y aplicar los temas personalizados, el permiso `scripting` para aplicar esos temas en pestañas que ya estaban abiertas y almacenamiento para guardar las reglas en el dispositivo. No hace peticiones a servidores externos.
 
 Los temas personalizados conservan los píxeles de imágenes, vídeos y canvas, así como las imágenes de fondo y los degradados. Esto puede limitar el contraste en páginas complejas. Los Shadow DOM cerrados y los marcos en los que el navegador impide la inyección pueden conservar los colores del sitio. Las reglas con temas personalizados se exportan como JSON en versión 2. La extensión sigue aceptando archivos de la versión 1.
 

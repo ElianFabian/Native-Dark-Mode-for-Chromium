@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DarkModeController } from '../extension/controller.js';
 
-function fixture({ commandError, attachError, url = 'https://example.org/' } = {}) {
+function fixture({ commandError, attachError, scriptLoaded = true, url = 'https://example.org/' } = {}) {
   const data = {};
   const calls = [];
   const api = {
@@ -13,7 +13,16 @@ function fixture({ commandError, attachError, url = 'https://example.org/' } = {
     action: { setBadgeText: async () => {}, setBadgeBackgroundColor: async () => {} },
     tabs: {
       get: async () => ({ url }),
-      sendMessage: async (...args) => { calls.push(['message', ...args]); }
+      sendMessage: async (...args) => {
+        calls.push(['message', ...args]);
+        if (!scriptLoaded) throw new Error('Could not establish connection. Receiving end does not exist.');
+      }
+    },
+    scripting: {
+      executeScript: async details => {
+        calls.push(['inject', details]);
+        scriptLoaded = true;
+      }
     },
     debugger: {
       attach: async (...args) => { calls.push(['attach', ...args]); if (attachError) throw new Error(attachError); },
@@ -46,10 +55,10 @@ test('custom presets clear native mode and are removed before native mode resume
   assert.deepEqual(await custom('contrast'), { enabled: true, preset: 'contrast' });
   assert.deepEqual(await apply(7, true), { enabled: true });
   assert.deepEqual(calls.map(([type]) => type), [
-    'attach', 'command', 'command', 'detach', 'message', 'message', 'message', 'attach', 'command'
+    'attach', 'command', 'command', 'detach', 'message', 'message', 'message', 'message', 'message', 'attach', 'command'
   ]);
   assert.deepEqual(calls.filter(([type]) => type === 'message').map(([, , message]) => message.preset),
-    ['soft', 'contrast', undefined]);
+    ['soft', 'soft', 'contrast', 'contrast', undefined]);
 });
 
 test('disabling a custom preset clears the frame styles without attaching a debugger', async () => {
@@ -58,7 +67,14 @@ test('disabling a custom preset clears the frame styles without attaching a debu
   await controller.disconnected(7, 'canceled_by_user');
   assert.deepEqual(await controller.read(7), { enabled: true, preset: 'soft' });
   assert.deepEqual(await apply(7, false), { enabled: false });
-  assert.deepEqual(calls.map(([type]) => type), ['message', 'message']);
+  assert.deepEqual(calls.map(([type]) => type), ['message', 'message', 'message']);
+});
+
+test('loads the custom theme script when the tab was already open', async () => {
+  const { controller, calls } = fixture({ scriptLoaded: false });
+  await controller.reconcile(7, () => ({ enabled: true, preset: 'soft' }), false);
+  assert.deepEqual(calls.map(([type]) => type), ['message', 'inject', 'message', 'message']);
+  assert.deepEqual(calls[1][1], { target: { tabId: 7, allFrames: true }, files: ['website-theme.js'] });
 });
 
 test('an unavailable method releases the connection and reports the error', async () => {

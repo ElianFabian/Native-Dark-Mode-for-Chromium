@@ -46,7 +46,7 @@ Click either screenshot to open it at full resolution.
 
 **Save settings** saves the scope and theme without changing an existing rule's enabled state. A new rule saved this way starts disabled.
 
-**Native** is the default for existing rules. **Soft dark** uses charcoal backgrounds, while **High contrast** emphasizes text, borders, and focus indicators. These themes affect the website and its eligible embedded frames. If you just installed or reloaded the extension, refresh the website before trying a custom theme.
+**Native** is the default for existing rules. **Soft dark** uses charcoal backgrounds, while **High contrast** emphasizes text, borders, and focus indicators. These themes affect the website and its eligible embedded frames. Changing the theme of a saved rule saves it immediately. For a new rule, choose the theme before clicking **Enable and save**.
 
 | Option | What it covers |
 | --- | --- |
@@ -79,7 +79,7 @@ The [Manifest V3 extension](extension/manifest.json) has a popup, a full-page ru
 2. For an enabled native rule, the [controller](extension/controller.js) attaches through `chrome.debugger` and sends `Emulation.setAutoDarkModeOverride` with `enabled: true`. Chromium handles rendering and images. The custom themes use a [content script](extension/website-theme.js) that applies reversible style overrides in each eligible frame and requires no debugger session.
 3. When a rule stops matching or is disabled, the controller clears its override and releases the connection. If the user cancels the debugging session, automatic activation pauses for that tab. Use **Enable and save** to resume it.
 
-The extension uses `debugger` to send the native emulation command, HTTP and HTTPS site access to match URLs during navigation, and `storage` to keep rules on the device. The rules are stored locally. The extension makes no external network requests.
+The extension uses `debugger` for native emulation, HTTP and HTTPS site access to match URLs and apply custom themes, `scripting` to apply custom themes in tabs that were already open, and `storage` to keep rules on the device. The extension makes no external network requests.
 
 Custom themes preserve image, video, and canvas pixels and leave background images and gradients in place. This can limit contrast on complex pages. Closed shadow roots and frames where the browser blocks injection can retain the site's original colors. Rules with custom themes export as JSON version 2. The extension can still import version 1.
 

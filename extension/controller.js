@@ -59,11 +59,31 @@ export class DarkModeController {
   }
 
   async sendPreset(tabId, preset) {
-    try { await this.api.tabs.sendMessage(tabId, { type: 'apply-website-preset', preset }); }
-    catch (error) {
-      // The document may still be loading. Its content script requests the preset on startup.
-      if (!/Receiving end does not exist|message port closed/i.test(error.message)) throw error;
+    const message = { type: 'apply-website-preset', preset };
+    if (preset) {
+      try {
+        await this.api.tabs.sendMessage(tabId, message, { frameId: 0 });
+      } catch (error) {
+        if (!this.isMissingReceiver(error)) throw error;
+        // Tabs already open when the extension was loaded lack the declarative script.
+        const target = { tabId };
+        try {
+          await this.api.scripting.executeScript({ target: { ...target, allFrames: true }, files: ['website-theme.js'] });
+        } catch {
+          // A restricted child frame can prevent injection into the entire tab.
+          await this.api.scripting.executeScript({ target, files: ['website-theme.js'] });
+        }
+        await this.api.tabs.sendMessage(tabId, message, { frameId: 0 });
+      }
     }
+    try { await this.api.tabs.sendMessage(tabId, message); }
+    catch (error) {
+      if (!this.isMissingReceiver(error)) throw error;
+    }
+  }
+
+  isMissingReceiver(error) {
+    return /Receiving end does not exist|message port closed/i.test(error.message);
   }
 
   async applyNative(tabId, enabled, old) {

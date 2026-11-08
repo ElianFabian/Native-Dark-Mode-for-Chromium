@@ -1,4 +1,8 @@
 (() => {
+  // A document can already have the declarative script when it is injected on demand.
+  if (globalThis.nativeDarkModeWebsiteThemeLoaded) return;
+  globalThis.nativeDarkModeWebsiteThemeLoaded = true;
+
   const palettes = {
     soft: { base: '#252a34', surface: '#303745', raised: '#3b4454', text: '#f0f3f8', link: '#b5dcff', border: '#929eaf' },
     contrast: { base: '#080a0e', surface: '#11151d', raised: '#19212d', text: '#ffffff', link: '#c5e5ff', border: '#c2ccdc' }
