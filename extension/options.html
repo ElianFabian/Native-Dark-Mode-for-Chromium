@@ -66,6 +66,15 @@
               </div>
             </div>
           </fieldset>
+          <fieldset id="website-preset" class="choice-group" aria-describedby="website-preset-help">
+            <legend data-i18n="websitePreset">Website theme</legend>
+            <div class="choices">
+              <label><input type="radio" name="website-preset" value="native" checked><span data-i18n="websitePresetNative">Native</span></label>
+              <label><input type="radio" name="website-preset" value="soft"><span data-i18n="websitePresetSoft">Soft dark</span></label>
+              <label><input type="radio" name="website-preset" value="contrast"><span data-i18n="websitePresetContrast">High contrast</span></label>
+            </div>
+            <p class="note" id="website-preset-help" data-i18n="websitePresetHelp">Native uses Chromium. Soft dark uses charcoal backgrounds. High contrast emphasizes text and controls.</p>
+          </fieldset>
           <label><input id="subdomains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="subdomains">Include subdomains</span></label>
           <label id="regional-option"><input id="regional" class="toggle-switch" type="checkbox" role="switch" disabled aria-describedby="regional-help"> <span data-i18n="regionalDomains">Include regional domains</span></label>
           <p class="note" id="regional-help"></p>

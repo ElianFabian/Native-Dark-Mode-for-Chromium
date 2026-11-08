@@ -6,6 +6,7 @@ import { LANGUAGES, initializeLanguage, setLanguage, translatePage, t, errorText
 import { initializeAppearance } from './appearance.js';
 import { readChoice, writeChoice } from './choices.js';
 
+const presetLabels = { native: 'websitePresetNative', soft: 'websitePresetSoft', contrast: 'websitePresetContrast' };
 const $ = selector => document.querySelector(selector);
 const isManager = document.documentElement.dataset.page === 'options';
 let tab;
@@ -121,6 +122,7 @@ function draft(enabled) {
     url: $('#address').value.trim(), scope: readChoice($('#scope')),
     includeSubdomains: $('#subdomains').checked,
     includeRegionalDomains: $('#regional').checked,
+    preset: readChoice($('#website-preset')),
     enabled
   };
 }
@@ -152,6 +154,7 @@ function updateButton() {
   }
   $('#toggle').disabled = busy || !canEdit;
   $('#save').disabled = busy || !canEdit;
+  $('#website-preset').disabled = busy || !canEdit;
   if (isManager) {
     $('#regional-help').textContent = regionalBase ? '' : t('regionalAvailability');
     $('#toggle').hidden = Boolean(editingId);
@@ -201,6 +204,12 @@ function ruleHeading(rule, dateFormatter) {
   state.className = 'rule-state';
   renderRuleState(state, rule.enabled);
   heading.append(state);
+  if (rule.preset) {
+    const preset = document.createElement('span');
+    preset.className = 'rule-preset';
+    preset.textContent = t(presetLabels[rule.preset]);
+    heading.append(preset);
+  }
   const createdAt = new Date(rule.createdAt);
   if (Number.isFinite(createdAt.getTime())) {
     const added = document.createElement('time');
@@ -237,6 +246,7 @@ function showRule(rule) {
   writeChoice($('#scope'), rule && rule.path !== '/' ? 'section' : 'website');
   $('#subdomains').checked = Boolean(rule?.includeSubdomains);
   $('#regional').checked = Boolean(rule?.includeRegionalDomains);
+  writeChoice($('#website-preset'), rule?.preset ?? 'native');
   updateButton();
 }
 
@@ -401,7 +411,9 @@ function render(value, toggledButton, previousEditedId) {
   const previous = snapshot;
   snapshot = value;
   const state = value.state;
-  $('#status').textContent = state.error ? errorText(state.error) : isManager ? '' : t(state.enabled ? 'active' : 'inactive');
+  $('#status').textContent = state.error ? errorText(state.error) : isManager ? '' : state.preset
+    ? t('websitePresetActive', { preset: t(presetLabels[state.preset]) })
+    : t(state.enabled ? 'active' : 'inactive');
   if (isManager) $('#diagnostic').textContent = JSON.stringify(value, null, 2);
   if (editingId && !value.rules.some(rule => rule.id === editingId)) {
     editingId = undefined;
@@ -479,7 +491,7 @@ function saveCheckboxChange() {
     updateButton();
     return;
   }
-  const rule = draft(previous.enabled);
+  const rule = { ...draft(previous.enabled), preset: previous.preset };
   void withBusy(async () => {
     try {
       const value = await send({ type: 'replace-scope', id: previous.id, rule });
@@ -669,8 +681,13 @@ $('#manage-extension').addEventListener('click', async () => {
   catch (error) { $('#status').textContent = errorText(error); }
 });
 $('#exclude-host')?.addEventListener('click', () => request({ type: 'exclude-inherited-host', url: tab.url }));
-$('#address').addEventListener('input', updateButton);
-$('#scope').addEventListener('change', updateButton);
+function refreshDraftScope() {
+  const rule = selected();
+  if (rule) writeChoice($('#website-preset'), rule.preset ?? 'native');
+  updateButton();
+}
+$('#address').addEventListener('input', refreshDraftScope);
+$('#scope').addEventListener('change', refreshDraftScope);
 $('#subdomains').addEventListener('change', saveCheckboxChange);
 $('#regional').addEventListener('change', saveCheckboxChange);
 

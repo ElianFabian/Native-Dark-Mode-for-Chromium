@@ -3,6 +3,16 @@ import assert from 'node:assert/strict';
 import { createBackup, parseBackup, mergeRules, importBackup, previewRemovals, MAX_BACKUP_BYTES } from '../extension/backup.js';
 import { normalizeRule, RuleManager } from '../extension/rules.js';
 
+test('backup version 2 round-trips custom presets and rejects unknown presets', () => {
+  const rule = normalizeRule({ url: 'example.com', enabled: true, preset: 'soft' });
+  const backup = createBackup([rule]);
+  assert.equal(backup.version, 2);
+  assert.deepEqual(parseBackup(JSON.stringify(backup)), [rule]);
+  assert.throws(() => parseBackup(JSON.stringify({ ...backup, version: 1 })), /invalid/i);
+  backup.rules[0].preset = 'unknown';
+  assert.throws(() => parseBackup(JSON.stringify(backup)), /invalid/i);
+});
+
 const rule = (url, enabled = true, includeSubdomains = false) => normalizeRule({ url, scope: 'section', enabled, includeSubdomains });
 const encode = rules => JSON.stringify(createBackup(rules));
 

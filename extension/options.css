@@ -180,6 +180,12 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 #cancel-import { background: var(--secondary); color: var(--text); }
 #confirm-import[data-destructive] { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
 .rule-address { font-size: 1rem; }
+.rule-preset {
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding-inline: .5em;
+  font-size: .875rem;
+}
 .rule-state {
   padding: .12em .6em;
   border: 1px solid var(--positive-highlight-border);

@@ -343,5 +343,23 @@
   },
   "contrastOn": {
     "message": "High contrast on"
+  },
+  "websitePreset": {
+    "message": "Website theme"
+  },
+  "websitePresetNative": {
+    "message": "Native"
+  },
+  "websitePresetSoft": {
+    "message": "Soft dark"
+  },
+  "websitePresetContrast": {
+    "message": "High contrast"
+  },
+  "websitePresetHelp": {
+    "message": "Native uses Chromium. Soft dark uses charcoal backgrounds. High contrast emphasizes text and controls."
+  },
+  "websitePresetActive": {
+    "message": "Website theme active: {preset}."
   }
 }

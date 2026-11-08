@@ -1,23 +1,24 @@
-import { normalizeRule, ruleAddress } from './rules.js';
+import { CUSTOM_PRESETS, normalizeRule, ruleAddress } from './rules.js';
 
 export const MAX_BACKUP_BYTES = 1024 * 1024;
 const MAX_BACKUP_RULES = 1000;
 const FORMAT = 'native-dark-mode-rules';
 
-function validateRule(input, index) {
+function validateRule(input, index, version) {
   const fail = () => { throw new Error(`Rule ${index + 1} is invalid. Expected a hostname, a canonical path and boolean settings.`); };
   if (!input || typeof input !== 'object' || Array.isArray(input) ||
       typeof input.host !== 'string' || !input.host || input.host.length > 512 ||
       /[\s/\\?#@]/.test(input.host) ||
       typeof input.path !== 'string' || !input.path.startsWith('/') || /[\\?#]/.test(input.path) ||
       typeof input.enabled !== 'boolean' || typeof input.includeSubdomains !== 'boolean' ||
+      (input.preset !== undefined && (version !== 2 || !CUSTOM_PRESETS.includes(input.preset))) ||
       (input.createdAt !== undefined && (!Number.isSafeInteger(input.createdAt) || input.createdAt < 0)) ||
       (input.includeRegionalDomains !== undefined && typeof input.includeRegionalDomains !== 'boolean')) fail();
   let rule;
   try {
     rule = normalizeRule({ url: ruleAddress(input), scope: 'section',
       enabled: input.enabled, includeSubdomains: input.includeSubdomains,
-      includeRegionalDomains: input.includeRegionalDomains });
+      includeRegionalDomains: input.includeRegionalDomains, preset: input.preset });
   } catch { fail(); }
   const parsed = new URL(ruleAddress(input));
   if (parsed.host !== input.host.toLowerCase() || rule.path !== (input.path.replace(/\/+$/, '') || '/')) fail();
@@ -31,11 +32,11 @@ export function parseBackup(text) {
   let document;
   try { document = JSON.parse(text.replace(/^\uFEFF/, '')); }
   catch { throw new Error('The selected file is not valid JSON.'); }
-  if (!document || document.format !== FORMAT || document.version !== 1 || !Array.isArray(document.rules)) {
-    throw new Error('Unsupported backup. Expected Native Dark Mode rules, format version 1.');
+  if (!document || document.format !== FORMAT || ![1, 2].includes(document.version) || !Array.isArray(document.rules)) {
+    throw new Error('Unsupported backup. Expected Native Dark Mode rules, format version 1 or 2.');
   }
   if (document.rules.length > MAX_BACKUP_RULES) throw new Error('A backup can contain at most 1,000 rules.');
-  const rules = document.rules.map(validateRule);
+  const rules = document.rules.map((rule, index) => validateRule(rule, index, document.version));
   if (new Set(rules.map(rule => rule.id)).size !== rules.length) {
     throw new Error('The backup contains duplicate website or section scopes.');
   }
@@ -45,9 +46,10 @@ export function parseBackup(text) {
 export function createBackup(rules) {
   const document = {
     format: FORMAT,
-    version: 1,
-    rules: rules.map(({ host, path, enabled, includeSubdomains, includeRegionalDomains, createdAt }) => ({
+    version: rules.some(rule => rule.preset !== undefined) ? 2 : 1,
+    rules: rules.map(({ host, path, enabled, includeSubdomains, includeRegionalDomains, createdAt, preset }) => ({
       host, path, enabled, includeSubdomains,
+      ...(preset === undefined ? {} : { preset }),
       ...(createdAt === undefined ? {} : { createdAt }),
       ...(includeRegionalDomains ? { includeRegionalDomains: true } : {})
     }))

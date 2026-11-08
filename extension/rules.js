@@ -1,5 +1,7 @@
 import { regionalBaseForHost, regionalDomain } from './domains.js';
 
+export const CUSTOM_PRESETS = ['soft', 'contrast'];
+
 export function ruleAddress({ host, path }) {
   // Use a scheme that preserves an explicitly stored port.
   return `${host.endsWith(':443') ? 'http' : 'https'}://${host}${path}`;
@@ -58,7 +60,8 @@ export function normalizeRule(input) {
     id: JSON.stringify(identity),
     host, path, includeSubdomains,
     ...(regional ? { includeRegionalDomains: true, regionalName: regional.name } : {}),
-    enabled: Boolean(input.enabled)
+    enabled: Boolean(input.enabled),
+    ...(CUSTOM_PRESETS.includes(input.preset) ? { preset: input.preset } : {})
   };
 }
 
@@ -95,7 +98,8 @@ export function inheritedExclusion(rule, address) {
 
 function normalizeStoredRule(stored) {
   const rule = normalizeRule({ url: ruleAddress(stored), scope: 'section', enabled: stored.enabled,
-    includeSubdomains: stored.includeSubdomains, includeRegionalDomains: stored.includeRegionalDomains });
+    includeSubdomains: stored.includeSubdomains, includeRegionalDomains: stored.includeRegionalDomains,
+    preset: stored.preset });
   if (Number.isSafeInteger(stored.createdAt)) rule.createdAt = stored.createdAt;
   return rule;
 }
@@ -141,7 +145,9 @@ export class RuleManager {
     return this.mutate(rules => {
       const index = rules.findIndex(existing => existing.id === rule.id);
       if (index === -1) return [...rules, { ...rule, createdAt: Date.now() }];
-      return rules.map((existing, position) => position === index ? { ...existing, ...rule } : existing);
+      const createdAt = rules[index].createdAt;
+      const replacement = createdAt === undefined ? rule : { ...rule, createdAt };
+      return rules.map((existing, position) => position === index ? replacement : existing);
     });
   }
 
@@ -221,14 +227,11 @@ export class RuleManager {
     });
   }
 
-  async apply(tabId, resume = false) {
-    const tab = await this.api.tabs.get(tabId);
-    const rule = matchingRule(await this.list(), tab.url ?? '');
-    const state = await this.controller.read(tabId);
-    if (state.suspended && !resume) return state;
-    // Avoid attaching to tabs without an enabled matching rule.
-    if (!rule?.enabled && !state.enabled) return state;
-    return this.controller.set(tabId, Boolean(rule?.enabled), { automatic: !resume });
+  apply(tabId, resume = false) {
+    return this.controller.reconcile(tabId, async () => {
+      const tab = await this.api.tabs.get(tabId);
+      return matchingRule(await this.list(), tab.url ?? '');
+    }, !resume);
   }
 
   async applyAll() {

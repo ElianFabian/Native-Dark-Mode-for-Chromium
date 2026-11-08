@@ -343,5 +343,23 @@
   },
   "contrastOn": {
     "message": "Contraste élevé activé"
+  },
+  "websitePreset": {
+    "message": "Thème du site"
+  },
+  "websitePresetNative": {
+    "message": "Natif"
+  },
+  "websitePresetSoft": {
+    "message": "Sombre doux"
+  },
+  "websitePresetContrast": {
+    "message": "Contraste élevé"
+  },
+  "websitePresetHelp": {
+    "message": "Natif utilise Chromium. Sombre doux propose des fonds gris anthracite. Contraste élevé accentue le texte et les commandes."
+  },
+  "websitePresetActive": {
+    "message": "Thème actif sur ce site : {preset}."
   }
 }

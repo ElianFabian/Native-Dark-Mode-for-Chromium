@@ -343,5 +343,23 @@
   },
   "contrastOn": {
     "message": "Hoher Kontrast an"
+  },
+  "websitePreset": {
+    "message": "Website-Design"
+  },
+  "websitePresetNative": {
+    "message": "Nativ"
+  },
+  "websitePresetSoft": {
+    "message": "Sanftes Dunkel"
+  },
+  "websitePresetContrast": {
+    "message": "Hoher Kontrast"
+  },
+  "websitePresetHelp": {
+    "message": "Nativ verwendet Chromium. Sanftes Dunkel verwendet anthrazitfarbene Hintergründe. Hoher Kontrast hebt Text und Bedienelemente hervor."
+  },
+  "websitePresetActive": {
+    "message": "Aktives Website-Design: {preset}."
   }
 }

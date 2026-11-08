@@ -343,5 +343,23 @@
   },
   "contrastOn": {
     "message": "高对比度已开启"
+  },
+  "websitePreset": {
+    "message": "网站主题"
+  },
+  "websitePresetNative": {
+    "message": "原生"
+  },
+  "websitePresetSoft": {
+    "message": "柔和深色"
+  },
+  "websitePresetContrast": {
+    "message": "高对比度"
+  },
+  "websitePresetHelp": {
+    "message": "原生模式使用 Chromium。柔和深色使用炭灰色背景。高对比度突出文字和控件。"
+  },
+  "websitePresetActive": {
+    "message": "当前网站主题：{preset}。"
   }
 }

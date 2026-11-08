@@ -343,5 +343,23 @@
   },
   "contrastOn": {
     "message": "Alto contraste activado"
+  },
+  "websitePreset": {
+    "message": "Tema de la web"
+  },
+  "websitePresetNative": {
+    "message": "Nativo"
+  },
+  "websitePresetSoft": {
+    "message": "Oscuro suave"
+  },
+  "websitePresetContrast": {
+    "message": "Alto contraste"
+  },
+  "websitePresetHelp": {
+    "message": "Nativo usa Chromium. Oscuro suave usa fondos gris carbón. Alto contraste resalta el texto y los controles."
+  },
+  "websitePresetActive": {
+    "message": "Tema activo en esta web: {preset}."
   }
 }

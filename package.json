@@ -2,5 +2,5 @@
   "name": "native-dark-mode-prototype",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test", "check": "node --check extension/background.js && node --check extension/controller.js && node --check extension/popup.js && node --check extension/rules.js && node --check extension/request.js && node --check extension/backup.js && node --check extension/i18n.js && node --check extension/appearance.js" }
+  "scripts": { "test": "node --test", "check": "node --check extension/background.js && node --check extension/controller.js && node --check extension/popup.js && node --check extension/rules.js && node --check extension/request.js && node --check extension/backup.js && node --check extension/i18n.js && node --check extension/appearance.js && node --check extension/website-theme.js" }
 }

@@ -15,6 +15,15 @@ async function snapshot(tabId) {
 
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (sender.id !== chrome.runtime.id || !message) return;
+  if (message.type === 'website-preset' && Number.isInteger(sender.tab?.id)) {
+    // Only return the active preset. Embedded documents do not receive stored rules.
+    void controller.read(sender.tab.id).then(async state => {
+      if (!state.preset) return {};
+      const rule = matchingRule(await manager.list(), sender.tab.url ?? '');
+      return { preset: rule?.enabled && rule.preset === state.preset ? state.preset : undefined };
+    }).then(reply, () => reply({}));
+    return true;
+  }
   const fromManager = sender.url === chrome.runtime.getURL('options.html');
   if (!fromManager && !Number.isInteger(message.tabId)) return;
   const result = (async () => {

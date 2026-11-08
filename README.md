@@ -41,10 +41,12 @@ Click either screenshot to open it at full resolution.
 
 1. Visit an HTTP or HTTPS page and open the extension popup.
 2. Select **Entire website** or **Path section**. The URL field lets you adjust the scope before saving.
-3. Click **Enable and save**. The browser applies its native darkening to the current page, and the extension remembers the rule for future visits.
+3. Under **Website theme**, choose **Native**, **Soft dark**, or **High contrast**, then click **Enable and save**. The extension remembers your choice for that website or section.
 4. Use **Disable and save** to keep a rule as an exclusion, or open **Manage rules** to edit, search, or remove saved rules.
 
-**Save settings** saves the selected scope without changing an existing rule's enabled state. A new rule saved this way starts disabled.
+**Save settings** saves the scope and theme without changing an existing rule's enabled state. A new rule saved this way starts disabled.
+
+**Native** is the default for existing rules. **Soft dark** uses charcoal backgrounds, while **High contrast** emphasizes text, borders, and focus indicators. These themes affect the website and its eligible embedded frames. If you just installed or reloaded the extension, refresh the website before trying a custom theme.
 
 | Option | What it covers |
 | --- | --- |
@@ -74,10 +76,12 @@ Use the text size controls at the top left of the popup or rule manager to adjus
 The [Manifest V3 extension](extension/manifest.json) has a popup, a full-page rule manager, and a [background service worker](extension/background.js). It requires the [extension debugger API](https://developer.chrome.com/docs/extensions/reference/api/debugger) and Chromium's experimental [native darkening command](https://chromedevtools.github.io/devtools-protocol/tot/Emulation/#method-setAutoDarkModeOverride).
 
 1. The worker checks the current URL against the rules saved in `chrome.storage.local` when tabs load or navigate. The rule matcher handles hosts, paths, subdomains, exclusions, and regional patterns. Regional matching uses a bundled snapshot of the ICANN section of the [Public Suffix List](https://publicsuffix.org/list/).
-2. On a matching enabled tab, the [controller](extension/controller.js) attaches through `chrome.debugger` and sends `Emulation.setAutoDarkModeOverride` with `enabled: true`. Chromium renders the dark theme. The extension uses the browser's image handling too.
+2. For an enabled native rule, the [controller](extension/controller.js) attaches through `chrome.debugger` and sends `Emulation.setAutoDarkModeOverride` with `enabled: true`. Chromium handles rendering and images. The custom themes use a [content script](extension/website-theme.js) that applies reversible style overrides in each eligible frame and requires no debugger session.
 3. When a rule stops matching or is disabled, the controller clears its override and releases the connection. If the user cancels the debugging session, automatic activation pauses for that tab. Use **Enable and save** to resume it.
 
 The extension uses `debugger` to send the native emulation command, HTTP and HTTPS site access to match URLs during navigation, and `storage` to keep rules on the device. The rules are stored locally. The extension makes no external network requests.
+
+Custom themes preserve image, video, and canvas pixels and leave background images and gradients in place. This can limit contrast on complex pages. Closed shadow roots and frames where the browser blocks injection can retain the site's original colors. Rules with custom themes export as JSON version 2. The extension can still import version 1.
 
 ## Optional launcher for the debugging banner
 
