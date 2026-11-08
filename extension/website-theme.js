@@ -9,8 +9,10 @@
   }
 
   const palettes = {
-    soft: { base: '#252a34', surface: '#303745', raised: '#3b4454', text: '#f0f3f8', link: '#b5dcff', border: '#929eaf' },
-    contrast: { base: '#080a0e', surface: '#11151d', raised: '#19212d', text: '#ffffff', link: '#c5e5ff', border: '#c2ccdc' }
+    soft: { base: '#252a34', surface: '#303745', raised: '#3b4454', text: '#f0f3f8', link: '#b5dcff',
+      border: '#929eaf', accent: '#ffc3d0', badge: '#61243a' },
+    contrast: { base: '#080a0e', surface: '#11151d', raised: '#19212d', text: '#ffffff', link: '#c5e5ff',
+      border: '#c2ccdc', accent: '#ffd4de', badge: '#54172d' }
   };
   const marker = 'data-native-dark-mode-paint';
   // An extension reload can leave its previous sheet in an open document.
@@ -50,6 +52,11 @@
       paint('link', `color: ${colors.link}`),
       paint('text-fill', `-webkit-text-fill-color: ${colors.text}`),
       paint('link-fill', `-webkit-text-fill-color: ${colors.link}`),
+      paint('badge', `background-color: ${colors.badge}`),
+      paint('accent', `color: ${colors.accent}`),
+      paint('accent', `-webkit-text-fill-color: ${colors.accent}`),
+      paint('isolated-label', 'mix-blend-mode: normal'),
+      paint('undimmed-label', 'filter: none'),
       paint('border', `border-color: ${colors.border}`),
       paint('photo', 'mix-blend-mode: normal'),
       `:root :focus-visible { outline: 2px solid ${colors.link} !important; outline-offset: 2px; }`
@@ -58,6 +65,13 @@
 
   function isLightColor([, red, green, blue, alpha = 1]) {
     return Number(alpha) > .2 && red * .213 + green * .715 + blue * .072 > 150;
+  }
+
+  function isRedAccent(color) {
+    const match = color.match(/^rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)$/);
+    if (!match) return false;
+    const [, red, green, blue, alpha = 1] = match;
+    return Number(alpha) > .65 && Number(red) >= 100 && red - Math.max(green, blue) >= 65;
   }
 
   function rolesFor(element) {
@@ -86,6 +100,18 @@
     } else if (!background && style.backgroundColor && !/\/\s*0(?:\.0+)?%?\s*\)$/.test(style.backgroundColor)) {
       // Wide-gamut colors can be serialized as color(), lab(), or oklch().
       roles.push('surface');
+    }
+    if (element.matches('span, small, strong, b, mark, label, [role="status"]') &&
+        element.textContent.trim() && element.textContent.length <= 80 &&
+        !element.querySelector('img, svg, video, canvas')) {
+      const badge = isRedAccent(style.backgroundColor);
+      if (badge || isRedAccent(style.color)) {
+        roles.push('accent');
+        if (style.mixBlendMode === 'multiply' || style.mixBlendMode === 'darken') roles.push('isolated-label');
+        const brightness = /^brightness\(([\d.]+)\)$/.exec(style.filter);
+        if (brightness && Number(brightness[1]) < .8) roles.push('undimmed-label');
+      }
+      if (badge) roles.push('badge');
     }
     if (element.matches('img') && style.mixBlendMode === 'multiply') roles.push('photo');
     if (['Top', 'Right', 'Bottom', 'Left'].some(side =>
