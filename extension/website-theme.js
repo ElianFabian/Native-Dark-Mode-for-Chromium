@@ -1,7 +1,11 @@
 (() => {
   // A document can already have the declarative script when it is injected on demand.
-  const existingListener = globalThis.nativeDarkModeWebsiteThemeListener;
+  const existingListener = globalThis.nativeDarkModeWebsiteThemeListenerV2;
   if (existingListener && chrome.runtime.onMessage.hasListener(existingListener)) return;
+  const previousListener = globalThis.nativeDarkModeWebsiteThemeListener;
+  if (previousListener && chrome.runtime.onMessage.hasListener(previousListener)) {
+    chrome.runtime.onMessage.removeListener(previousListener);
+  }
 
   const palettes = {
     soft: { base: '#252a34', surface: '#303745', raised: '#3b4454', text: '#f0f3f8', link: '#b5dcff', border: '#929eaf' },
@@ -100,6 +104,21 @@
     if (batchTimer === undefined) batchTimer = setTimeout(paintBatch, 0);
   }
 
+  function paintVisibleSurfaces() {
+    const updates = [];
+    sheet.disabled = true;
+    try {
+      for (const element of document.querySelectorAll('html, body, body *')) {
+        const rect = element.getBoundingClientRect();
+        if (rect.width && rect.height && rect.bottom > 0 && rect.right > 0 &&
+            rect.top < innerHeight && rect.left < innerWidth) updates.push([element, inspect(element)]);
+      }
+    } finally {
+      sheet.disabled = false;
+    }
+    applyRoles(updates);
+  }
+
   function paintBatch() {
     batchTimer = undefined;
     const updates = [];
@@ -126,12 +145,16 @@
     } finally {
       sheet.disabled = false;
     }
+    applyRoles(updates);
+    if (elements || pending.size) schedule();
+  }
+
+  function applyRoles(updates) {
     for (const [element, roles] of updates) {
       if (!roles) continue;
       if (element.getAttribute(marker) !== roles) element.setAttribute(marker, roles);
       marked.add(element);
     }
-    if (elements || pending.size) schedule();
   }
 
   function stylesLoaded(event) {
@@ -163,6 +186,7 @@
     }
     if (sheet) {
       sheet.replaceSync(paletteCSS(palettes[next]));
+      paintVisibleSurfaces();
       return;
     }
     sheet = new CSSStyleSheet();
@@ -189,6 +213,7 @@
     });
     observer.observe(document, observationOptions);
     document.addEventListener('load', stylesLoaded, true);
+    paintVisibleSurfaces();
     schedule(document.documentElement);
   }
 
@@ -199,8 +224,8 @@
     }).catch(() => {});
   }
 
-  globalThis.nativeDarkModeWebsiteThemeListener = (message, sender, reply) => {
-    if (sender.id !== chrome.runtime.id || message.type !== 'apply-website-preset') return;
+  globalThis.nativeDarkModeWebsiteThemeListenerV2 = (message, sender, reply) => {
+    if (sender.id !== chrome.runtime.id || message.type !== 'apply-website-preset-v2') return;
     revision++;
     const previous = preset;
     setPreset(message.preset);
@@ -209,7 +234,7 @@
     if (!applied) setPreset(previous);
     reply(applied);
   };
-  chrome.runtime.onMessage.addListener(globalThis.nativeDarkModeWebsiteThemeListener);
+  chrome.runtime.onMessage.addListener(globalThis.nativeDarkModeWebsiteThemeListenerV2);
   window.addEventListener('pageshow', event => { if (event.persisted) requestPreset(); });
   requestPreset();
 })();

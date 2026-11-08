@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DarkModeController } from '../extension/controller.js';
 
-function fixture({ commandError, attachError, scriptLoaded = true, themeApplied = true, url = 'https://example.org/' } = {}) {
+function fixture({ commandError, attachError, scriptLoaded = true, staleScript = false, themeApplied = true, url = 'https://example.org/' } = {}) {
   const data = {};
   const calls = [];
   const api = {
@@ -16,13 +16,14 @@ function fixture({ commandError, attachError, scriptLoaded = true, themeApplied 
       sendMessage: async (...args) => {
         calls.push(['message', ...args]);
         if (!scriptLoaded) throw new Error('Could not establish connection. Receiving end does not exist.');
-        return themeApplied;
+        return staleScript ? undefined : themeApplied;
       }
     },
     scripting: {
       executeScript: async details => {
         calls.push(['inject', details]);
         scriptLoaded = true;
+        staleScript = false;
       }
     },
     debugger: {
@@ -83,6 +84,12 @@ test('loads the custom theme script when the tab was already open', async () => 
   await controller.reconcile(7, () => ({ enabled: true, preset: 'soft' }), false);
   assert.deepEqual(calls.map(([type]) => type), ['message', 'inject', 'message', 'message']);
   assert.deepEqual(calls[1][1], { target: { tabId: 7, allFrames: true }, files: ['website-theme.js'] });
+});
+
+test('replaces an older script that cannot acknowledge the current theme message', async () => {
+  const { controller, calls } = fixture({ staleScript: true });
+  await controller.reconcile(7, () => ({ enabled: true, preset: 'soft' }), false);
+  assert.deepEqual(calls.map(([type]) => type), ['message', 'inject', 'message', 'message']);
 });
 
 test('an unavailable method releases the connection and reports the error', async () => {

@@ -59,14 +59,17 @@ export class DarkModeController {
   }
 
   async sendPreset(tabId, preset) {
-    const message = { type: 'apply-website-preset', preset };
+    // A tab can still have the content script from before the extension reload.
+    const message = { type: 'apply-website-preset-v2', preset };
     if (preset) {
       let applied;
       try {
         applied = await this.api.tabs.sendMessage(tabId, message, { frameId: 0 });
       } catch (error) {
         if (!this.isMissingReceiver(error)) throw error;
-        // Tabs already open when the extension was loaded lack the declarative script.
+      }
+      if (applied === undefined) {
+        // A tab opened before the extension reload may lack the current script.
         const target = { tabId };
         try {
           await this.api.scripting.executeScript({ target: { ...target, allFrames: true }, files: ['website-theme.js'] });
