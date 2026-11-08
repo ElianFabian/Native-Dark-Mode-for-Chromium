@@ -231,9 +231,9 @@ export class RuleManager {
     return this.controller.set(tabId, Boolean(rule?.enabled), { automatic: !resume });
   }
 
-  async applyAll(resumeTabId) {
+  async applyAll() {
     const tabs = await this.api.tabs.query({});
-    await Promise.allSettled(tabs.map(tab => this.apply(tab.id, tab.id === resumeTabId)));
+    await Promise.allSettled(tabs.map(tab => this.apply(tab.id)));
   }
 
   async applyFromPopup(tabId, resume = true) {

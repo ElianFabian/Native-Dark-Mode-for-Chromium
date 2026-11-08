@@ -170,10 +170,6 @@ function updateButton() {
   } catch { $('#scope-hint').textContent = ''; }
 }
 
-function loadSelection() {
-  updateButton();
-}
-
 function displayHost(rule) {
   return rule.includeRegionalDomains ? `${rule.regionalName}.*` : rule.host;
 }
@@ -290,12 +286,18 @@ function renderRules(previousEditedId) {
   updateGroupToggle();
 }
 
-function renderRule(rule, dateFormatter) {
+function createRuleRow(rule, dateFormatter) {
   const item = document.createElement('div');
   item.className = 'rule';
   item.append(ruleHeading(rule, dateFormatter));
   const actions = document.createElement('div');
   actions.className = 'rule-actions';
+  item.append(actions);
+  return { item, actions };
+}
+
+function renderRule(rule, dateFormatter) {
+  const { item, actions } = createRuleRow(rule, dateFormatter);
   const toggle = document.createElement('button');
   toggle.dataset.ruleId = rule.id;
   toggle.append(document.createElement('span'));
@@ -318,7 +320,6 @@ function renderRule(rule, dateFormatter) {
   remove.textContent = t('remove');
   remove.addEventListener('click', () => request({ type: 'remove', id: rule.id }, { removedRow: item }));
   actions.append(toggle, edit, remove);
-  item.append(actions);
   return item;
 }
 
@@ -386,23 +387,17 @@ function renderTrash(entries) {
   }
   const dateFormatter = new Intl.DateTimeFormat(document.documentElement.lang, { dateStyle: 'medium' });
   for (const { id, rule } of entries) {
-    const item = document.createElement('div');
-    item.className = 'rule';
-    item.append(ruleHeading(rule, dateFormatter));
-    const actions = document.createElement('div');
-    actions.className = 'rule-actions';
+    const { item, actions } = createRuleRow(rule, dateFormatter);
     const restore = document.createElement('button');
     restore.className = 'rule-edit';
     restore.textContent = t('restoreRule');
     restore.addEventListener('click', () => request({ type: 'restore', id }));
     actions.append(restore);
-    item.append(actions);
     list.append(item);
   }
 }
 
 function render(value, toggledButton, previousEditedId) {
-  if (value.error) throw new Error(value.error);
   const previous = snapshot;
   snapshot = value;
   const state = value.state;
@@ -453,7 +448,6 @@ async function request(message, { retainedButton, removedRow } = {}) {
       ? snapshot?.trash?.find(entry => entry.id === message.id)?.rule.id
       : undefined;
     const value = await send(message);
-    if (value.error) throw new Error(value.error);
     if (editingId && message.type === 'replace-scope') editingId = normalizeRule(message.rule).id;
     if (removedRow) await animateRuleRemoval(removedRow);
     render(value, retainedButton, message.type === 'replace-scope' ? message.id : undefined);
@@ -473,8 +467,10 @@ async function request(message, { retainedButton, removedRow } = {}) {
   }
 }
 
-function send(message) {
-  return requestWithTimeout(chrome.runtime, isManager ? message : { ...message, tabId: tab.id });
+async function send(message) {
+  const response = await requestWithTimeout(chrome.runtime, isManager ? message : { ...message, tabId: tab.id });
+  if (response.error) throw new Error(response.error);
+  return response;
 }
 
 function saveCheckboxChange() {
@@ -487,7 +483,6 @@ function saveCheckboxChange() {
   void withBusy(async () => {
     try {
       const value = await send({ type: 'replace-scope', id: previous.id, rule });
-      if (value.error) throw new Error(value.error);
       if (editingId) editingId = normalizeRule(rule).id;
       render(value, undefined, previous.id);
       if (isManager) notifyRule('ruleSaved');
@@ -499,14 +494,8 @@ function saveCheckboxChange() {
   }, t('saving'));
 }
 
-async function backupRequest(message) {
-  const value = await send(message);
-  if (value.error) throw new Error(value.error);
-  return value;
-}
-
 $('#export')?.addEventListener('click', () => withBusy(async () => {
-  const { backup } = await backupRequest({ type: 'export' });
+  const { backup } = await send({ type: 'export' });
   const blob = new Blob([JSON.stringify(backup, null, 2) + '\n'], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -530,11 +519,11 @@ $('#import-file')?.addEventListener('change', async () => {
     pendingImport = undefined;
     if (file.size > MAX_BACKUP_BYTES) throw new Error('Choose a JSON backup smaller than 1 MiB.');
     const text = await file.text();
-    const preview = await backupRequest({ type: 'preview-import', text });
+    const preview = await send({ type: 'preview-import', text });
     const { summary } = preview;
     // An unpacked extension can briefly serve a new UI alongside an older worker.
     const existing = !Array.isArray(preview.removedRules) && Array.isArray(preview.removedIds)
-      ? (await backupRequest({ type: 'status' })).rules
+      ? (await send({ type: 'status' })).rules
       : undefined;
     const removedRules = previewRemovals(preview, existing);
     const removals = $('#import-removals');
@@ -591,7 +580,7 @@ $('#confirm-import')?.addEventListener('click', async () => {
     if (!window.confirm(t('confirmReplaceAll') + warning)) return;
   }
   const imported = await withBusy(async () => {
-    const value = await backupRequest({ type: 'import', text: pendingImport.text,
+    const value = await send({ type: 'import', text: pendingImport.text,
       confirmedRemovalIds: pendingImport.removedRules.map(rule => rule.id), conflictPolicy });
     render(value);
     const { added, updated, skipped } = value.importSummary;
@@ -680,8 +669,8 @@ $('#manage-extension').addEventListener('click', async () => {
   catch (error) { $('#status').textContent = errorText(error); }
 });
 $('#exclude-host')?.addEventListener('click', () => request({ type: 'exclude-inherited-host', url: tab.url }));
-$('#address').addEventListener('input', loadSelection);
-$('#scope').addEventListener('change', loadSelection);
+$('#address').addEventListener('input', updateButton);
+$('#scope').addEventListener('change', updateButton);
 $('#subdomains').addEventListener('change', saveCheckboxChange);
 $('#regional').addEventListener('change', saveCheckboxChange);
 

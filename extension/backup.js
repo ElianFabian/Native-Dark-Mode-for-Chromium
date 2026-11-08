@@ -1,7 +1,7 @@
 import { normalizeRule, ruleAddress } from './rules.js';
 
 export const MAX_BACKUP_BYTES = 1024 * 1024;
-export const MAX_BACKUP_RULES = 1000;
+const MAX_BACKUP_RULES = 1000;
 const FORMAT = 'native-dark-mode-rules';
 
 function validateRule(input, index) {

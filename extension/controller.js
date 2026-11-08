@@ -47,8 +47,9 @@ export class DarkModeController {
         if (attached) {
           // Clear the override before releasing the connection.
           await this.api.debugger.sendCommand(target, 'Emulation.setAutoDarkModeOverride', {});
-          await this.write(tabId, { enabled: false });
+          const state = await this.write(tabId, { enabled: false });
           await this.api.debugger.detach(target);
+          return state;
         }
         return await this.write(tabId, { enabled: false });
       } catch (error) {
@@ -57,18 +58,6 @@ export class DarkModeController {
           try { await this.api.debugger.detach(target); } catch {}
         }
         return await this.write(tabId, { enabled: false, error: String(error.message ?? error) });
-      }
-    });
-  }
-
-  navigation(tabId) {
-    return this.enqueue(tabId, async () => {
-      if (!(await this.read(tabId)).enabled) return;
-      try {
-        await this.api.debugger.sendCommand({ tabId }, 'Emulation.setAutoDarkModeOverride', { enabled: true });
-      } catch (error) {
-        try { await this.api.debugger.detach({ tabId }); } catch {}
-        await this.write(tabId, { enabled: false, error: String(error.message ?? error) });
       }
     });
   }

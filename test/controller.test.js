@@ -52,7 +52,7 @@ test('canceling prevents reconnection on navigation', async () => {
   await controller.set(7, true);
   await controller.disconnected(7, 'canceled_by_user');
   const count = calls.length;
-  await controller.navigation(7);
+  await controller.set(7, true, { automatic: true });
   assert.equal(calls.length, count);
   assert.equal((await controller.read(7)).enabled, false);
 });
@@ -60,8 +60,7 @@ test('canceling prevents reconnection on navigation', async () => {
 test('reload reapplies without attaching again and leaves other tabs disabled', async () => {
   const { controller, calls } = fixture();
   await controller.set(7, true);
-  await controller.navigation(7);
-  await controller.navigation(8);
+  await controller.set(7, true, { automatic: true });
   assert.equal(calls.filter(call => call[0] === 'attach').length, 1);
   assert.equal(calls.filter(call => call[0] === 'command').length, 2);
   assert.equal((await controller.read(8)).enabled, false);

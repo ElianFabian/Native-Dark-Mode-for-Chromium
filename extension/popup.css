@@ -403,16 +403,15 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
   margin-inline-start: auto;
 }
 #close-appearance {
-  display: block;
+  display: grid;
+  place-items: center;
   flex: none;
-  inline-size: 44px;
-  min-block-size: 44px;
+  inline-size: 36px;
+  block-size: 36px;
   margin: 0;
   padding: 0;
   background: var(--secondary);
   color: var(--text);
-  font-size: 1.4rem;
-  line-height: 1;
 }
 #close-appearance:hover { background: var(--secondary-hover); }
 .text-size output { text-align: center; font-variant-numeric: tabular-nums; }
