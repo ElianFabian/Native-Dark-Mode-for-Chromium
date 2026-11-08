@@ -55,6 +55,8 @@
       paint('badge', `background-color: ${colors.badge}`),
       paint('accent', `color: ${colors.accent}`),
       paint('accent', `-webkit-text-fill-color: ${colors.accent}`),
+      paint('readable-light', `-webkit-text-fill-color: ${colors.text}`),
+      paint('readable-dark', '-webkit-text-fill-color: #080a0e'),
       paint('isolated-label', 'mix-blend-mode: normal'),
       paint('undimmed-label', 'filter: none'),
       paint('border', `border-color: ${colors.border}`),
@@ -101,17 +103,16 @@
       // Wide-gamut colors can be serialized as color(), lab(), or oklch().
       roles.push('surface');
     }
-    if (element.matches('span, small, strong, b, mark, label, [role="status"]') &&
-        element.textContent.trim() && element.textContent.length <= 80 &&
+    if (element.matches('span, div, small, strong, b, mark, label, [role="status"]') &&
+        element.textContent.length <= 80 && element.textContent.trim() &&
+        !element.closest('[disabled], [aria-disabled="true"]') &&
         !element.querySelector('img, svg, video, canvas')) {
       const badge = isRedAccent(style.backgroundColor);
-      if (badge || isRedAccent(style.color)) {
-        roles.push('accent');
-        if (style.mixBlendMode === 'multiply' || style.mixBlendMode === 'darken') roles.push('isolated-label');
-        const brightness = /^brightness\(([\d.]+)\)$/.exec(style.filter);
-        if (brightness && Number(brightness[1]) < .8) roles.push('undimmed-label');
-      }
+      if (badge || isRedAccent(style.color)) roles.push('accent');
       if (badge) roles.push('badge');
+      if (['multiply', 'darken', 'color-burn'].includes(style.mixBlendMode)) roles.push('isolated-label');
+      const brightness = /^brightness\(([\d.]+)\)$/.exec(style.filter);
+      if (brightness && Number(brightness[1]) < .8) roles.push('undimmed-label');
     }
     if (element.matches('img') && style.mixBlendMode === 'multiply') roles.push('photo');
     if (['Top', 'Right', 'Bottom', 'Left'].some(side =>
@@ -205,6 +206,58 @@
       if (element.getAttribute(marker) !== roles) element.setAttribute(marker, roles);
       marked.add(element);
     }
+    repairTextContrast(updates);
+  }
+
+  function srgb(value) {
+    const match = /^rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)$/.exec(value);
+    return match ? [Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4] ?? 1)] : null;
+  }
+
+  function luminance(color) {
+    const linear = color.slice(0, 3).map(value => {
+      const channel = value / 255;
+      return channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4;
+    });
+    return linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722;
+  }
+
+  function repairTextContrast(updates) {
+    const backgrounds = new Map();
+    function backdrop(element) {
+      if (!element) return null;
+      if (backgrounds.has(element)) return backgrounds.get(element);
+      const style = getComputedStyle(element);
+      let color = null;
+      if (style.backgroundImage === 'none') {
+        const layer = srgb(style.backgroundColor);
+        if (layer?.[3] === 1) color = layer;
+        else if (layer) {
+          const below = backdrop(element.assignedSlot ?? element.parentElement ?? element.getRootNode().host);
+          if (below) color = below.map((channel, index) => index === 3 ? 1 :
+            layer[index] * layer[3] + channel * (1 - layer[3]));
+        }
+      }
+      backgrounds.set(element, color);
+      return color;
+    }
+
+    const fixes = [];
+    for (const [element, roles] of updates) {
+      if (!roles || !Array.prototype.some.call(element.childNodes,
+        node => node.nodeType === Node.TEXT_NODE && node.textContent.trim())) continue;
+      if (element.closest('[disabled], [aria-disabled="true"]')) continue;
+      const color = srgb(getComputedStyle(element).webkitTextFillColor);
+      const background = backdrop(element);
+      if (!background || !color?.[3]) continue;
+      const foreground = color.map((channel, index) => index === 3 ? 1 :
+        channel * color[3] + background[index] * (1 - color[3]));
+      const light = luminance(foreground) + .05;
+      const dark = luminance(background) + .05;
+      if (Math.max(light, dark) / Math.min(light, dark) >= (preset === 'contrast' ? 7 : 4.5)) continue;
+      fixes.push([element, `${roles} readable-${dark > Math.sqrt(.05 * 1.05) ? 'dark' : 'light'}`]);
+    }
+    for (const [element, roles] of fixes) element.setAttribute(marker, roles);
   }
 
   function stylesLoaded(event) {
