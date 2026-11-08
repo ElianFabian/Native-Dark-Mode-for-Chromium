@@ -54,9 +54,9 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
     else if (message.type !== 'status') throw new Error('Unknown request.');
     if (message.type === 'status' && !fromManager) {
       const current = await snapshot(message.tabId);
-      if (current.matching?.enabled && current.matching.preset) {
-        await manager.apply(message.tabId);
-        return snapshot(message.tabId);
+      if (current.matching?.enabled && current.matching.preset !== undefined &&
+          current.state.preset !== current.matching.preset) {
+        void manager.apply(message.tabId).catch(report);
       }
       return current;
     }

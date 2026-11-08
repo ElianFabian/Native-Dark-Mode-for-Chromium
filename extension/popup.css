@@ -71,6 +71,7 @@
   --focus: var(--text);
 }
 [hidden] { display: none !important; }
+#website-preset[data-loading] { visibility: hidden; }
 body { margin: 0; width: 544px; max-width: 100%; background: var(--page); color: var(--text); font-size: .875rem; }
 main { padding: 20px; }
 .popup-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }

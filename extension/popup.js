@@ -409,13 +409,16 @@ function renderTrash(entries) {
   }
 }
 
-function render(value, toggledButton, previousEditedId) {
-  const previous = snapshot;
-  snapshot = value;
-  const state = value.state;
+function renderStatus(state) {
   $('#status').textContent = state.error ? errorText(state.error) : isManager ? '' : state.preset
     ? t('websitePresetActive', { preset: t(presetLabels[state.preset]) })
     : t(state.enabled ? 'active' : 'inactive');
+}
+
+function render(value, toggledButton, previousEditedId) {
+  const previous = snapshot;
+  snapshot = value;
+  renderStatus(value.state);
   if (isManager) $('#diagnostic').textContent = JSON.stringify(value, null, 2);
   if (editingId && !value.rules.some(rule => rule.id === editingId)) {
     editingId = undefined;
@@ -728,6 +731,13 @@ try {
     if (!/^https?:\/\//i.test(tab.url ?? '')) throw new Error('Open an HTTP or HTTPS page to manage rules.');
     $('#site').textContent = new URL(tab.url).hostname;
     $('#address').value = tab.url;
+    chrome.storage.onChanged.addListener((changes, area) => {
+      const state = changes[`tab:${tab?.id}`]?.newValue;
+      if (area !== 'session' || !state || !snapshot || busy) return;
+      snapshot.state = state;
+      renderStatus(state);
+      updateButton();
+    });
   }
   render(await send({ type: 'status' }));
   if (snapshot.matching) showRule(snapshot.matching);
@@ -736,4 +746,6 @@ try {
   tab = undefined;
   $('#status').textContent = errorText(error);
   updateButton();
+} finally {
+  $('#website-preset').removeAttribute('data-loading');
 }

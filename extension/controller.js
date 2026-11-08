@@ -60,7 +60,7 @@ export class DarkModeController {
 
   async sendPreset(tabId, preset) {
     // A tab can still have the content script from before the extension reload.
-    const message = { type: 'apply-website-preset-v2', preset };
+    const message = { type: 'apply-website-preset-v3', preset };
     if (preset) {
       let applied;
       try {

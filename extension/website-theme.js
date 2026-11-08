@@ -1,8 +1,9 @@
 (() => {
   // A document can already have the declarative script when it is injected on demand.
-  const existingListener = globalThis.nativeDarkModeWebsiteThemeListenerV2;
+  const existingListener = globalThis.nativeDarkModeWebsiteThemeListenerV3;
   if (existingListener && chrome.runtime.onMessage.hasListener(existingListener)) return;
-  const previousListener = globalThis.nativeDarkModeWebsiteThemeListener;
+  const previousListener = globalThis.nativeDarkModeWebsiteThemeListenerV2 ??
+    globalThis.nativeDarkModeWebsiteThemeListener;
   if (previousListener && chrome.runtime.onMessage.hasListener(previousListener)) {
     chrome.runtime.onMessage.removeListener(previousListener);
   }
@@ -85,7 +86,8 @@
   }
 
   function inspect(element) {
-    const root = element.shadowRoot;
+    const root = element.shadowRoot ?? (element instanceof HTMLElement
+      ? chrome.dom?.openOrClosedShadowRoot(element) : null);
     if (root && !shadowRoots.has(root)) {
       shadowRoots.add(root);
       removePreviousThemeSheets(root);
@@ -106,12 +108,18 @@
 
   function paintVisibleSurfaces() {
     const updates = [];
+    const roots = new Set([document]);
     sheet.disabled = true;
     try {
-      for (const element of document.querySelectorAll('html, body, body *')) {
-        const rect = element.getBoundingClientRect();
-        if (rect.width && rect.height && rect.bottom > 0 && rect.right > 0 &&
-            rect.top < innerHeight && rect.left < innerWidth) updates.push([element, inspect(element)]);
+      for (const root of roots) {
+        for (const element of root.querySelectorAll('*')) {
+          const rect = element.getBoundingClientRect();
+          if (rect.width && rect.height && rect.bottom > 0 && rect.right > 0 &&
+              rect.top < innerHeight && rect.left < innerWidth) updates.push([element, inspect(element)]);
+        }
+        for (const shadow of shadowRoots) {
+          if (shadow.host.isConnected) roots.add(shadow);
+        }
       }
     } finally {
       sheet.disabled = false;
@@ -224,8 +232,8 @@
     }).catch(() => {});
   }
 
-  globalThis.nativeDarkModeWebsiteThemeListenerV2 = (message, sender, reply) => {
-    if (sender.id !== chrome.runtime.id || message.type !== 'apply-website-preset-v2') return;
+  globalThis.nativeDarkModeWebsiteThemeListenerV3 = (message, sender, reply) => {
+    if (sender.id !== chrome.runtime.id || message.type !== 'apply-website-preset-v3') return;
     revision++;
     const previous = preset;
     setPreset(message.preset);
@@ -234,7 +242,7 @@
     if (!applied) setPreset(previous);
     reply(applied);
   };
-  chrome.runtime.onMessage.addListener(globalThis.nativeDarkModeWebsiteThemeListenerV2);
+  chrome.runtime.onMessage.addListener(globalThis.nativeDarkModeWebsiteThemeListenerV3);
   window.addEventListener('pageshow', event => { if (event.persisted) requestPreset(); });
   requestPreset();
 })();

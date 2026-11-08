@@ -79,7 +79,7 @@ La [extensión Manifest V3](extension/manifest.json) tiene un panel, un gestor d
 
 La extensión usa permisos de depuración para el modo nativo, acceso a sitios HTTP y HTTPS para evaluar las reglas y aplicar los temas personalizados, el permiso `scripting` para aplicar esos temas en pestañas que ya estaban abiertas y almacenamiento para guardar las reglas en el dispositivo. No hace peticiones a servidores externos.
 
-Los temas personalizados conservan los píxeles de imágenes, vídeos y canvas, así como las imágenes de fondo. Oscurecen los degradados CSS claros sin imágenes. El texto sobre fotografías, los Shadow DOM cerrados y los marcos en los que el navegador impide la inyección pueden conservar el aspecto del sitio. Las reglas con temas personalizados se exportan como JSON en versión 2. La extensión sigue aceptando archivos de la versión 1.
+Los temas personalizados conservan los píxeles de imágenes, vídeos y canvas, así como las imágenes de fondo. Oscurecen los degradados CSS claros sin imágenes y aplican el tema a los Shadow DOM que Chromium expone a las extensiones. El texto sobre fotografías y los marcos en los que el navegador impide la inyección pueden conservar el aspecto del sitio. Las reglas con temas personalizados se exportan como JSON en versión 2. La extensión sigue aceptando archivos de la versión 1.
 
 ## Acceso directo opcional para ocultar el aviso de depuración
 

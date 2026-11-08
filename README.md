@@ -81,7 +81,7 @@ The [Manifest V3 extension](extension/manifest.json) has a popup, a full-page ru
 
 The extension uses `debugger` for native emulation, HTTP and HTTPS site access to match URLs and apply custom themes, `scripting` to apply custom themes in tabs that were already open, and `storage` to keep rules on the device. The extension makes no external network requests.
 
-Custom themes preserve image, video, and canvas pixels and leave image-backed backgrounds in place. They darken light CSS gradients that contain no images. Text over photos, closed shadow roots, and frames where the browser blocks injection can retain the site's original appearance. Rules with custom themes export as JSON version 2. The extension can still import version 1.
+Custom themes preserve image, video, and canvas pixels and leave image-backed backgrounds in place. They darken light CSS gradients that contain no images and theme shadow roots that Chromium exposes to extensions. Text over photos and frames where the browser blocks injection can retain the site's original appearance. Rules with custom themes export as JSON version 2. The extension can still import version 1.
 
 ## Optional launcher for the debugging banner
 
