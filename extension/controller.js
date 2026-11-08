@@ -61,8 +61,9 @@ export class DarkModeController {
   async sendPreset(tabId, preset) {
     const message = { type: 'apply-website-preset', preset };
     if (preset) {
+      let applied;
       try {
-        await this.api.tabs.sendMessage(tabId, message, { frameId: 0 });
+        applied = await this.api.tabs.sendMessage(tabId, message, { frameId: 0 });
       } catch (error) {
         if (!this.isMissingReceiver(error)) throw error;
         // Tabs already open when the extension was loaded lack the declarative script.
@@ -73,8 +74,9 @@ export class DarkModeController {
           // A restricted child frame can prevent injection into the entire tab.
           await this.api.scripting.executeScript({ target, files: ['website-theme.js'] });
         }
-        await this.api.tabs.sendMessage(tabId, message, { frameId: 0 });
+        applied = await this.api.tabs.sendMessage(tabId, message, { frameId: 0 });
       }
+      if (applied !== true) throw new Error('Website theme could not be applied to the page.');
     }
     try { await this.api.tabs.sendMessage(tabId, message); }
     catch (error) {

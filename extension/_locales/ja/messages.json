@@ -356,8 +356,17 @@
   "websitePresetContrast": {
     "message": "ハイコントラスト"
   },
-  "websitePresetHelp": {
-    "message": "ネイティブは Chromium の機能を使います。ソフトダークはチャコールグレーの背景を使います。ハイコントラストは文字や操作部分を強調します。"
+  "websitePresetNativeHelp": {
+    "message": "ネイティブは Chromium の機能を使います。"
+  },
+  "websitePresetSoftHelp": {
+    "message": "ソフトダークはチャコールグレーの背景を使います。"
+  },
+  "websitePresetContrastHelp": {
+    "message": "ハイコントラストは文字や操作部分を強調します。"
+  },
+  "errorWebsitePreset": {
+    "message": "このページにウェブサイトのテーマを適用できませんでした。"
   },
   "websitePresetActive": {
     "message": "このサイトで使用中のテーマ：{preset}"

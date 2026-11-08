@@ -356,8 +356,17 @@
   "websitePresetContrast": {
     "message": "Contraste élevé"
   },
-  "websitePresetHelp": {
-    "message": "Natif utilise Chromium. Sombre doux propose des fonds gris anthracite. Contraste élevé accentue le texte et les commandes."
+  "websitePresetNativeHelp": {
+    "message": "Natif utilise Chromium."
+  },
+  "websitePresetSoftHelp": {
+    "message": "Sombre doux propose des fonds gris anthracite."
+  },
+  "websitePresetContrastHelp": {
+    "message": "Contraste élevé accentue le texte et les commandes."
+  },
+  "errorWebsitePreset": {
+    "message": "Impossible d’appliquer le thème à cette page."
   },
   "websitePresetActive": {
     "message": "Thème actif sur ce site : {preset}."

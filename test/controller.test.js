@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DarkModeController } from '../extension/controller.js';
 
-function fixture({ commandError, attachError, scriptLoaded = true, url = 'https://example.org/' } = {}) {
+function fixture({ commandError, attachError, scriptLoaded = true, themeApplied = true, url = 'https://example.org/' } = {}) {
   const data = {};
   const calls = [];
   const api = {
@@ -16,6 +16,7 @@ function fixture({ commandError, attachError, scriptLoaded = true, url = 'https:
       sendMessage: async (...args) => {
         calls.push(['message', ...args]);
         if (!scriptLoaded) throw new Error('Could not establish connection. Receiving end does not exist.');
+        return themeApplied;
       }
     },
     scripting: {
@@ -45,6 +46,13 @@ test('enables the filter, clears the override and detaches when disabled', async
     ['command', { tabId: 7 }, 'Emulation.setAutoDarkModeOverride', {}],
     ['detach', { tabId: 7 }]
   ]);
+});
+
+test('a theme the page could not apply is not reported active', async () => {
+  const { controller } = fixture({ themeApplied: false });
+  await assert.rejects(controller.reconcile(7, () => ({ enabled: true, preset: 'soft' }), false),
+    /could not be applied/);
+  assert.deepEqual(await controller.read(7), { enabled: false });
 });
 
 test('custom presets clear native mode and are removed before native mode resumes', async () => {

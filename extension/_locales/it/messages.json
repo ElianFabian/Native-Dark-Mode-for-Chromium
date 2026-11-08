@@ -356,8 +356,17 @@
   "websitePresetContrast": {
     "message": "Contrasto elevato"
   },
-  "websitePresetHelp": {
-    "message": "Nativo usa Chromium. Scuro tenue usa sfondi grigio antracite. Contrasto elevato mette in risalto testo e comandi."
+  "websitePresetNativeHelp": {
+    "message": "Nativo usa Chromium."
+  },
+  "websitePresetSoftHelp": {
+    "message": "Scuro tenue usa sfondi grigio antracite."
+  },
+  "websitePresetContrastHelp": {
+    "message": "Contrasto elevato mette in risalto testo e comandi."
+  },
+  "errorWebsitePreset": {
+    "message": "Impossibile applicare il tema a questa pagina."
   },
   "websitePresetActive": {
     "message": "Tema attivo su questo sito: {preset}."

@@ -135,6 +135,8 @@ function selected() {
 }
 
 function updateButton() {
+  const preset = readChoice($('#website-preset'));
+  $('#website-preset-help').textContent = t(`${presetLabels[preset]}Help`);
   let regionalBase;
   try { regionalBase = regionalBaseForHost(normalizeRule({ ...draft(false), includeSubdomains: false, includeRegionalDomains: false }).host); }
   catch { /* The address may be incomplete while being edited. */ }
@@ -689,6 +691,7 @@ function refreshDraftScope() {
 $('#address').addEventListener('input', refreshDraftScope);
 $('#scope').addEventListener('change', refreshDraftScope);
 $('#website-preset').addEventListener('change', () => {
+  updateButton();
   const rule = selected();
   if (!rule || busy) return;
   void withBusy(async () => {

@@ -356,8 +356,17 @@
   "websitePresetContrast": {
     "message": "High contrast"
   },
-  "websitePresetHelp": {
-    "message": "Native uses Chromium. Soft dark uses charcoal backgrounds. High contrast emphasizes text and controls."
+  "websitePresetNativeHelp": {
+    "message": "Native uses Chromium."
+  },
+  "websitePresetSoftHelp": {
+    "message": "Soft dark uses charcoal backgrounds."
+  },
+  "websitePresetContrastHelp": {
+    "message": "High contrast emphasizes text and controls."
+  },
+  "errorWebsitePreset": {
+    "message": "The website theme could not be applied to this page."
   },
   "websitePresetActive": {
     "message": "Website theme active: {preset}."

@@ -356,8 +356,17 @@
   "websitePresetContrast": {
     "message": "Alto contraste"
   },
-  "websitePresetHelp": {
-    "message": "Nativo usa Chromium. Oscuro suave usa fondos gris carbón. Alto contraste resalta el texto y los controles."
+  "websitePresetNativeHelp": {
+    "message": "Nativo usa Chromium."
+  },
+  "websitePresetSoftHelp": {
+    "message": "Oscuro suave usa fondos gris carbón."
+  },
+  "websitePresetContrastHelp": {
+    "message": "Alto contraste resalta el texto y los controles."
+  },
+  "errorWebsitePreset": {
+    "message": "No se pudo aplicar el tema a esta página."
   },
   "websitePresetActive": {
     "message": "Tema activo en esta web: {preset}."

@@ -356,8 +356,17 @@
   "websitePresetContrast": {
     "message": "고대비"
   },
-  "websitePresetHelp": {
-    "message": "기본은 Chromium 기능을 사용합니다. 부드러운 어두운 테마는 짙은 회색 배경을 사용합니다. 고대비는 텍스트와 조작 요소를 강조합니다."
+  "websitePresetNativeHelp": {
+    "message": "기본은 Chromium 기능을 사용합니다."
+  },
+  "websitePresetSoftHelp": {
+    "message": "부드러운 어두운 테마는 짙은 회색 배경을 사용합니다."
+  },
+  "websitePresetContrastHelp": {
+    "message": "고대비는 텍스트와 조작 요소를 강조합니다."
+  },
+  "errorWebsitePreset": {
+    "message": "이 페이지에 웹사이트 테마를 적용하지 못했습니다."
   },
   "websitePresetActive": {
     "message": "이 사이트의 활성 테마: {preset}."

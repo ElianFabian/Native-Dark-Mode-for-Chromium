@@ -69,6 +69,7 @@ export function errorText(error) {
   const rule = /^Rule (\d+) is invalid/.exec(text);
   if (rule) return t('errorRule', { count: rule[1] });
   if (/taking too long/.test(text)) return t('errorTimeout');
+  if (/Website theme could not be applied/.test(text)) return t('errorWebsitePreset');
   if (/already exists for this scope/.test(text)) return t('errorScopeConflict');
   if (/Saved rules changed since the import preview/.test(text)) return t('errorStaleImport');
   if (/Import preview is unavailable/.test(text)) return t('errorImportPreview');

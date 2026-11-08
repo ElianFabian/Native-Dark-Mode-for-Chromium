@@ -24,8 +24,8 @@
       return `${selector.repeat(3)} { ${declaration} !important; }`;
     };
     return [
-      `:root { color-scheme: dark !important; }`,
-      paint('base', `background-color: ${colors.base}`),
+      `:root:root { color-scheme: dark !important; background-color: ${colors.base} !important; color: ${colors.text} !important; }`,
+      `:root body { background-color: ${colors.surface} !important; }`,
       paint('surface', `background-color: ${colors.surface}`),
       paint('raised', `background-color: ${colors.raised}`),
       paint('text', `color: ${colors.text}`),
@@ -40,8 +40,7 @@
     const style = getComputedStyle(element);
     const roles = [element.closest('a[href]') ? 'link' : 'text'];
     const background = style.backgroundColor.match(/^rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)$/);
-    if (element === document.documentElement) roles.push('base');
-    else if (background && Number(background[4] ?? 1) > 0.05) {
+    if (element !== document.documentElement && background && Number(background[4] ?? 1) > 0.05) {
       const lightness = Number(background[1]) * .213 + Number(background[2]) * .715 + Number(background[3]) * .072;
       roles.push(lightness > 180 ? 'surface' : 'raised');
     }
@@ -93,6 +92,9 @@
 
   function setPreset(next) {
     if (!Object.hasOwn(palettes, next)) next = undefined;
+    if (sheet && next && !document.adoptedStyleSheets.includes(sheet)) {
+      document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+    }
     if (preset === next) return;
     preset = next;
     if (!next) {
@@ -146,8 +148,12 @@
   chrome.runtime.onMessage.addListener((message, sender, reply) => {
     if (sender.id !== chrome.runtime.id || message.type !== 'apply-website-preset') return;
     revision++;
+    const previous = preset;
     setPreset(message.preset);
-    reply(true);
+    const root = document.documentElement;
+    const applied = !preset || Boolean(root && getComputedStyle(root).backgroundColor === sheet.cssRules[0].style.backgroundColor);
+    if (!applied) setPreset(previous);
+    reply(applied);
   });
   window.addEventListener('pageshow', event => { if (event.persisted) requestPreset(); });
   requestPreset();

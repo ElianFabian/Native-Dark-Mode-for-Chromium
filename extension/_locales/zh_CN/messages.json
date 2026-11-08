@@ -356,8 +356,17 @@
   "websitePresetContrast": {
     "message": "高对比度"
   },
-  "websitePresetHelp": {
-    "message": "原生模式使用 Chromium。柔和深色使用炭灰色背景。高对比度突出文字和控件。"
+  "websitePresetNativeHelp": {
+    "message": "原生模式使用 Chromium。"
+  },
+  "websitePresetSoftHelp": {
+    "message": "柔和深色使用炭灰色背景。"
+  },
+  "websitePresetContrastHelp": {
+    "message": "高对比度突出文字和控件。"
+  },
+  "errorWebsitePreset": {
+    "message": "无法将网站主题应用到此页面。"
   },
   "websitePresetActive": {
     "message": "当前网站主题：{preset}。"

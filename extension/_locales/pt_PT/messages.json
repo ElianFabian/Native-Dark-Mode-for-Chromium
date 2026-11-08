@@ -356,8 +356,17 @@
   "websitePresetContrast": {
     "message": "Alto contraste"
   },
-  "websitePresetHelp": {
-    "message": "Nativo usa o Chromium. Escuro suave usa fundos cinzento-carvão. Alto contraste realça o texto e os controlos."
+  "websitePresetNativeHelp": {
+    "message": "Nativo usa o Chromium."
+  },
+  "websitePresetSoftHelp": {
+    "message": "Escuro suave usa fundos cinzento-carvão."
+  },
+  "websitePresetContrastHelp": {
+    "message": "Alto contraste realça o texto e os controlos."
+  },
+  "errorWebsitePreset": {
+    "message": "Não foi possível aplicar o tema a esta página."
   },
   "websitePresetActive": {
     "message": "Tema ativo neste site: {preset}."
