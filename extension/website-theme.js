@@ -25,7 +25,7 @@
   let sheet;
   let observer;
   let batchTimer;
-  let walk;
+  let elements;
   let revision = 0;
 
   function paletteCSS(colors) {
@@ -91,18 +91,20 @@
     sheet.disabled = true;
     try {
       const started = performance.now();
-      while (updates.length < 150 && performance.now() - started < 6) {
-        if (!walk) {
+      while (updates.length < 400 && performance.now() - started < 10) {
+        if (!elements) {
           const root = pending.values().next().value;
           if (!root) break;
           pending.delete(root);
           if (!root.isConnected) continue;
-          walk = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+          // Amazon and other dynamic pages can remove the current element.
+          // A static list lets the rest of the subtree continue to be painted.
+          elements = root.querySelectorAll('*').values();
           if (root.nodeType === Node.ELEMENT_NODE) updates.push([root, inspect(root)]);
         } else {
-          const element = walk.nextNode();
-          if (!element?.isConnected) { walk = undefined; continue; }
-          updates.push([element, inspect(element)]);
+          const { value: element, done } = elements.next();
+          if (done) elements = undefined;
+          else if (element.isConnected) updates.push([element, inspect(element)]);
         }
       }
     } finally {
@@ -113,7 +115,7 @@
       if (element.getAttribute(marker) !== roles) element.setAttribute(marker, roles);
       marked.add(element);
     }
-    if (walk || pending.size) schedule();
+    if (elements || pending.size) schedule();
   }
 
   function stylesLoaded(event) {
@@ -131,7 +133,7 @@
       observer.disconnect();
       document.removeEventListener('load', stylesLoaded, true);
       clearTimeout(batchTimer);
-      batchTimer = walk = undefined;
+      batchTimer = elements = undefined;
       pending.clear();
       document.adoptedStyleSheets = document.adoptedStyleSheets.filter(style => style !== sheet);
       for (const root of shadowRoots) {
