@@ -57,6 +57,7 @@
       paint('accent', `-webkit-text-fill-color: ${colors.accent}`),
       paint('readable-light', `-webkit-text-fill-color: ${colors.text}`),
       paint('readable-dark', '-webkit-text-fill-color: #080a0e'),
+      paint('heading-backdrop', `background-color: ${colors.base}`),
       paint('isolated-label', 'mix-blend-mode: normal'),
       paint('undimmed-label', 'filter: none'),
       paint('border', `border-color: ${colors.border}`),
@@ -110,9 +111,17 @@
       const badge = isRedAccent(style.backgroundColor);
       if (badge || isRedAccent(style.color)) roles.push('accent');
       if (badge) roles.push('badge');
-      if (['multiply', 'darken', 'color-burn'].includes(style.mixBlendMode)) roles.push('isolated-label');
-      const brightness = /^brightness\(([\d.]+)\)$/.exec(style.filter);
-      if (brightness && Number(brightness[1]) < .8) roles.push('undimmed-label');
+    }
+    // Blending affects the entire rendered group, including nested labels.
+    if (['multiply', 'darken', 'color-burn'].includes(style.mixBlendMode) &&
+        element.textContent.trim() && !element.closest('[disabled], [aria-disabled="true"]')) {
+      roles.push('isolated-label');
+    }
+    const brightness = /^brightness\(([\d.]+)\)$/.exec(style.filter);
+    if (brightness && Number(brightness[1]) < .8 && element.textContent.trim() &&
+        !element.closest('[disabled], [aria-disabled="true"]') &&
+        !element.querySelector('img, svg, video, canvas') && image === 'none') {
+      roles.push('undimmed-label');
     }
     if (element.matches('img') && style.mixBlendMode === 'multiply') roles.push('photo');
     if (['Top', 'Right', 'Bottom', 'Left'].some(side =>
@@ -249,7 +258,15 @@
       if (element.closest('[disabled], [aria-disabled="true"]')) continue;
       const color = srgb(getComputedStyle(element).webkitTextFillColor);
       const background = backdrop(element);
-      if (!background || !color?.[3]) continue;
+      if (!color?.[3]) continue;
+      if (!background) {
+        // An image can vary behind each letter. Give real headings a solid backing.
+        if (element.closest('h1, h2, h3, h4, h5, h6, [role="heading"]') &&
+            getComputedStyle(element).backgroundImage === 'none') {
+          fixes.push([element, `${roles} heading-backdrop readable-light`]);
+        }
+        continue;
+      }
       const foreground = color.map((channel, index) => index === 3 ? 1 :
         channel * color[3] + background[index] * (1 - color[3]));
       const light = luminance(foreground) + .05;
