@@ -30,6 +30,7 @@
   let sheet;
   let observer;
   let batchTimer;
+  let visibleTimer;
   let elements;
   let revision = 0;
 
@@ -47,6 +48,8 @@
       `${selector('gradient')} :where(h1, h2, h3, h4, h5, h6) { color: ${colors.text} !important; }`,
       paint('text', `color: ${colors.text}`),
       paint('link', `color: ${colors.link}`),
+      paint('text-fill', `-webkit-text-fill-color: ${colors.text}`),
+      paint('link-fill', `-webkit-text-fill-color: ${colors.link}`),
       paint('border', `border-color: ${colors.border}`),
       paint('photo', 'mix-blend-mode: normal'),
       `:root :focus-visible { outline: 2px solid ${colors.link} !important; outline-offset: 2px; }`
@@ -60,7 +63,12 @@
   function rolesFor(element) {
     if (!(element instanceof HTMLElement) || element.matches(excluded)) return '';
     const style = getComputedStyle(element);
-    const roles = [element.closest('a[href]') ? 'link' : 'text'];
+    const foreground = element.closest('a[href]') ? 'link' : 'text';
+    const roles = [foreground];
+    if (style.webkitTextFillColor !== 'rgba(0, 0, 0, 0)' &&
+        (style.webkitTextFillColor !== style.color || element.style.getPropertyPriority('color') === 'important')) {
+      roles.push(`${foreground}-fill`);
+    }
     const image = style.backgroundImage;
     if (image.includes('gradient(') && !/(?:url|image-set|cross-fade|image|paint|element)\(/i.test(image) &&
         [...image.matchAll(/rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)/g)].some(isLightColor)) {
@@ -127,6 +135,14 @@
     applyRoles(updates);
   }
 
+  function scheduleVisibleSurfaces() {
+    if (visibleTimer !== undefined) return;
+    visibleTimer = setTimeout(() => {
+      visibleTimer = undefined;
+      paintVisibleSurfaces();
+    }, 120);
+  }
+
   function paintBatch() {
     batchTimer = undefined;
     const updates = [];
@@ -179,7 +195,10 @@
     if (!next) {
       observer.disconnect();
       document.removeEventListener('load', stylesLoaded, true);
+      document.removeEventListener('scrollend', scheduleVisibleSurfaces);
       clearTimeout(batchTimer);
+      clearTimeout(visibleTimer);
+      visibleTimer = undefined;
       batchTimer = elements = undefined;
       pending.clear();
       document.adoptedStyleSheets = document.adoptedStyleSheets.filter(style => style !== sheet);
@@ -209,7 +228,10 @@
         }
         else if (record.type === 'attributes') schedule(target);
         for (const node of record.addedNodes) {
-          if (node.nodeType === Node.ELEMENT_NODE) schedule(node);
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            schedule(node);
+            scheduleVisibleSurfaces();
+          }
         }
         for (const node of record.removedNodes) {
           if (node.nodeType !== Node.ELEMENT_NODE || node.isConnected) continue;
@@ -221,6 +243,7 @@
     });
     observer.observe(document, observationOptions);
     document.addEventListener('load', stylesLoaded, true);
+    document.addEventListener('scrollend', scheduleVisibleSurfaces);
     paintVisibleSurfaces();
     schedule(document.documentElement);
   }
