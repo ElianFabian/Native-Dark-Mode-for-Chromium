@@ -52,6 +52,14 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
     else if (message.type === 'remove') await manager.remove(message.id);
     else if (message.type === 'restore') await manager.restore(message.id);
     else if (message.type !== 'status') throw new Error('Unknown request.');
+    if (message.type === 'status' && !fromManager) {
+      const current = await snapshot(message.tabId);
+      if (current.matching?.enabled && current.matching.preset) {
+        await manager.apply(message.tabId);
+        return snapshot(message.tabId);
+      }
+      return current;
+    }
     if (message.type !== 'status') {
       if (fromManager) void manager.applyAll().catch(report);
       else await manager.applyFromPopup(message.tabId, message.type !== 'replace-scope');

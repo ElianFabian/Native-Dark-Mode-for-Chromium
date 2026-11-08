@@ -1,15 +1,25 @@
 (() => {
   // A document can already have the declarative script when it is injected on demand.
-  if (globalThis.nativeDarkModeWebsiteThemeLoaded) return;
-  globalThis.nativeDarkModeWebsiteThemeLoaded = true;
+  const existingListener = globalThis.nativeDarkModeWebsiteThemeListener;
+  if (existingListener && chrome.runtime.onMessage.hasListener(existingListener)) return;
 
   const palettes = {
     soft: { base: '#252a34', surface: '#303745', raised: '#3b4454', text: '#f0f3f8', link: '#b5dcff', border: '#929eaf' },
     contrast: { base: '#080a0e', surface: '#11151d', raised: '#19212d', text: '#ffffff', link: '#c5e5ff', border: '#c2ccdc' }
   };
   const marker = 'data-native-dark-mode-paint';
+  // An extension reload can leave its previous sheet in an open document.
+  function removePreviousThemeSheets(root) {
+    root.adoptedStyleSheets = root.adoptedStyleSheets.filter(style => {
+      const rules = style.cssRules;
+      const themeSheet = [rules[1], rules[2]].some(rule => rule?.selectorText?.startsWith(`[${marker}~=`));
+      return !themeSheet || ![':root', ':root:root'].includes(rules[0]?.selectorText);
+    });
+  }
+  removePreviousThemeSheets(document);
   const marked = new Set();
   const pending = new Set();
+  const shadowRoots = new Set();
   const excluded = 'script,style,link,meta,template,noscript';
   let preset;
   let sheet;
@@ -31,6 +41,7 @@
       paint('text', `color: ${colors.text}`),
       paint('link', `color: ${colors.link}`),
       paint('border', `border-color: ${colors.border}`),
+      paint('photo', 'mix-blend-mode: normal'),
       `:root :focus-visible { outline: 2px solid ${colors.link} !important; outline-offset: 2px; }`
     ].join('\n');
   }
@@ -43,11 +54,30 @@
     if (element !== document.documentElement && background && Number(background[4] ?? 1) > 0.05) {
       const lightness = Number(background[1]) * .213 + Number(background[2]) * .715 + Number(background[3]) * .072;
       roles.push(lightness > 180 ? 'surface' : 'raised');
+    } else if (!background && style.backgroundColor && !/\/\s*0(?:\.0+)?%?\s*\)$/.test(style.backgroundColor)) {
+      // Wide-gamut colors can be serialized as color(), lab(), or oklch().
+      roles.push('surface');
     }
+    if (element.matches('img') && style.mixBlendMode === 'multiply') roles.push('photo');
     if (['Top', 'Right', 'Bottom', 'Left'].some(side =>
       style[`border${side}Style`] !== 'none' && parseFloat(style[`border${side}Width`]) > 0)) roles.push('border');
     return roles.join(' ');
   }
+
+  function inspect(element) {
+    const root = element.shadowRoot;
+    if (root && !shadowRoots.has(root)) {
+      shadowRoots.add(root);
+      removePreviousThemeSheets(root);
+      root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
+      observer.observe(root, observationOptions);
+      schedule(root);
+    }
+    return rolesFor(element);
+  }
+
+  const observationOptions = { subtree: true, childList: true, characterData: true,
+    attributes: true, attributeFilter: ['class', 'style', 'hidden', 'open', 'data-theme', 'href'] };
 
   function schedule(root) {
     if (root?.isConnected) pending.add(root);
@@ -68,11 +98,11 @@
           pending.delete(root);
           if (!root.isConnected) continue;
           walk = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
-          updates.push([root, rolesFor(root)]);
+          if (root.nodeType === Node.ELEMENT_NODE) updates.push([root, inspect(root)]);
         } else {
           const element = walk.nextNode();
           if (!element?.isConnected) { walk = undefined; continue; }
-          updates.push([element, rolesFor(element)]);
+          updates.push([element, inspect(element)]);
         }
       }
     } finally {
@@ -104,6 +134,10 @@
       batchTimer = walk = undefined;
       pending.clear();
       document.adoptedStyleSheets = document.adoptedStyleSheets.filter(style => style !== sheet);
+      for (const root of shadowRoots) {
+        root.adoptedStyleSheets = root.adoptedStyleSheets.filter(style => style !== sheet);
+      }
+      shadowRoots.clear();
       for (const element of marked) element.removeAttribute(marker);
       marked.clear();
       sheet = undefined;
@@ -119,7 +153,10 @@
     observer = new MutationObserver(records => {
       for (const record of records) {
         const target = record.target.nodeType === Node.ELEMENT_NODE ? record.target : record.target.parentElement;
-        if (target?.closest('style')) schedule(document.documentElement);
+        if (target?.closest('style')) {
+          const root = target.getRootNode();
+          schedule(root === document ? document.documentElement : root);
+        }
         else if (record.type === 'attributes') schedule(target);
         for (const node of record.addedNodes) {
           if (node.nodeType === Node.ELEMENT_NODE) schedule(node);
@@ -132,8 +169,7 @@
         }
       }
     });
-    observer.observe(document, { subtree: true, childList: true, characterData: true,
-      attributes: true, attributeFilter: ['class', 'style', 'hidden', 'open', 'data-theme', 'href'] });
+    observer.observe(document, observationOptions);
     document.addEventListener('load', stylesLoaded, true);
     schedule(document.documentElement);
   }
@@ -145,7 +181,7 @@
     }).catch(() => {});
   }
 
-  chrome.runtime.onMessage.addListener((message, sender, reply) => {
+  globalThis.nativeDarkModeWebsiteThemeListener = (message, sender, reply) => {
     if (sender.id !== chrome.runtime.id || message.type !== 'apply-website-preset') return;
     revision++;
     const previous = preset;
@@ -154,7 +190,8 @@
     const applied = !preset || Boolean(root && getComputedStyle(root).backgroundColor === sheet.cssRules[0].style.backgroundColor);
     if (!applied) setPreset(previous);
     reply(applied);
-  });
+  };
+  chrome.runtime.onMessage.addListener(globalThis.nativeDarkModeWebsiteThemeListener);
   window.addEventListener('pageshow', event => { if (event.persisted) requestPreset(); });
   requestPreset();
 })();
