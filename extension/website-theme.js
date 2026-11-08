@@ -150,16 +150,21 @@
     if (batchTimer === undefined) batchTimer = setTimeout(paintBatch, 0);
   }
 
-  function paintVisibleSurfaces() {
+  function paintVisibleSurfaces(onlyUnpainted = false) {
     const updates = [];
     const roots = new Set([document]);
-    sheet.disabled = true;
+    const lookahead = innerHeight * .75;
     try {
       for (const root of roots) {
         for (const element of root.querySelectorAll('*')) {
+          if (onlyUnpainted && marked.has(element)) continue;
+          if (!(element instanceof HTMLElement) || element.matches(excluded)) continue;
           const rect = element.getBoundingClientRect();
-          if (rect.width && rect.height && rect.bottom > 0 && rect.right > 0 &&
-              rect.top < innerHeight && rect.left < innerWidth) updates.push([element, inspect(element)]);
+          if (rect.width && rect.height && rect.bottom > -lookahead && rect.right > 0 &&
+              rect.top < innerHeight + lookahead && rect.left < innerWidth) {
+            if (updates.length === 0) sheet.disabled = true;
+            updates.push([element, inspect(element)]);
+          }
         }
         for (const shadow of shadowRoots) {
           if (shadow.host.isConnected) roots.add(shadow);
@@ -175,8 +180,8 @@
     if (visibleTimer !== undefined) return;
     visibleTimer = setTimeout(() => {
       visibleTimer = undefined;
-      paintVisibleSurfaces();
-    }, 120);
+      paintVisibleSurfaces(true);
+    }, 40);
   }
 
   function paintBatch() {
@@ -291,7 +296,7 @@
     if (!next) {
       observer.disconnect();
       document.removeEventListener('load', stylesLoaded, true);
-      document.removeEventListener('scrollend', scheduleVisibleSurfaces);
+      document.removeEventListener('scroll', scheduleVisibleSurfaces, true);
       clearTimeout(batchTimer);
       clearTimeout(visibleTimer);
       visibleTimer = undefined;
@@ -339,7 +344,7 @@
     });
     observer.observe(document, observationOptions);
     document.addEventListener('load', stylesLoaded, true);
-    document.addEventListener('scrollend', scheduleVisibleSurfaces);
+    document.addEventListener('scroll', scheduleVisibleSurfaces, { capture: true, passive: true });
     paintVisibleSurfaces();
     schedule(document.documentElement);
   }
