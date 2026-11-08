@@ -12,7 +12,7 @@ export function resolveLanguage(choice, browserLanguage) {
 }
 
 export function formatMessage(key, values, messages, fallback) {
-  const template = messages[key]?.message ?? fallback[key]?.message ?? key;
+  const template = messages[key] ?? fallback[key] ?? key;
   return template.replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? ''));
 }
 
@@ -23,7 +23,7 @@ const cache = new Map();
 async function catalog(language) {
   if (!cache.has(language)) {
     cache.set(language, (async () => {
-      const response = await fetch(chrome.runtime.getURL(`_locales/${language}/messages.json`));
+      const response = await fetch(chrome.runtime.getURL(`translations/${language}.json`));
       if (!response.ok) throw new Error('Could not load interface translations.');
       return response.json();
     })());
