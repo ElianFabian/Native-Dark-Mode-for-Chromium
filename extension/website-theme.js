@@ -38,6 +38,7 @@
       paint('raised', `background-color: ${colors.raised}`),
       paint('gradient', 'background-image: none'),
       paint('gradient', `background-color: ${colors.surface}`),
+      paint('backdrop-shadow', 'box-shadow: none'),
       `${selector('gradient')} :where(h1, h2, h3, h4, h5, h6) { color: ${colors.text} !important; }`,
       paint('text', `color: ${colors.text}`),
       paint('link', `color: ${colors.link}`),
@@ -47,16 +48,24 @@
     ].join('\n');
   }
 
+  function isLightColor([, red, green, blue, alpha = 1]) {
+    return Number(alpha) > .2 && red * .213 + green * .715 + blue * .072 > 150;
+  }
+
   function rolesFor(element) {
     if (!(element instanceof HTMLElement) || element.matches(excluded)) return '';
     const style = getComputedStyle(element);
     const roles = [element.closest('a[href]') ? 'link' : 'text'];
     const image = style.backgroundImage;
     if (image.includes('gradient(') && !/(?:url|image-set|cross-fade|image|paint|element)\(/i.test(image) &&
-        [...image.matchAll(/rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)/g)].some(color => {
-          const [, red, green, blue, alpha = 1] = color;
-          return Number(alpha) > .2 && red * .213 + green * .715 + blue * .072 > 150;
-        })) roles.push('gradient');
+        [...image.matchAll(/rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)/g)].some(isLightColor)) {
+      roles.push('gradient');
+    }
+    // A wide, unblurred outer shadow can act as a separate page background.
+    const backdropShadows = style.boxShadow.matchAll(/(?:^|,\s*)rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\) 0px 0px 0px ([\d.]+)px(?=,|$)/g);
+    if ([...backdropShadows].some(shadow => Number(shadow[5]) >= 24 && isLightColor(shadow))) {
+      roles.push('backdrop-shadow');
+    }
     const background = style.backgroundColor.match(/^rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)$/);
     if (element !== document.documentElement && background && Number(background[4] ?? 1) > 0.05) {
       const lightness = Number(background[1]) * .213 + Number(background[2]) * .715 + Number(background[3]) * .072;
