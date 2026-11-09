@@ -52,7 +52,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .rules-column > details { margin-block-start: .65rem; }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
 .rule-editor { background: var(--page); }
-.panel h2 { margin-top: 0; }
+.panel h2 { margin-top: 0; font-size: 1.2rem; line-height: 1.25; }
 .rule-scope-options { display: grid; }
 .rule-scope-options > label { margin: 0; }
 :root {
@@ -106,8 +106,8 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .list-controls > * { min-width: 0; max-width: 100%; }
 .rules-control-heading {
   display: inline-block;
-  padding-inline: .45em 0;
-  border-inline-start: 2px solid var(--accent-text);
+  padding-block-end: .2em;
+  border-block-end: 2px solid var(--border);
   color: var(--accent-text);
   font-weight: 700;
 }
