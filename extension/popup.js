@@ -140,13 +140,17 @@ function updateButton() {
       { domain: parentDomain });
   }
   const disables = Boolean(displayedRule?.enabled && !needsResume);
-  const disablesBroadRule = disables && !isManager &&
-    (displayedRule.includeRegionalDomains || inheritedExclusion(displayedRule, tab?.url));
   $('#toggle').toggleAttribute('data-disables', disables);
   $('#toggle').toggleAttribute('data-reenables', displayedRule?.enabled === false);
-  $('#toggle').textContent = disablesBroadRule
-    ? t('disableInheritedRule', { scope: ruleHostPattern(displayedRule) + displayedRule.path.replace(/^\/$/, '') })
-    : t(disables ? 'disableSave' : 'enableSave');
+  if (isManager) {
+    $('#toggle').textContent = t(disables ? 'disableSave' : 'enableSave');
+  } else {
+    const broadRule = displayedRule && (displayedRule.includeRegionalDomains ||
+      inheritedExclusion({ ...displayedRule, enabled: true }, tab?.url));
+    $('#popup-disable-label').textContent = broadRule
+      ? t('disableInheritedRule', { scope: ruleHostPattern(displayedRule) + displayedRule.path.replace(/^\/$/, '') })
+      : t('disableSave');
+  }
   const canEdit = isManager ? Boolean(snapshot) : Boolean(tab?.id);
   if (!isManager) {
     const state = $('#popup-rule-state');

@@ -91,7 +91,12 @@
   </fieldset>
   <div class="popup-row">
     <div class="has-tooltip">
-      <button id="toggle" aria-describedby="toggle-help" disabled>Please wait…</button>
+      <button id="toggle" aria-describedby="toggle-help" disabled>
+        <span class="popup-toggle-labels">
+          <span data-i18n="enableSave">Enable and save</span>
+          <span id="popup-disable-label">Disable and save</span>
+        </span>
+      </button>
       <span id="toggle-help" class="tooltip" role="tooltip" data-i18n="toggleHelp">Changes whether dark mode is enabled for this scope and saves the rule.</span>
     </div>
     <div class="popup-save-actions">

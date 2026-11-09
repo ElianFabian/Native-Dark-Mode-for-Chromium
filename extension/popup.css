@@ -100,6 +100,10 @@ main > #scope-hint + .note { margin-block-start: 0; }
 .has-tooltip { position: relative; }
 .has-tooltip:has(> button[hidden]) { display: none; }
 .popup-row .has-tooltip > button { display: block; height: 100%; margin: 0; }
+.popup-toggle-labels { display: grid; }
+.popup-toggle-labels > span { grid-area: 1 / 1; align-self: center; }
+#toggle[data-disables] .popup-toggle-labels > :first-child,
+#toggle:not([data-disables]) #popup-disable-label { visibility: hidden; }
 .popup-save-actions { display: flex; gap: .5rem; }
 .popup-save-actions > :first-child { flex: 1; min-inline-size: 0; }
 .popup-remove-action { flex: 0 0 44px; }
