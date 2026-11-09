@@ -162,7 +162,6 @@ function updateButton() {
   $('#save').disabled = busy || !canEdit;
   $('#website-preset').disabled = busy || !canEdit;
   if (isManager) {
-    $('#regional-help').textContent = regionalBase ? '' : t('regionalAvailability');
     $('#toggle').hidden = Boolean(editingId);
     $('#cancel-edit').hidden = !editingId;
     $('#export').disabled = busy || !snapshot;

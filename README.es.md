@@ -63,7 +63,7 @@ Para excluir una ruta dentro de una web o sección activa, introduce la URL más
 
 **Eliminar** mueve la regla a la **Papelera**, debajo del editor. Puedes recuperarla con sus ajustes o elegir **Vaciar papelera** y confirmar el borrado definitivo. Si ya existe una regla para el mismo alcance, la copia eliminada se queda en la papelera al intentar restaurarla.
 
-Con **Exportar JSON** puedes guardar una copia de las reglas. **Importar JSON** muestra una vista previa y te permite añadir solo las reglas nuevas, añadirlas y actualizar las coincidencias, o reemplazar toda la lista. El reemplazo muestra una lista desplazable de las reglas que se eliminarán y pide confirmación. La papelera y las preferencias de apariencia se guardan aparte.
+Con **Exportar configuración de reglas** puedes guardar una copia de las reglas. **Importar configuración de reglas** muestra una vista previa y te permite añadir solo las reglas nuevas, añadirlas y actualizar las coincidencias, o reemplazar toda la lista. El reemplazo muestra una lista desplazable de las reglas que se eliminarán y pide confirmación. La papelera y las preferencias de apariencia se guardan aparte.
 
 La interfaz sigue el idioma del navegador por defecto. En **Idioma** puedes elegir español, inglés, francés, portugués europeo, italiano, chino simplificado, japonés, coreano o alemán.
 

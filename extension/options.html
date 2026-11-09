@@ -79,8 +79,7 @@
             <p class="note" id="website-preset-help">Native uses Chromium.</p>
           </fieldset>
           <label><input id="subdomains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="subdomains">Include subdomains</span></label>
-          <label id="regional-option"><input id="regional" class="toggle-switch" type="checkbox" role="switch" disabled aria-describedby="regional-help"> <span data-i18n="regionalDomains">Include regional domains</span></label>
-          <p class="note" id="regional-help"></p>
+          <label id="regional-option"><input id="regional" class="toggle-switch" type="checkbox" role="switch" disabled> <span data-i18n="regionalDomains">Include regional domains</span></label>
           <p class="note" id="scope-hint"></p>
           <div class="has-tooltip">
             <button id="toggle" aria-describedby="toggle-help" disabled>Please wait…</button>
@@ -94,8 +93,8 @@
           <p class="note" data-i18n="rulesNote">Saved locally. Disabled rules remain as exclusions. More specific sections take priority. Queries and fragments are ignored.</p>
           <section class="backup-panel">
             <h3 data-i18n="backup">Backup and restore</h3>
-            <button id="export" disabled data-i18n="export">Export JSON</button>
-            <button id="import" disabled data-i18n="import">Import JSON</button>
+            <button id="export" disabled data-i18n="export">Export rule settings</button>
+            <button id="import" disabled data-i18n="import">Import rule settings</button>
             <input id="import-file" type="file" accept=".json,application/json" hidden>
             <p id="backup-status" role="status" aria-live="polite"></p>
           </section>
