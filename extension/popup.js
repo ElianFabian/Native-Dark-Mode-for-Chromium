@@ -169,9 +169,13 @@ function updateButton() {
   }
   try {
     const rule = normalizeRule(draft(false));
-    $('#scope-hint').textContent = rule.includeRegionalDomains
+    const scope = rule.includeRegionalDomains
       ? t(rule.includeSubdomains ? 'scopeRegionalFamily' : 'scopeRegional', { scope: `${rule.regionalName}.*${rule.path}` })
       : t(rule.includeSubdomains ? 'scopeFamily' : 'scopeExact', { scope: `${rule.host}${rule.path}` });
+    const sectionHint = readChoice($('#scope')) === 'section'
+      ? t(rule.path === '/' ? 'scopeSectionRoot' : 'scopeSectionDescendants')
+      : '';
+    $('#scope-hint').textContent = [scope, sectionHint].filter(Boolean).join(' ');
   } catch { $('#scope-hint').textContent = ''; }
 }
 
