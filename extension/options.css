@@ -150,7 +150,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
   color: var(--danger);
 }
 .domain-group summary + .rule { border-top: 0; }
-.trash-panel { margin-block-start: 20px; background: #e8ebf0; }
+.trash-panel { background: #e8ebf0; }
 [data-theme="dark"] .trash-panel { background: #252b35; }
 :root[data-high-contrast] .trash-panel { background: var(--panel); border-width: 2px; }
 .trash-panel.is-highlighted {

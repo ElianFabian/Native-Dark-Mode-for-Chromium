@@ -116,16 +116,6 @@
             <p id="backup-status" role="status" aria-live="polite"></p>
           </section>
         </section>
-        <section class="panel trash-panel" aria-labelledby="trash-title">
-          <div class="trash-heading">
-            <h2 id="trash-title" data-i18n="trash" tabindex="-1">Trash</h2>
-            <span id="trash-count" class="trash-count"></span>
-          </div>
-          <p class="note" data-i18n="trashDescription">Restore deleted rules or permanently empty the trash.</p>
-          <div id="trash-rules"></div>
-          <button id="empty-trash" type="button" disabled data-i18n="emptyTrash">Empty trash</button>
-          <p id="trash-status" role="status"></p>
-        </section>
       </div>
       <div class="rules-column">
         <section class="panel" aria-labelledby="rules-title">
@@ -154,6 +144,16 @@
         </section>
         <details><summary data-i18n="diagnostics">Diagnostics</summary><pre id="diagnostic"></pre></details>
       </div>
+      <section class="panel trash-panel" aria-labelledby="trash-title">
+        <div class="trash-heading">
+          <h2 id="trash-title" data-i18n="trash" tabindex="-1">Trash</h2>
+          <span id="trash-count" class="trash-count"></span>
+        </div>
+        <p class="note" data-i18n="trashDescription">Restore deleted rules or permanently empty the trash.</p>
+        <div id="trash-rules"></div>
+        <button id="empty-trash" type="button" disabled data-i18n="emptyTrash">Empty trash</button>
+        <p id="trash-status" role="status"></p>
+      </section>
     </div>
   </div>
   <dialog id="import-preview" aria-labelledby="import-title">
