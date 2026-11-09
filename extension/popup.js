@@ -10,6 +10,7 @@ const presetLabels = { native: 'websitePresetNative', soft: 'websitePresetSoft',
 const $ = selector => document.querySelector(selector);
 const isManager = document.documentElement.dataset.page === 'options';
 let tab;
+let suggestedAddress;
 let snapshot;
 let busy = false;
 let pendingImport;
@@ -145,7 +146,9 @@ function updateButton() {
   $('#regional').disabled = busy || !regionalBase;
   const needsResume = snapshot?.state.suspended || snapshot?.state.error;
   displayedRule = selected();
-  $('#toggle').textContent = t(displayedRule?.enabled && !needsResume ? 'disableSave' : 'enableSave');
+  const disables = Boolean(displayedRule?.enabled && !needsResume);
+  $('#toggle').toggleAttribute('data-disables', disables);
+  $('#toggle').textContent = t(disables ? 'disableSave' : 'enableSave');
   const canEdit = isManager ? Boolean(snapshot) : Boolean(tab?.id);
   if (!isManager) {
     const matching = snapshot?.matching;
@@ -248,7 +251,8 @@ function updateGroupToggle() {
 }
 
 function showRule(rule) {
-  $('#address').value = rule ? ruleAddress(rule) : '';
+  suggestedAddress = rule ? ruleAddress(rule) : '';
+  $('#address').value = suggestedAddress;
   writeChoice($('#scope'), rule && rule.path !== '/' ? 'section' : 'website');
   $('#subdomains').checked = Boolean(rule?.includeSubdomains);
   $('#regional').checked = Boolean(rule?.includeRegionalDomains);
@@ -696,7 +700,20 @@ function refreshDraftScope() {
   updateButton();
 }
 $('#address').addEventListener('input', refreshDraftScope);
-$('#scope').addEventListener('change', refreshDraftScope);
+$('#scope').addEventListener('change', () => {
+  const address = $('#address');
+  if (tab && readChoice($('#scope')) === 'section' && address.value === suggestedAddress) {
+    const scopeAddress = new URL(address.value);
+    const tabAddress = new URL(tab.url);
+    const section = scopeAddress.host === tabAddress.host ? tabAddress : scopeAddress;
+    section.pathname = tabAddress.pathname;
+    section.search = '';
+    section.hash = '';
+    suggestedAddress = section.href;
+    address.value = suggestedAddress;
+  }
+  refreshDraftScope();
+});
 $('#website-preset').addEventListener('change', () => {
   updateButton();
   const rule = selected();
@@ -734,7 +751,8 @@ try {
     if (!tab?.id) throw new Error('The active tab could not be found.');
     if (!/^https?:\/\//i.test(tab.url ?? '')) throw new Error('Open an HTTP or HTTPS page to manage rules.');
     $('#site').textContent = new URL(tab.url).hostname;
-    $('#address').value = tab.url;
+    suggestedAddress = tab.url;
+    $('#address').value = suggestedAddress;
     chrome.storage.onChanged.addListener((changes, area) => {
       const state = changes[`tab:${tab?.id}`]?.newValue;
       if (area !== 'session' || !state || !snapshot || busy) return;

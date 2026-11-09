@@ -40,7 +40,7 @@ Click either screenshot to open it at full resolution.
 ## Use the extension
 
 1. Visit an HTTP or HTTPS page and open the extension popup.
-2. Select **Entire website** or **Path section**. The URL field lets you adjust the scope before saving.
+2. Select **Entire website** or **Path section**. The popup suggests the current tab’s path without its query string or fragment. You can edit the URL before saving.
 3. Under **Website theme**, choose **Native**, **Soft dark**, or **High contrast**, then click **Enable and save**. The extension remembers your choice for that website or section.
 4. Use **Disable and save** to keep a rule as an exclusion, or open **Manage rules** to edit, search, or remove saved rules.
 

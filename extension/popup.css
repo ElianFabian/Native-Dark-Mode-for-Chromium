@@ -106,6 +106,13 @@ h1 { font-size: 1.2rem; margin: 0 0 8px; }
 #site { overflow-wrap: anywhere; color: var(--accent-text); }
 button { width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--primary); color: var(--primary-text); overflow-wrap: anywhere; font: inherit; font-weight: 650; cursor: pointer; }
 button:disabled, button[aria-disabled="true"] { opacity: .5; cursor: default; }
+#toggle:not([data-disables]):enabled:hover { background: var(--primary-hover); }
+#toggle[data-disables] {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+  color: var(--warning);
+}
+#toggle[data-disables]:enabled:hover { border-color: var(--warning); }
 button, button *, summary, select,
 label:has(> input:is([type=checkbox], [type=radio])) { user-select: none; }
 .note { font-size: .8125rem; color: var(--muted); }
