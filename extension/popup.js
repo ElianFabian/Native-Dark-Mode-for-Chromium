@@ -525,7 +525,7 @@ async function request(message, { retainedButton, removedRow } = {}) {
       notifyRule('ruleRestored');
       await revealRestoredRule(restoredId);
     }
-  }, isManager || message.type !== 'remove' ? t('saving') : undefined, $('#status'), retainedButton);
+  }, isManager ? t('saving') : undefined, $('#status'), retainedButton);
   if (hadFocus && !retainedButton.isConnected) {
     $(`[data-rule-id="${CSS.escape(message.id)}"]`)?.focus({ preventScroll: true });
   }
