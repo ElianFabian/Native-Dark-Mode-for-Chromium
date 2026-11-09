@@ -52,8 +52,11 @@
       <div class="editor-column">
         <section class="panel rule-editor" aria-labelledby="editor-title">
           <h2 id="editor-title" data-i18n="ruleEditor">Rule editor</h2>
-          <label><span data-i18n="address">Website or section URL</span><input id="address" type="text" placeholder="https://example.com/articles/"></label>
-          <fieldset id="scope" class="choice-group">
+          <fieldset class="choice-group rule-field">
+            <legend><label for="address" data-i18n="address">Website or section URL</label></legend>
+            <input id="address" type="text" placeholder="https://example.com/articles/">
+          </fieldset>
+          <fieldset id="scope" class="choice-group rule-field">
             <legend data-i18n="scope">Scope</legend>
             <div class="choices">
               <div class="has-tooltip">
@@ -66,7 +69,7 @@
               </div>
             </div>
           </fieldset>
-          <fieldset id="website-preset" class="choice-group" aria-describedby="website-preset-help">
+          <fieldset id="website-preset" class="choice-group rule-field" aria-describedby="website-preset-help">
             <legend data-i18n="websitePreset">Website theme</legend>
             <div class="choices">
               <label><input type="radio" name="website-preset" value="native" checked><span data-i18n="websitePresetNative">Native</span></label>

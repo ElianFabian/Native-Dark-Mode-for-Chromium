@@ -421,6 +421,21 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
 #appearance-status:empty { position: absolute; }
 
 .choice-group { min-inline-size: 0; border: 0; padding: 0; margin: .65rem 0; }
+.rule-field {
+  padding: .45rem .7rem .65rem;
+  border: 1px solid var(--border);
+  border-radius: .65rem;
+  background: var(--panel);
+}
+.rule-field > legend {
+  max-inline-size: 100%;
+  padding-inline: .35rem;
+  color: var(--accent-text);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.rule-field > legend > label { margin: 0; }
+.rule-field > .note { margin-block: .5rem 0; }
 .choices { display: flex; flex-wrap: wrap; gap: .4rem; margin-block-start: .25rem; }
 .choices label { position: relative; min-inline-size: 0; margin: 0; }
 .choices .has-tooltip { min-inline-size: 0; max-inline-size: 100%; }
