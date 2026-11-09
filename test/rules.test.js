@@ -169,6 +169,22 @@ test('cancellation pauses automatic rules until explicit resume', async () => {
   assert.equal((await controller.read(7)).enabled, true);
 });
 
+test('broadening a saved section replaces only that section and keeps sibling exclusions', async () => {
+  const { manager } = integration();
+  const root = { url: 'https://example.com/', scope: 'website', enabled: false };
+  const section = { url: 'https://example.com/articles', scope: 'section', enabled: true };
+  const sibling = { url: 'https://example.com/private', scope: 'section', enabled: false };
+  await manager.save(root);
+  await manager.save(section);
+  await manager.save(sibling);
+  await manager.save({ ...root, enabled: true }, normalizeRule(section).id);
+  const rules = await manager.list();
+  assert.equal(rules.length, 2);
+  assert.equal(matchingRule(rules, section.url)?.path, '/');
+  assert.equal(matchingRule(rules, section.url)?.enabled, true);
+  assert.equal(matchingRule(rules, sibling.url)?.enabled, false);
+});
+
 test('concurrent rule saves do not overwrite each other', async () => {
   const { manager } = integration();
   await Promise.all([

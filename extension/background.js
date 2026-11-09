@@ -45,7 +45,7 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
       void manager.applyAll().catch(report);
       return { ...await snapshot(message.tabId), importSummary: summary };
     }
-    if (message.type === 'save') await manager.save(message.rule);
+    if (message.type === 'save') await manager.save(message.rule, fromManager ? undefined : message.replacedSectionId);
     else if (message.type === 'exclude-inherited-host') await manager.excludeInheritedHost(message.tabId, message.url);
     else if (message.type === 'replace-scope') await manager.replaceScope(message.id, message.rule);
     else if (message.type === 'update') await manager.update(message.id, message.patch ?? {});

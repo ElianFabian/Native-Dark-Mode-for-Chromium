@@ -44,7 +44,7 @@ Click either screenshot to open it at full resolution.
 3. Under **Website theme**, choose **Native**, **Soft dark**, or **High contrast**, then click **Enable and save**. The extension remembers your choice for that website or section.
 4. Use **Disable and save** to keep a rule as an exclusion, or open **Manage rules** to edit, search, or remove saved rules.
 
-**Save settings** saves the scope and theme without changing an existing rule's enabled state. A new rule saved this way starts disabled.
+**Save settings** saves the scope and theme without changing an existing rule's enabled state. A new rule saved this way starts disabled. In the popup, switching a saved section to **Entire website** and saving replaces that section with the website rule.
 
 **Native** is the default for existing rules. **Soft dark** uses charcoal backgrounds, while **High contrast** emphasizes text, borders, and focus indicators. These themes affect the website and its eligible embedded frames. Changing the theme of a saved rule saves it immediately. For a new rule, choose the theme before clicking **Enable and save**.
 

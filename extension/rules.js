@@ -140,14 +140,23 @@ export class RuleManager {
     });
   }
 
-  save(input) {
+  save(input, replacedSectionId) {
     const rule = normalizeRule(input);
     return this.mutate(rules => {
-      const index = rules.findIndex(existing => existing.id === rule.id);
-      if (index === -1) return [...rules, { ...rule, createdAt: Date.now() }];
-      const createdAt = rules[index].createdAt;
+      const section = rules.find(existing => existing.id === replacedSectionId);
+      if (replacedSectionId) {
+        const broader = section && section.path !== '/' &&
+          normalizeRule({ ...section, url: ruleAddress(section), scope: 'website' });
+        if (!broader || broader.id !== rule.id) {
+          throw new Error('The original rule changed. Reopen the popup to edit it.');
+        }
+      }
+      const existing = rules.find(entry => entry.id === rule.id);
+      const createdAt = existing ? existing.createdAt : section?.createdAt ?? Date.now();
       const replacement = createdAt === undefined ? rule : { ...rule, createdAt };
-      return rules.map((existing, position) => position === index ? replacement : existing);
+      const remaining = rules.filter(entry => entry.id !== replacedSectionId);
+      if (!existing) return [...remaining, replacement];
+      return remaining.map(entry => entry.id === rule.id ? replacement : entry);
     });
   }
 

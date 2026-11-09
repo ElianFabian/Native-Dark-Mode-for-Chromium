@@ -11,6 +11,7 @@ const $ = selector => document.querySelector(selector);
 const isManager = document.documentElement.dataset.page === 'options';
 let tab;
 let suggestedAddress;
+let sectionToReplace;
 let snapshot;
 let busy = false;
 let pendingImport;
@@ -251,6 +252,7 @@ function updateGroupToggle() {
 }
 
 function showRule(rule) {
+  sectionToReplace = undefined;
   suggestedAddress = rule ? ruleAddress(rule) : '';
   $('#address').value = suggestedAddress;
   writeChoice($('#scope'), rule && rule.path !== '/' ? 'section' : 'website');
@@ -473,6 +475,7 @@ async function request(message, { retainedButton, removedRow } = {}) {
       ? snapshot?.trash?.find(entry => entry.id === message.id)?.rule.id
       : undefined;
     const value = await send(message);
+    if (message.replacedSectionId) sectionToReplace = undefined;
     if (editingId && message.type === 'replace-scope') editingId = normalizeRule(message.rule).id;
     if (removedRow) await animateRuleRemoval(removedRow);
     render(value, retainedButton, message.type === 'replace-scope' ? message.id : undefined);
@@ -499,6 +502,7 @@ async function send(message) {
 }
 
 function saveCheckboxChange() {
+  sectionToReplace = undefined;
   const previous = displayedRule;
   if (!previous || busy || (isManager && previous.id !== editingId)) {
     updateButton();
@@ -646,10 +650,12 @@ $('#language')?.addEventListener('change', async event => {
 
 $('#toggle').addEventListener('click', () => {
   const needsResume = snapshot?.state.suspended || snapshot?.state.error;
-  void request({ type: 'save', rule: draft(!selected()?.enabled || Boolean(needsResume)) });
+  void request({ type: 'save', replacedSectionId: sectionToReplace?.id,
+    rule: draft(!selected()?.enabled || Boolean(needsResume)) });
 });
 $('#save').addEventListener('click', () => request({
-  type: editingId ? 'replace-scope' : 'save', id: editingId, rule: draft(selected()?.enabled ?? false)
+  type: editingId ? 'replace-scope' : 'save', id: editingId, replacedSectionId: sectionToReplace?.id,
+  rule: draft(sectionToReplace?.enabled ?? selected()?.enabled ?? false)
 }));
 $('#cancel-edit')?.addEventListener('click', () => { editingId = undefined; showRule(); });
 $('#search')?.addEventListener('input', () => renderRules());
@@ -699,11 +705,16 @@ function refreshDraftScope() {
   if (rule) writeChoice($('#website-preset'), rule.preset ?? 'native');
   updateButton();
 }
-$('#address').addEventListener('input', refreshDraftScope);
+$('#address').addEventListener('input', () => {
+  sectionToReplace = undefined;
+  refreshDraftScope();
+});
 $('#scope').addEventListener('change', () => {
   const address = $('#address');
   const scope = readChoice($('#scope'));
   const isSuggested = address.value === suggestedAddress;
+  sectionToReplace = scope === 'website' && !isManager && displayedRule && displayedRule.path !== '/'
+    ? displayedRule : undefined;
   if (scope === 'website') {
     const url = draft(false).url;
     if (url) {
