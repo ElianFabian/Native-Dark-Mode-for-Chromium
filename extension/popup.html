@@ -50,34 +50,38 @@
     <h1 data-i18n="title">Native Dark Mode</h1>
     <button id="manage" type="button" class="opens-tab"><span data-i18n="manageRules">Manage rules</span><span class="external-link-icon" aria-hidden="true"></span></button>
   </header>
-  <p id="site">Checking tab…</p>
-  <p id="status" role="status" aria-live="polite"></p>
+  <div class="popup-tab-summary">
+    <p id="site">Checking tab…</p>
+    <p id="status" role="status" aria-live="polite"></p>
+  </div>
   <fieldset class="choice-group rule-field">
     <legend><label for="address" data-i18n="address">Website or section URL</label></legend>
     <input id="address" type="text" placeholder="https://example.com/articles/">
   </fieldset>
-  <fieldset id="scope" class="choice-group rule-field">
-    <legend data-i18n="scope">Scope</legend>
-    <div class="choices">
-      <div class="has-tooltip">
-        <label><input type="radio" name="scope" value="website" aria-describedby="scope-website-help" checked><span data-i18n="website">Entire website</span></label>
-        <span id="scope-website-help" class="tooltip" role="tooltip" data-i18n="scopeWebsiteHelp">Covers the whole hostname. For example, example.com includes example.com/blog and example.com/shop.</span>
+  <div class="popup-rule-choices">
+    <fieldset id="scope" class="choice-group rule-field">
+      <legend data-i18n="scope">Scope</legend>
+      <div class="choices">
+        <div class="has-tooltip">
+          <label><input type="radio" name="scope" value="website" aria-describedby="scope-website-help" checked><span data-i18n="website">Entire website</span></label>
+          <span id="scope-website-help" class="tooltip" role="tooltip" data-i18n="scopeWebsiteHelp">Covers the whole hostname. For example, example.com includes example.com/blog and example.com/shop.</span>
+        </div>
+        <div class="has-tooltip">
+          <label><input type="radio" name="scope" value="section" aria-describedby="scope-section-help"><span data-i18n="section">Path section</span></label>
+          <span id="scope-section-help" class="tooltip" role="tooltip" data-i18n="scopeSectionHelp">Covers the selected path and its subpaths. For example, example.com/blog includes example.com/blog/post, but excludes example.com/shop.</span>
+        </div>
       </div>
-      <div class="has-tooltip">
-        <label><input type="radio" name="scope" value="section" aria-describedby="scope-section-help"><span data-i18n="section">Path section</span></label>
-        <span id="scope-section-help" class="tooltip" role="tooltip" data-i18n="scopeSectionHelp">Covers the selected path and its subpaths. For example, example.com/blog includes example.com/blog/post, but excludes example.com/shop.</span>
+    </fieldset>
+    <fieldset id="website-preset" class="choice-group rule-field" aria-describedby="website-preset-help" data-loading disabled>
+      <legend data-i18n="websitePreset">Website theme</legend>
+      <div class="choices">
+        <label><input type="radio" name="website-preset" value="native" checked><span data-i18n="websitePresetNative">Native</span></label>
+        <label><input type="radio" name="website-preset" value="soft"><span data-i18n="websitePresetSoft">Soft dark</span></label>
+        <label><input type="radio" name="website-preset" value="contrast"><span data-i18n="websitePresetContrast">High contrast</span></label>
       </div>
-    </div>
-  </fieldset>
-  <fieldset id="website-preset" class="choice-group rule-field" aria-describedby="website-preset-help" data-loading disabled>
-    <legend data-i18n="websitePreset">Website theme</legend>
-    <div class="choices">
-      <label><input type="radio" name="website-preset" value="native" checked><span data-i18n="websitePresetNative">Native</span></label>
-      <label><input type="radio" name="website-preset" value="soft"><span data-i18n="websitePresetSoft">Soft dark</span></label>
-      <label><input type="radio" name="website-preset" value="contrast"><span data-i18n="websitePresetContrast">High contrast</span></label>
-    </div>
-    <p class="note" id="website-preset-help">Native uses Chromium.</p>
-  </fieldset>
+      <p class="note" id="website-preset-help">Native uses Chromium.</p>
+    </fieldset>
+  </div>
   <div class="popup-row">
     <div class="has-tooltip">
       <button id="toggle" aria-describedby="toggle-help" disabled>Please wait…</button>
