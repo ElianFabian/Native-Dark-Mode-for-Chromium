@@ -169,7 +169,12 @@ h2 { font-size: 1rem; }
   forced-color-adjust: none;
 }
 .external-link-icon { mask-image: url("external-link.svg"); }
-#exclude-host { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
+#exclude-host {
+  background: var(--secondary);
+  color: var(--accent-text);
+  border: 2px dashed var(--accent-text);
+}
+#exclude-host:enabled:hover { background: var(--secondary-hover); }
 
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
