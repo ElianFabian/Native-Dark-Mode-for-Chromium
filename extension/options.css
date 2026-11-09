@@ -40,6 +40,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .editor-column {
   min-width: 0;
   align-self: stretch;
+  grid-row: 1 / span 3;
 }
 .rules-column { min-width: 0; }
 .trash-panel, .rules-diagnostics { grid-column: 2; }
@@ -283,6 +284,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 }
 @container (max-width: 46em) {
   .workspace { grid-template-columns: minmax(0, 1fr); }
+  .editor-column { grid-row: auto; }
   .trash-panel, .rules-diagnostics { grid-column: auto; }
   .rule-editor { position: static; }
 }

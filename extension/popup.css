@@ -13,6 +13,7 @@
   --primary-text: #fff;
   --primary-hover: #1b3970;
   --secondary: #dde7f6;
+  --tooltip-bg: #eee4fb;
   --secondary-hover: #cbdaf0;
   --warning: #754400;
   --warning-border: #94601d;
@@ -36,6 +37,7 @@
   --primary-text: #101a2c;
   --primary-hover: #b6ceff;
   --secondary: #303e56;
+  --tooltip-bg: #38274d;
   --secondary-hover: #40506a;
   --warning: #ffd88b;
   --warning-border: #c69b5f;
@@ -161,7 +163,7 @@ main > #scope-hint + .note { margin-block-start: 0; }
   padding: .5rem .65rem;
   border: 1px solid var(--border);
   border-radius: .5rem;
-  background: var(--secondary);
+  background: var(--tooltip-bg);
   color: var(--text);
   overflow-wrap: anywhere;
 }
