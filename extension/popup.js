@@ -42,7 +42,7 @@ for (const trigger of document.querySelectorAll('.has-tooltip')) {
   trigger.querySelector('.tooltip').addEventListener('click', () => trigger.setAttribute('data-tooltip-dismissed', ''));
 }
 document.addEventListener('keydown', event => {
-  if (event.key !== 'Escape' || $('#import-preview')?.open) return;
+  if (event.key !== 'Escape' || $('#import-preview')?.open || $('#remove-rule-dialog')?.open) return;
   if (appearanceMenu?.open) {
     event.preventDefault();
     appearanceMenu.open = false;
@@ -778,8 +778,21 @@ $('#manage-extension').addEventListener('click', async () => {
   catch (error) { $('#status').textContent = errorText(error); }
 });
 $('#exclude-host')?.addEventListener('click', () => request({ type: 'exclude-inherited-host', url: tab.url }));
+const removeRuleDialog = $('#remove-rule-dialog');
 $('#remove-popup-rule')?.addEventListener('click', event => {
-  if (!event.currentTarget.hidden && displayedRule) void request({ type: 'remove', id: displayedRule.id });
+  if (event.currentTarget.hidden || busy || !displayedRule) return;
+  const rule = displayedRule;
+  $('#remove-rule-address').textContent = `${rule.includeSubdomains ? '*.' : ''}${rule.host}${rule.path}`;
+  removeRuleDialog.dataset.ruleId = rule.id;
+  removeRuleDialog.showModal();
+});
+removeRuleDialog?.addEventListener('submit', event => {
+  event.preventDefault();
+  const { ruleId } = removeRuleDialog.dataset;
+  removeRuleDialog.close();
+  if (event.submitter?.value === 'remove' && displayedRule?.id === ruleId) {
+    void request({ type: 'remove', id: ruleId });
+  }
 });
 function refreshDraftScope() {
   const rule = selected();

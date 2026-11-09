@@ -111,6 +111,21 @@ main { padding: 20px; }
 }
 #remove-popup-rule:enabled:hover { background: var(--danger-bg); }
 .popup-remove-action > .tooltip { inset-inline-start: auto; inline-size: min(12rem, calc(100vw - 3rem)); }
+#remove-rule-dialog {
+  box-sizing: border-box;
+  inline-size: min(24rem, calc(100% - 2rem));
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  color: var(--text);
+  background: var(--panel);
+  overflow-wrap: anywhere;
+}
+#remove-rule-dialog::backdrop { background: rgb(0 0 0 / .55); }
+#remove-rule-dialog h2 { margin-block-start: 0; }
+#remove-rule-dialog .popup-row > button { flex-basis: 7rem; }
+#remove-rule-dialog button[value="cancel"] { background: var(--secondary); color: var(--text); }
+#remove-rule-dialog button[value="remove"] { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
 #rule-toast {
   position: fixed;
   z-index: 7;
@@ -515,7 +530,8 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
   font-weight: 700;
   overflow-wrap: anywhere;
 }
-.rule-field > legend > label { margin: 0; }
+#scope > label { margin-block: 0 .35rem; }
+#scope > .choices { margin-block-start: .6rem; }
 .rule-field > .note { margin-block: .5rem 0; }
 #website-preset-help { display: grid; }
 #website-preset-help > span { grid-area: 1 / 1; visibility: hidden; }

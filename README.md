@@ -46,7 +46,7 @@ Click either screenshot to open it at full resolution.
 
 **Save settings** saves the scope and theme without changing an existing rule's enabled state. A new rule saved this way starts disabled. In the popup, switching a saved section to **Entire website** and saving replaces that section with the website rule.
 
-The trash icon beside **Save settings** moves the selected saved rule for the current host to **Trash**. Manage inherited and regional rules in the rule manager.
+The trash icon beside **Save settings** shows the selected saved rule for the current host and asks for confirmation before moving it to **Trash**. Manage inherited and regional rules in the rule manager.
 
 **Native** is the default for existing rules. **Soft dark** uses charcoal backgrounds, while **High contrast** emphasizes text, borders, and focus indicators. These themes affect the website and its eligible embedded frames. Changing the theme of a saved rule saves it immediately. For a new rule, choose the theme before clicking **Enable and save**.
 
