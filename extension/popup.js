@@ -498,6 +498,30 @@ function showSavedScope(draftRule) {
   if (saved) showRule(saved);
 }
 
+function selectExistingParentScope(checkbox) {
+  if (isManager || checkbox.id !== 'parent-domain') return false;
+  const rule = draft(false);
+  const current = displayedRule;
+  const alternate = { ...rule, includeRegionalDomains: !rule.includeRegionalDomains };
+  const exact = normalizeRule({ ...rule, includeParentDomain: false,
+    includeSubdomains: false, includeRegionalDomains: false });
+  const exclusion = snapshot?.rules.find(entry => entry.id === exact.id && !entry.enabled);
+  if (!exclusion) return false;
+  if (!checkbox.checked && current?.includeSubdomains) {
+    showRule(exclusion);
+    return true;
+  }
+  if (checkbox.checked && current?.id === exclusion.id) {
+    const parent = selected() ?? (rule.includeRegionalDomains ? undefined
+      : snapshot.rules.find(entry => entry.id === normalizeRule(alternate).id));
+    if (parent) {
+      showRule(parent);
+      return true;
+    }
+  }
+  return false;
+}
+
 function saveCheckboxChange(event) {
   const checkbox = event.currentTarget;
   sectionToReplace = undefined;
@@ -506,6 +530,7 @@ function saveCheckboxChange(event) {
     updateButton();
     return;
   }
+  if (selectExistingParentScope(checkbox)) return;
   const rule = { ...draft(previous.enabled), preset: previous.preset };
   void withBusy(async () => {
     try {
