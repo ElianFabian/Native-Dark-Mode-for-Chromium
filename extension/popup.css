@@ -77,18 +77,6 @@ main { padding: 20px; }
 .popup-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
 .popup-header h1 { margin: 0; overflow-wrap: anywhere; }
 .popup-header button { width: auto; max-width: 100%; margin: 0; }
-.popup-tab-summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: .2rem .75rem;
-  margin-block: .45rem .6rem;
-}
-.popup-tab-summary > p { min-inline-size: 0; margin: 0; overflow-wrap: anywhere; }
-.popup-rule-choices { display: flex; flex-wrap: wrap; gap: .45rem; margin-block: .45rem; }
-.popup-rule-choices > .rule-field { box-sizing: border-box; margin: 0; max-inline-size: 100%; }
-.popup-rule-choices > #scope { flex: 2 1 12rem; }
-.popup-rule-choices > #website-preset { flex: 3 1 16rem; }
 .popup-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: .5rem; }
 .popup-row > * { flex: 1 1 12rem; min-inline-size: 0; margin: 0; }
 .popup-scope-options span { overflow-wrap: anywhere; }
