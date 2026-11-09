@@ -28,5 +28,6 @@ export function regionalDomain(hostname) {
 
 export function regionalBaseForHost(host) {
   const site = regionalDomain(host);
-  return site && (!site.subdomain || site.subdomain === 'www') ? site : undefined;
+  if (site?.subdomain === 'www') return { ...site, subdomain: '' };
+  return site;
 }

@@ -36,8 +36,9 @@ test('backup round trip preserves scopes, exclusions, ports and subdomain settin
 
 test('backups preserve regional rules and reject unsupported groups', () => {
   const regional = normalizeRule({ url: 'www.amazon.com.au/deals', scope: 'section', enabled: true, includeRegionalDomains: true });
-  const backup = createBackup([regional]);
-  assert.deepEqual(parseBackup(JSON.stringify(backup)), [regional]);
+  const subdomain = normalizeRule({ url: 'fonts.google.com/icons', scope: 'section', enabled: false, includeRegionalDomains: true });
+  const backup = createBackup([regional, subdomain]);
+  assert.deepEqual(parseBackup(JSON.stringify(backup)), [regional, subdomain]);
   backup.rules[0].host = 'localhost';
   assert.throws(() => parseBackup(JSON.stringify(backup)), /invalid/);
 });

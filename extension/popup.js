@@ -1,5 +1,5 @@
-import { normalizeRule, orderRules, groupRulesByDomain, ruleAddress, inheritedExclusion } from './rules.js';
-import { regionalBaseForHost, regionalDomain } from './domains.js';
+import { normalizeRule, orderRules, groupRulesByDomain, ruleAddress, ruleHostPattern, matchingRule, inheritedExclusion } from './rules.js';
+import { regionalBaseForHost } from './domains.js';
 import { requestWithTimeout } from './request.js';
 import { MAX_BACKUP_BYTES, previewRemovals } from './backup.js';
 import { LANGUAGES, initializeLanguage, setLanguage, translatePage, t, errorText } from './i18n.js';
@@ -123,6 +123,7 @@ function draft(enabled) {
   return {
     url: $('#address').value.replace(/[ \t]*[\r\n]+[ \t]*/g, '').trim(), scope: readChoice($('#scope')),
     includeSubdomains: $('#subdomains').checked,
+    includeParentDomain: $('#parent-domain').checked,
     includeRegionalDomains: $('#regional').checked,
     preset: readChoice($('#website-preset')),
     enabled
@@ -139,9 +140,17 @@ function selected() {
 function updateButton() {
   const preset = readChoice($('#website-preset'));
   $('#website-preset-help').textContent = t(`${presetLabels[preset]}Help`);
-  let regionalBase;
-  try { regionalBase = regionalBaseForHost(normalizeRule({ ...draft(false), includeSubdomains: false, includeRegionalDomains: false }).host); }
+  let host;
+  try { host = normalizeRule({ url: draft(false).url }).host; }
   catch { /* The address may be incomplete while being edited. */ }
+  const regionalBase = host && regionalBaseForHost(host);
+  const parent = $('#parent-domain');
+  const parentDomain = regionalBase?.subdomain && regionalBase.domain;
+  $('#parent-domain-option').hidden = !parentDomain;
+  if (!parentDomain) parent.checked = false;
+  else $('#parent-domain-label').textContent = t('includeParentDomain', { domain: parentDomain });
+  parent.disabled = busy || !parentDomain;
+  $('#subdomains').disabled = busy || parent.checked;
   if (!regionalBase) $('#regional').checked = false;
   $('#regional').disabled = busy || !regionalBase;
   const needsResume = snapshot?.state.suspended || snapshot?.state.error;
@@ -172,7 +181,8 @@ function updateButton() {
   try {
     const rule = normalizeRule(draft(false));
     const scope = rule.includeRegionalDomains
-      ? t(rule.includeSubdomains ? 'scopeRegionalFamily' : 'scopeRegional', { scope: `${rule.regionalName}.*${rule.path}` })
+      ? t(rule.includeSubdomains ? 'scopeRegionalFamily' : rule.regionalSubdomain ? 'scopeRegionalSubdomain' : 'scopeRegional',
+        { scope: ruleHostPattern(rule) + rule.path })
       : t(rule.includeSubdomains ? 'scopeFamily' : 'scopeExact', { scope: `${rule.host}${rule.path}` });
     const sectionHint = readChoice($('#scope')) === 'section'
       ? t(rule.path === '/' ? 'scopeSectionRoot' : 'scopeSectionDescendants')
@@ -181,17 +191,13 @@ function updateButton() {
   } catch { $('#scope-hint').textContent = ''; }
 }
 
-function displayHost(rule) {
-  return rule.includeRegionalDomains ? `${rule.regionalName}.*` : rule.host;
-}
-
 function matchesSearch(rule, query) {
-  if ((displayHost(rule) + rule.path).toLowerCase().includes(query) ||
+  if ((ruleHostPattern(rule) + rule.path).toLowerCase().includes(query) ||
       (rule.host + rule.path).toLowerCase().includes(query)) return true;
   if (!rule.includeRegionalDomains) return false;
   try {
     const url = new URL(query.includes('://') ? query : `https://${query}`);
-    return regionalDomain(url.hostname)?.name === rule.regionalName &&
+    return Boolean(matchingRule([rule], url.origin + rule.path)) &&
       (url.pathname === '/' || rule.path.toLowerCase().startsWith(url.pathname));
   } catch { return false; }
 }
@@ -202,7 +208,7 @@ function ruleHeading(rule, dateFormatter) {
   const address = document.createElement('span');
   address.className = 'rule-address';
   const domain = document.createElement('strong');
-  domain.textContent = `${rule.includeSubdomains ? '*.' : ''}${displayHost(rule)}`;
+  domain.textContent = `${rule.includeSubdomains ? '*.' : ''}${ruleHostPattern(rule)}`;
   const path = document.createElement('span');
   path.className = 'rule-path';
   path.textContent = rule.path;
@@ -252,9 +258,19 @@ function updateGroupToggle() {
 function showRule(rule) {
   sectionToReplace = undefined;
   suggestedAddress = rule ? ruleAddress(rule) : '';
+  const tabSite = !isManager && tab && regionalBaseForHost(new URL(tab.url).host);
+  const ruleSite = rule && regionalBaseForHost(rule.host);
+  const inheritsParent = Boolean(tabSite?.subdomain && rule?.includeSubdomains && ruleSite &&
+    !ruleSite.subdomain && (rule.includeRegionalDomains ? tabSite.name === ruleSite.name : tabSite.domain === ruleSite.domain));
+  if (inheritsParent) {
+    const address = new URL(suggestedAddress);
+    address.hostname = `${tabSite.subdomain}.${ruleSite.domain}`;
+    suggestedAddress = address.href;
+  }
   $('#address').value = suggestedAddress;
   writeChoice($('#scope'), rule && rule.path !== '/' ? 'section' : 'website');
-  $('#subdomains').checked = Boolean(rule?.includeSubdomains);
+  $('#subdomains').checked = Boolean(rule?.includeSubdomains && !inheritsParent);
+  $('#parent-domain').checked = inheritsParent;
   $('#regional').checked = Boolean(rule?.includeRegionalDomains);
   writeChoice($('#website-preset'), rule?.preset ?? 'native');
   updateButton();
@@ -418,9 +434,7 @@ function renderTrash(entries) {
 }
 
 function renderStatus(state) {
-  $('#status').textContent = state.error ? errorText(state.error) : isManager ? '' : state.preset
-    ? t('websitePresetActive', { preset: t(presetLabels[state.preset]) })
-    : t(state.enabled ? 'active' : 'inactive');
+  $('#status').textContent = state.error ? errorText(state.error) : '';
 }
 
 function render(value, toggledButton, previousEditedId) {
@@ -499,7 +513,8 @@ async function send(message) {
   return response;
 }
 
-function saveCheckboxChange() {
+function saveCheckboxChange(event) {
+  const checkbox = event.currentTarget;
   sectionToReplace = undefined;
   const previous = displayedRule;
   if (!previous || busy || (isManager && previous.id !== editingId)) {
@@ -514,8 +529,7 @@ function saveCheckboxChange() {
       render(value, undefined, previous.id);
       if (isManager) notifyRule('ruleSaved');
     } catch (error) {
-      $('#subdomains').checked = previous.includeSubdomains;
-      $('#regional').checked = Boolean(previous.includeRegionalDomains);
+      checkbox.checked = !checkbox.checked;
       throw error;
     }
   }, t('saving'));
@@ -556,7 +570,7 @@ $('#import-file')?.addEventListener('change', async () => {
     const removals = $('#import-removals');
     removals.replaceChildren(...removedRules.map(rule => {
       const entry = document.createElement('li');
-      entry.textContent = `${rule.includeSubdomains ? '*.' : ''}${displayHost(rule)}${rule.path}`;
+      entry.textContent = `${rule.includeSubdomains ? '*.' : ''}${ruleHostPattern(rule)}${rule.path}`;
       return entry;
     }));
     removals.scrollTop = 0;
@@ -754,6 +768,7 @@ $('#website-preset').addEventListener('change', () => {
 });
 $('#subdomains').addEventListener('change', saveCheckboxChange);
 $('#regional').addEventListener('change', saveCheckboxChange);
+$('#parent-domain').addEventListener('change', saveCheckboxChange);
 
 try {
   const language = await initializeLanguage();

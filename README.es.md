@@ -53,7 +53,8 @@ Haz clic en una captura para abrirla a resolución completa.
 | **Web completa** | El nombre de host indicado en el campo de URL. |
 | **Sección por ruta** | Una ruta y sus subrutas. Por ejemplo, `/articulos` incluye `/articulos/guia`. |
 | **Incluir subdominios** | Los subdominios del sitio. Con esta opción, `www.android.com` se trata como `android.com` y puede cubrir `developer.android.com`. |
-| **Incluir dominios regionales** | El mismo nombre bajo sufijos reconocidos. `amazon.es` pasa a `amazon.*` y puede cubrir `amazon.com.au` y `amazon.co.uk`. Activa también los subdominios para obtener `*.amazon.*`. |
+| **Incluir dominios regionales** | Varía el sufijo público y conserva el nombre registrado y el subdominio específico. Por ejemplo, `amazon.es` pasa a `amazon.*` y `fonts.google.com` a `fonts.google.*`. |
+| **Aplicar a todo …** | Desde un subdominio como `fonts.google.com`, incluye el dominio base `google.com` y todos sus subdominios. Combínalo con los dominios regionales para abarcar la misma familia en otros sufijos públicos reconocidos. |
 
 Las rutas más específicas tienen prioridad. Para la misma ruta, un dominio concreto tiene prioridad sobre una regla regional. Si la página hereda una regla activa, el panel puede ofrecer **Excluir este subdominio** o **Excluir este nombre de host** para guardar una excepción.
 

@@ -7,6 +7,12 @@ export function ruleAddress({ host, path }) {
   return `${host.endsWith(':443') ? 'http' : 'https'}://${host}${path}`;
 }
 
+export function ruleHostPattern(rule) {
+  if (!rule.includeRegionalDomains) return rule.host;
+  const prefix = rule.regionalSubdomain ? `${rule.regionalSubdomain}.` : '';
+  return `${prefix}${rule.regionalName}.*`;
+}
+
 export function orderRules(rules, order, locale) {
   const ordered = [...rules];
   if (order === 'newest') {
@@ -17,7 +23,7 @@ export function orderRules(rules, order, locale) {
   }
   const collator = new Intl.Collator(locale);
   const direction = order === 'reverse-alphabetical' ? -1 : 1;
-  const key = rule => (rule.regionalName ? `${rule.regionalName}.*` : rule.host) + rule.path;
+  const key = rule => ruleHostPattern(rule) + rule.path;
   return ordered.sort((a, b) => direction * collator.compare(key(a), key(b)));
 }
 
@@ -43,7 +49,9 @@ export function normalizeRule(input) {
     throw new Error('Enter an HTTP or HTTPS website without credentials.');
   }
   const path = input.scope === 'website' ? '/' : url.pathname.replace(/\/+$/, '') || '/';
-  const includeSubdomains = Boolean(input.includeSubdomains);
+  const parent = input.includeParentDomain && regionalBaseForHost(url.hostname);
+  if (parent?.subdomain) url.hostname = parent.domain;
+  const includeSubdomains = Boolean(input.includeSubdomains || parent?.subdomain);
   // Treat a leading www as optional only when the user opts into subdomains.
   let host = includeSubdomains && url.hostname.startsWith('www.') && url.hostname.slice(4).includes('.')
     ? url.host.slice(4).toLowerCase() : url.host.toLowerCase();
@@ -52,14 +60,16 @@ export function normalizeRule(input) {
   if (input.includeRegionalDomains === true) {
     regional = regionalBaseForHost(url.host);
     if (!regional) throw new Error('Regional domains are not available for this hostname.');
-    host = regional.domain;
-    identity[0] = `${regional.name}.*`;
+    host = regional.subdomain ? `${regional.subdomain}.${regional.domain}` : regional.domain;
+    identity[0] = ruleHostPattern({ includeRegionalDomains: true, regionalName: regional.name,
+      regionalSubdomain: regional.subdomain });
     identity.push(true);
   }
   return {
     id: JSON.stringify(identity),
     host, path, includeSubdomains,
     ...(regional ? { includeRegionalDomains: true, regionalName: regional.name } : {}),
+    ...(regional?.subdomain ? { regionalSubdomain: regional.subdomain } : {}),
     enabled: Boolean(input.enabled),
     ...(CUSTOM_PRESETS.includes(input.preset) ? { preset: input.preset } : {})
   };
@@ -69,20 +79,25 @@ export function matchingRule(rules, address) {
   let url;
   try { url = new URL(address); } catch { return undefined; }
   if (!['http:', 'https:'].includes(url.protocol)) return undefined;
-  const regional = url.port ? undefined : regionalDomain(url.hostname);
+  const regional = url.port ? undefined : regionalBaseForHost(url.hostname);
   return rules.filter(rule => {
     const host = new URL(ruleAddress(rule));
     const localMatch = url.host === rule.host || (
       rule.includeSubdomains && url.port === host.port && url.hostname.endsWith(`.${host.hostname}`)
     );
+    const prefix = rule.regionalSubdomain ?? '';
+    const subdomain = regional?.subdomain;
     const hostMatches = rule.includeRegionalDomains
-      ? regional && regional.name === rule.regionalName &&
-          (!regional.subdomain || regional.subdomain === 'www' || rule.includeSubdomains)
+      ? regional && regional.name === rule.regionalName && (
+        subdomain === prefix || (rule.includeSubdomains && (!prefix || subdomain.endsWith(`.${prefix}`)))
+      )
       : localMatch;
     return hostMatches && (rule.path === '/' || url.pathname === rule.path || url.pathname.startsWith(`${rule.path}/`));
   }).sort((a, b) => b.path.length - a.path.length ||
     Number(Boolean(a.includeRegionalDomains)) - Number(Boolean(b.includeRegionalDomains)) ||
-    (a.includeRegionalDomains && b.includeRegionalDomains ? 0 : b.host.length - a.host.length) ||
+    (a.includeRegionalDomains && b.includeRegionalDomains
+      ? (b.regionalSubdomain?.length ?? 0) - (a.regionalSubdomain?.length ?? 0)
+      : b.host.length - a.host.length) ||
     Number(a.includeSubdomains) - Number(b.includeSubdomains))[0];
 }
 

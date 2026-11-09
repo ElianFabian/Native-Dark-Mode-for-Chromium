@@ -1,4 +1,6 @@
 {
+  "includeParentDomain": "应用于整个 {domain} 域",
+  "scopeRegionalSubdomain": "在各区域域名中应用于 {scope}。",
   "title": "原生深色模式",
   "language": "语言",
   "automatic": "自动（浏览器）",

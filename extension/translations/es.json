@@ -1,4 +1,6 @@
 {
+  "includeParentDomain": "Aplicar a todo {domain}",
+  "scopeRegionalSubdomain": "Se aplica a {scope} en los dominios regionales.",
   "title": "Modo oscuro nativo",
   "language": "Idioma",
   "automatic": "Automático (navegador)",

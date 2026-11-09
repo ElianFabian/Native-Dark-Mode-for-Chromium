@@ -1,4 +1,6 @@
 {
+  "includeParentDomain": "{domain} 全体に適用",
+  "scopeRegionalSubdomain": "各地域ドメインの {scope} に適用します。",
   "title": "ネイティブダークモード",
   "language": "言語",
   "automatic": "自動（ブラウザ）",

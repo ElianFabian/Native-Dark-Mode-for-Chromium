@@ -72,7 +72,30 @@ test('regional rules use the registrable name across public suffixes', () => {
   const another = rule('example.co.uk', true, { includeRegionalDomains: true });
   assert.equal(matchingRule([another], 'https://example.de/').enabled, true);
   assert.throws(() => rule('localhost', true, { includeRegionalDomains: true }), /not available/);
-  assert.throws(() => rule('seller.amazon.com', true, { includeRegionalDomains: true }), /not available/);
+});
+
+test('regional subdomain rules preserve the prefix and override broader regional rules', () => {
+  const settings = { includeRegionalDomains: true };
+  const exact = rule('fonts.google.com/icons', false, settings);
+  const family = rule('fonts.google.com/icons', true, { ...settings, includeSubdomains: true });
+  const parent = rule('fonts.google.com/icons', true, { ...settings, includeParentDomain: true });
+  assert.equal(exact.id, rule('fonts.google.co.uk/icons', false, settings).id);
+  assert.equal(parent.id, rule('google.com/icons', true, { ...settings, includeSubdomains: true }).id);
+  assert.equal(matchingRule([parent, family, exact], 'https://fonts.google.es/icons/next'), exact);
+  assert.equal(matchingRule([parent, exact, family], 'https://cdn.fonts.google.co.uk/icons'), family);
+  assert.equal(matchingRule([exact], 'https://maps.google.es/icons'), undefined);
+  assert.equal(matchingRule([exact], 'https://fonts.google.es/iconset'), undefined);
+  const local = rule('fonts.google.es/icons');
+  assert.equal(matchingRule([exact, local], 'https://fonts.google.es/icons'), local);
+  assert.equal(inheritedExclusion(family, 'https://cdn.fonts.google.co.uk/icons').host, 'cdn.fonts.google.co.uk');
+});
+
+test('applying to the base domain covers the base and sibling subdomains on the same suffix', () => {
+  const parent = rule('fonts.google.com/icons', true, { includeParentDomain: true });
+  assert.equal(parent.id, rule('google.com/icons', true, { includeSubdomains: true }).id);
+  assert.equal(matchingRule([parent], 'https://google.com/icons'), parent);
+  assert.equal(matchingRule([parent], 'https://maps.google.com/icons'), parent);
+  assert.equal(matchingRule([parent], 'https://maps.google.es/icons'), undefined);
 });
 
 test('regional scope honors suffix exceptions and upgrades legacy rules', async () => {

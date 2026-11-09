@@ -1,4 +1,6 @@
 {
+  "includeParentDomain": "Auf die gesamte Domain {domain} anwenden",
+  "scopeRegionalSubdomain": "Gilt für {scope} in regionalen Domains.",
   "title": "Nativer Dunkelmodus",
   "language": "Sprache",
   "automatic": "Automatisch (Browser)",
