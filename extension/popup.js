@@ -803,7 +803,8 @@ $('#address').addEventListener('input', () => {
   sectionToReplace = undefined;
   refreshDraftScope();
 });
-$('#scope').addEventListener('change', () => {
+$('#scope').addEventListener('change', event => {
+  if (!event.target.matches('input[name="scope"]')) return;
   const address = $('#address');
   const scope = readChoice($('#scope'));
   const isSuggested = address.value === suggestedAddress;

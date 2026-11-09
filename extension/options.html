@@ -66,6 +66,12 @@
                 <span id="scope-section-help" class="tooltip" role="tooltip" data-i18n="scopeSectionHelp">Covers the selected path and its subpaths. For example, example.com/blog includes example.com/blog/post, but excludes example.com/shop.</span>
               </div>
             </div>
+            <div class="rule-scope-options">
+              <label><input id="subdomains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="subdomains">Include subdomains</span></label>
+              <label><input id="regional" class="toggle-switch" type="checkbox" role="switch" disabled> <span data-i18n="regionalDomains">Include regional domains</span></label>
+              <label id="parent-domain-option" hidden><input id="parent-domain" class="toggle-switch" type="checkbox" role="switch"> <span id="parent-domain-label"></span></label>
+              <label id="subpaths-option" hidden><input id="subpaths" class="toggle-switch" type="checkbox" role="switch" checked> <span data-i18n="includeSubpaths">Include subpaths</span></label>
+            </div>
           </fieldset>
           <fieldset id="website-preset" class="choice-group rule-field" aria-describedby="website-preset-help">
             <legend data-i18n="websitePreset">Website theme</legend>
@@ -80,12 +86,6 @@
               <span data-preset="contrast" data-i18n="websitePresetContrastHelp">High contrast emphasizes text and controls.</span>
             </p>
           </fieldset>
-          <div class="rule-scope-options">
-            <label><input id="subdomains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="subdomains">Include subdomains</span></label>
-            <label><input id="regional" class="toggle-switch" type="checkbox" role="switch" disabled> <span data-i18n="regionalDomains">Include regional domains</span></label>
-            <label id="parent-domain-option" hidden><input id="parent-domain" class="toggle-switch" type="checkbox" role="switch"> <span id="parent-domain-label"></span></label>
-            <label id="subpaths-option" hidden><input id="subpaths" class="toggle-switch" type="checkbox" role="switch" checked> <span data-i18n="includeSubpaths">Include subpaths</span></label>
-          </div>
           <p class="note" id="scope-hint"></p>
           <div class="has-tooltip">
             <button id="toggle" aria-describedby="toggle-help" disabled>Please wait…</button>

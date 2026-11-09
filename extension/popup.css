@@ -86,8 +86,8 @@ main { padding: 20px; }
 .popup-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: .5rem; }
 .popup-row > * { flex: 1 1 12rem; min-inline-size: 0; margin: 0; }
 .popup-scope-options { row-gap: 0; }
-.popup-scope-options ~ #scope-hint { margin-block-end: .25rem; overflow-wrap: anywhere; }
-.popup-scope-options ~ #scope-hint + .note { margin-block-start: 0; }
+main > #scope-hint { margin-block-end: .25rem; overflow-wrap: anywhere; }
+main > #scope-hint + .note { margin-block-start: 0; }
 :is(.popup-scope-options, .rule-scope-options) > label:has(> input[type=checkbox]) {
   min-block-size: 2rem;
 }
@@ -163,7 +163,7 @@ main { padding: 20px; }
   visibility: visible;
 }
 .has-tooltip:not([data-tooltip-dismissed], :has(:focus-visible)):has(> :is(button, label):hover) > .tooltip {
-  transition-delay: 400ms;
+  transition-delay: 600ms;
 }
 h1 { font-size: 1.2rem; margin: 0 0 8px; }
 #site { overflow-wrap: anywhere; color: var(--accent-text); }
@@ -532,6 +532,7 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
 }
 #scope > label { margin-block: 0 .35rem; }
 #scope > .choices { margin-block-start: .6rem; }
+#scope > :is(.popup-scope-options, .rule-scope-options) { margin-block: .5rem 0; }
 .rule-field > .note { margin-block: .5rem 0; }
 #website-preset-help { display: grid; }
 #website-preset-help > span { grid-area: 1 / 1; visibility: hidden; }

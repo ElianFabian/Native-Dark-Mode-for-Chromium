@@ -69,6 +69,12 @@
         <span id="scope-section-help" class="tooltip" role="tooltip" data-i18n="scopeSectionHelp">Covers the selected path and its subpaths. For example, example.com/blog includes example.com/blog/post, but excludes example.com/shop.</span>
       </div>
     </div>
+    <div class="popup-row popup-scope-options">
+      <label><input id="subdomains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="subdomains">Include subdomains</span></label>
+      <label><input id="regional" class="toggle-switch" type="checkbox" role="switch" disabled> <span data-i18n="regionalDomains">Include regional domains</span></label>
+      <label id="parent-domain-option" hidden><input id="parent-domain" class="toggle-switch" type="checkbox" role="switch"> <span id="parent-domain-label"></span></label>
+      <label id="subpaths-option" hidden><input id="subpaths" class="toggle-switch" type="checkbox" role="switch" checked> <span data-i18n="includeSubpaths">Include subpaths</span></label>
+    </div>
   </fieldset>
   <fieldset id="website-preset" class="choice-group rule-field" aria-describedby="website-preset-help" data-loading disabled>
     <legend data-i18n="websitePreset">Website theme</legend>
@@ -100,12 +106,6 @@
       </button>
       <span class="tooltip" role="tooltip" data-i18n="moveRuleToTrash">Move rule to Trash</span>
     </div>
-  </div>
-  <div class="popup-row popup-scope-options">
-    <label><input id="subdomains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="subdomains">Include subdomains</span></label>
-    <label><input id="regional" class="toggle-switch" type="checkbox" role="switch" disabled> <span data-i18n="regionalDomains">Include regional domains</span></label>
-    <label id="parent-domain-option" hidden><input id="parent-domain" class="toggle-switch" type="checkbox" role="switch"> <span id="parent-domain-label"></span></label>
-    <label id="subpaths-option" hidden><input id="subpaths" class="toggle-switch" type="checkbox" role="switch" checked> <span data-i18n="includeSubpaths">Include subpaths</span></label>
   </div>
   <div class="has-tooltip">
     <button id="exclude-host" aria-describedby="exclude-host-help" hidden>Exclude this subdomain</button>

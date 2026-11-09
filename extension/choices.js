@@ -1,5 +1,5 @@
 export function readChoice(group) {
-  return group.querySelector('input:checked').value;
+  return group.querySelector('input[type=radio]:checked').value;
 }
 
 export function writeChoice(group, value) {
