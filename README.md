@@ -54,7 +54,7 @@ Click either screenshot to open it at full resolution.
 | **Path section** | A path and its descendants, such as `/articles` and `/articles/guide`. |
 | **Include subdomains** | Child hostnames. With this option enabled, `www.android.com` is treated as `android.com`, so the rule can also cover `developer.android.com`. |
 | **Include regional domains** | Vary the public suffix while keeping the registered name and any specific subdomain. For example, `amazon.es` becomes `amazon.*`, and `fonts.google.com` becomes `fonts.google.*`. |
-| **Apply to all of …** | From a subdomain such as `fonts.google.com`, include the base domain `google.com` and all its subdomains. Combine with regional domains to cover the same family across recognized public suffixes. |
+| **Apply to all of …** | From a subdomain such as `fonts.google.com`, include the base domain `google.com` and all its subdomains. Combine with regional domains to cover the same family across recognized public suffixes. When the current page already inherits an enabled base-domain rule, the popup shows this switch checked and disabled. Use the exclusion action to exempt just the current subdomain. |
 
 More specific paths take priority. At the same path, a rule for a single domain takes priority over a regional pattern. Regional patterns match names across suffixes. Use a single-domain rule when you want to limit the scope to one domain. When a page inherits an enabled rule, the popup can offer **Exclude this subdomain** or **Exclude this hostname** to save an exception for the current hostname and inherited path.
 

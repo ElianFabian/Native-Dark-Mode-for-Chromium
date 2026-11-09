@@ -125,18 +125,19 @@ function updateButton() {
   $('#parent-domain-option').hidden = !parentDomain;
   if (!parentDomain) parent.checked = false;
   else $('#parent-domain-label').textContent = t('includeParentDomain', { domain: parentDomain });
-  parent.disabled = busy || !parentDomain;
   $('#subdomains').disabled = busy || parent.checked;
   if (!regionalBase) $('#regional').checked = false;
   $('#regional').disabled = busy || !regionalBase;
   const needsResume = snapshot?.state.suspended || snapshot?.state.error;
   displayedRule = selected();
+  const matching = snapshot?.matching;
+  const inheritsActiveParent = !isManager && parent.checked && matching?.enabled && displayedRule?.id === matching.id;
+  parent.disabled = busy || !parentDomain || inheritsActiveParent;
   const disables = Boolean(displayedRule?.enabled && !needsResume);
   $('#toggle').toggleAttribute('data-disables', disables);
   $('#toggle').textContent = t(disables ? 'disableSave' : 'enableSave');
   const canEdit = isManager ? Boolean(snapshot) : Boolean(tab?.id);
   if (!isManager) {
-    const matching = snapshot?.matching;
     const exclusion = inheritedExclusion(matching, tab?.url);
     $('#exclude-host').hidden = !exclusion;
     $('#exclude-host').disabled = busy || !exclusion;
