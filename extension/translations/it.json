@@ -1,4 +1,5 @@
 {
+  "removeInheritedRuleHelp": "Questa regola è ereditata. Rimuovila in Gestisci regole.",
   "moveRuleToTrash": "Sposta la regola nel cestino",
   "removeDomainGroup": "Rimuovi gruppo",
   "confirmRemoveDomainGroup": "Spostare nel cestino tutte le regole di {domain} ({count})?",

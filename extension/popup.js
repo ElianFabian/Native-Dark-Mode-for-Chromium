@@ -160,9 +160,19 @@ function updateButton() {
     state.textContent = t(displayedRule ? (displayedRule.enabled ? 'enabled' : 'disabled') : 'unsavedScope');
     const remove = $('#remove-popup-rule');
     const tabHost = tab && normalizeRule({ url: tab.url }).host;
-    remove.hidden = !tabHost || !displayedRule ||
-      (displayedRule.host !== tabHost && !(displayedRule.includeSubdomains && `www.${displayedRule.host}` === tabHost));
+    const ownsRule = displayedRule && (displayedRule.host === tabHost ||
+      (displayedRule.includeSubdomains && `www.${displayedRule.host}` === tabHost));
+    const inheritsRule = !ownsRule && Boolean(displayedRule && tab && matchingRule([displayedRule], tab.url));
+    remove.hidden = !ownsRule && !inheritsRule;
     remove.disabled = busy;
+    if (inheritsRule) {
+      remove.setAttribute('aria-disabled', 'true');
+      remove.setAttribute('aria-describedby', 'remove-popup-rule-help');
+    } else {
+      remove.removeAttribute('aria-disabled');
+      remove.removeAttribute('aria-describedby');
+    }
+    $('#remove-popup-rule-help').textContent = t(inheritsRule ? 'removeInheritedRuleHelp' : 'moveRuleToTrash');
     const exclusion = inheritedExclusion(matching, tab?.url);
     $('#exclude-host').hidden = !exclusion;
     $('#exclude-host').disabled = busy || !exclusion;
@@ -790,9 +800,10 @@ $('#manage-extension').addEventListener('click', async () => {
 $('#exclude-host')?.addEventListener('click', () => request({ type: 'exclude-inherited-host', url: tab.url }));
 const removeRuleDialog = $('#remove-rule-dialog');
 const ruleToRemove = () => isManager ? snapshot?.rules.find(rule => rule.id === editingId) : displayedRule;
-$('#remove-editor-rule, #remove-popup-rule').addEventListener('click', event => {
+const removeRuleButton = $('#remove-editor-rule, #remove-popup-rule');
+removeRuleButton.addEventListener('click', () => {
   const rule = ruleToRemove();
-  if (event.currentTarget.hidden || busy || !rule) return;
+  if (removeRuleButton.hidden || removeRuleButton.hasAttribute('aria-disabled') || busy || !rule) return;
   $('#remove-rule-address').textContent = `${rule.includeSubdomains ? '*.' : ''}${ruleHostPattern(rule)}${rule.path}`;
   removeRuleDialog.dataset.ruleId = rule.id;
   removeRuleDialog.showModal();
@@ -801,7 +812,8 @@ removeRuleDialog?.addEventListener('submit', event => {
   event.preventDefault();
   const { ruleId } = removeRuleDialog.dataset;
   removeRuleDialog.close();
-  if (event.submitter?.value === 'remove' && ruleToRemove()?.id === ruleId) {
+  if (event.submitter?.value === 'remove' && !removeRuleButton.hidden &&
+      !removeRuleButton.hasAttribute('aria-disabled') && ruleToRemove()?.id === ruleId) {
     void request({ type: 'remove', id: ruleId });
   }
 });

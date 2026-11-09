@@ -1,4 +1,5 @@
 {
+  "removeInheritedRuleHelp": "此规则为继承规则。请在“管理规则”中移除。",
   "moveRuleToTrash": "将规则移至回收站",
   "removeDomainGroup": "移除分组",
   "confirmRemoveDomainGroup": "将 {domain} 的全部 {count} 条规则移至回收站？",
