@@ -182,7 +182,13 @@ h1 { font-size: 1.2rem; margin: 0 0 8px; }
 :root[data-high-contrast] #popup-rule-state[data-disabled] { color: var(--page); background: var(--text); }
 button { width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--primary); color: var(--primary-text); overflow-wrap: anywhere; font: inherit; font-weight: 650; cursor: pointer; }
 button:disabled, button[aria-disabled="true"] { opacity: .5; cursor: default; }
-#toggle:not([data-disables]):enabled:hover { background: var(--primary-hover); }
+#toggle:not([data-disables], [data-reenables]):enabled:hover { background: var(--primary-hover); }
+#toggle[data-reenables] {
+  background: var(--positive-highlight-bg);
+  border-color: var(--positive-highlight-border);
+  color: var(--text);
+}
+#toggle[data-reenables]:enabled:hover { border-color: var(--text); }
 #toggle[data-disables] {
   overflow-wrap: anywhere;
   background: var(--warning-bg);

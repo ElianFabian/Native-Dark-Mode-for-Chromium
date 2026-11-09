@@ -142,6 +142,7 @@ function updateButton() {
   const disables = Boolean(displayedRule?.enabled && !needsResume);
   const disablesInheritedRule = disables && !isManager && inheritedExclusion(displayedRule, tab?.url);
   $('#toggle').toggleAttribute('data-disables', disables);
+  $('#toggle').toggleAttribute('data-reenables', displayedRule?.enabled === false);
   $('#toggle').textContent = disablesInheritedRule
     ? t('disableInheritedRule', { scope: ruleHostPattern(displayedRule) + displayedRule.path.replace(/^\/$/, '') })
     : t(disables ? 'disableSave' : 'enableSave');
