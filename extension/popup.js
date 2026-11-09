@@ -152,6 +152,11 @@ function updateButton() {
     state.toggleAttribute('data-enabled', displayedRule?.enabled === true);
     state.toggleAttribute('data-disabled', displayedRule?.enabled === false);
     state.textContent = t(displayedRule ? (displayedRule.enabled ? 'enabled' : 'disabled') : 'unsavedScope');
+    const remove = $('#remove-popup-rule');
+    const tabHost = tab && new URL(tab.url).host;
+    remove.hidden = !tabHost || !displayedRule || displayedRule.includeRegionalDomains ||
+      (displayedRule.host !== tabHost && !(displayedRule.includeSubdomains && `www.${displayedRule.host}` === tabHost));
+    remove.disabled = busy;
     const exclusion = inheritedExclusion(matching, tab?.url);
     $('#exclude-host').hidden = !exclusion;
     $('#exclude-host').disabled = busy || !exclusion;
@@ -510,15 +515,16 @@ async function request(message, { retainedButton, removedRow } = {}) {
       showSavedScope(message.rule);
       notifyRule('ruleSaved');
     }
-    if (isManager && (message.type === 'remove' || message.type === 'remove-group')) {
+    if (message.type === 'remove' || message.type === 'remove-group') {
       notifyRule('ruleTrashed');
-      highlightPanel($('.trash-panel'));
+      if (isManager) highlightPanel($('.trash-panel'));
+      else if (value.matching) showRule(value.matching);
     }
     if (isManager && message.type === 'restore') {
       notifyRule('ruleRestored');
       await revealRestoredRule(restoredId);
     }
-  }, t('saving'), $('#status'), retainedButton);
+  }, isManager || message.type !== 'remove' ? t('saving') : undefined, $('#status'), retainedButton);
   if (hadFocus && !retainedButton.isConnected) {
     $(`[data-rule-id="${CSS.escape(message.id)}"]`)?.focus({ preventScroll: true });
   }
@@ -772,6 +778,9 @@ $('#manage-extension').addEventListener('click', async () => {
   catch (error) { $('#status').textContent = errorText(error); }
 });
 $('#exclude-host')?.addEventListener('click', () => request({ type: 'exclude-inherited-host', url: tab.url }));
+$('#remove-popup-rule')?.addEventListener('click', event => {
+  if (!event.currentTarget.hidden && displayedRule) void request({ type: 'remove', id: displayedRule.id });
+});
 function refreshDraftScope() {
   const rule = selected();
   if (rule) writeChoice($('#website-preset'), rule.preset ?? 'native');

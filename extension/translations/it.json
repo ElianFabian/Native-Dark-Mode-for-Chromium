@@ -1,4 +1,5 @@
 {
+  "moveRuleToTrash": "Sposta la regola nel cestino",
   "removeDomainGroup": "Rimuovi gruppo",
   "confirmRemoveDomainGroup": "Spostare nel cestino tutte le regole di {domain} ({count})?",
   "unsavedScope": "Nessuna regola salvata per questo ambito",

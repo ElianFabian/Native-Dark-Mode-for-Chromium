@@ -98,6 +98,36 @@ main { padding: 20px; }
 .has-tooltip { position: relative; }
 .has-tooltip:has(> button[hidden]) { display: none; }
 .popup-row .has-tooltip > button { display: block; height: 100%; margin: 0; }
+.popup-row > .popup-remove-action { flex: 0 0 auto; }
+#remove-popup-rule {
+  display: grid;
+  place-items: center;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  padding: 6px;
+  color: var(--danger);
+  border-color: var(--danger);
+  background: transparent;
+}
+#remove-popup-rule:enabled:hover { background: var(--danger-bg); }
+.popup-remove-action > .tooltip { inset-inline-start: auto; inline-size: min(12rem, calc(100vw - 3rem)); }
+#rule-toast {
+  position: fixed;
+  z-index: 7;
+  inset-block-end: 1rem;
+  inset-inline-end: 1rem;
+  box-sizing: border-box;
+  max-inline-size: min(28rem, calc(100% - 2rem));
+  padding: .65rem .85rem;
+  border: 1px solid var(--positive-highlight-border);
+  border-radius: .65rem;
+  background: var(--positive-highlight-bg);
+  color: var(--text);
+  box-shadow: 0 .25rem 1rem rgb(0 0 0 / .2);
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+#rule-toast:empty { opacity: 0; }
 .tooltip {
   visibility: hidden;
   transition: visibility 0s;

@@ -1,4 +1,5 @@
 {
+  "moveRuleToTrash": "Regel in den Papierkorb verschieben",
   "removeDomainGroup": "Gruppe entfernen",
   "confirmRemoveDomainGroup": "Alle Regeln für {domain} ({count}) in den Papierkorb verschieben?",
   "unsavedScope": "Keine gespeicherte Regel für diesen Bereich",

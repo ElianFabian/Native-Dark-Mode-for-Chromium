@@ -1,4 +1,5 @@
 {
+  "moveRuleToTrash": "ルールをゴミ箱に移動",
   "removeDomainGroup": "グループを削除",
   "confirmRemoveDomainGroup": "{domain} の全ルール（{count} 件）をゴミ箱に移動しますか？",
   "unsavedScope": "この範囲に保存済みのルールはありません",

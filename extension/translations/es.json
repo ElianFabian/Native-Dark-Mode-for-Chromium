@@ -1,4 +1,5 @@
 {
+  "moveRuleToTrash": "Mover regla a la papelera",
   "removeDomainGroup": "Eliminar grupo",
   "confirmRemoveDomainGroup": "¿Mover a la papelera todas las reglas de {domain} ({count})?",
   "unsavedScope": "Sin regla guardada para este alcance",

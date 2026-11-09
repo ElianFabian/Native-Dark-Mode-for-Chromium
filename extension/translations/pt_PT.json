@@ -1,4 +1,5 @@
 {
+  "moveRuleToTrash": "Mover regra para o lixo",
   "removeDomainGroup": "Remover grupo",
   "confirmRemoveDomainGroup": "Mover todas as regras de {domain} ({count}) para o lixo?",
   "unsavedScope": "Sem regra guardada para este âmbito",

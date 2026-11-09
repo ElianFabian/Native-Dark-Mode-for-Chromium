@@ -63,7 +63,7 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
     }
     if (message.type !== 'status') {
       if (fromManager) void manager.applyAll().catch(report);
-      else await manager.applyFromPopup(message.tabId, message.type !== 'replace-scope');
+      else await manager.applyFromPopup(message.tabId, !['replace-scope', 'remove'].includes(message.type));
     }
     return snapshot(message.tabId);
   })();

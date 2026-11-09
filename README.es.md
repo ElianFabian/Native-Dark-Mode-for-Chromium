@@ -46,6 +46,8 @@ Haz clic en una captura para abrirla a resolución completa.
 
 **Guardar ajustes** guarda el alcance y el tema elegidos, y conserva el estado de la regla si ya existe. Una regla nueva guardada así queda desactivada. En el popup, si cambias una sección guardada a **Web completa** y guardas, la regla del sitio sustituye a la de esa sección.
 
+El icono de papelera junto a **Guardar ajustes** mueve a la **Papelera** la regla guardada seleccionada para el nombre de host actual. Gestiona las reglas heredadas y regionales desde el gestor de reglas.
+
 **Nativo** es el tema predeterminado de las reglas existentes. **Oscuro suave** usa fondos gris carbón y **Alto contraste** resalta el texto, los bordes y los contornos de foco. Los temas se aplican a la web y a los marcos en los que la extensión puede ejecutarse. El cambio de tema de una regla existente se guarda al instante. Para una regla nueva, elige el tema antes de pulsar **Activar y guardar**.
 
 | Opción | Qué cubre |

@@ -1,4 +1,5 @@
 {
+  "moveRuleToTrash": "Déplacer la règle vers la corbeille",
   "removeDomainGroup": "Supprimer le groupe",
   "confirmRemoveDomainGroup": "Déplacer toutes les règles de {domain} ({count}) vers la corbeille ?",
   "unsavedScope": "Aucune règle enregistrée pour cette portée",

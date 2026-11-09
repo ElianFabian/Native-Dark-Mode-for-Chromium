@@ -1,4 +1,5 @@
 {
+  "moveRuleToTrash": "Move rule to Trash",
   "removeDomainGroup": "Remove group",
   "confirmRemoveDomainGroup": "Move all {count} rules in {domain} to Trash?",
   "unsavedScope": "No saved rule for this scope",
