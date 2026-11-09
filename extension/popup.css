@@ -135,7 +135,7 @@ input[type=text], textarea, select {
   field-sizing: content;
   max-block-size: 8lh;
   overflow-wrap: anywhere;
-  resize: vertical;
+  resize: none;
 }
 select { background: var(--secondary); font-weight: 600; }
 select:enabled { cursor: pointer; }
