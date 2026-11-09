@@ -468,7 +468,10 @@ async function request(message, { retainedButton, removedRow } = {}) {
     if (removedRow) await animateRuleRemoval(removedRow);
     render(value, retainedButton, message.type === 'replace-scope' ? message.id : undefined);
     if (message.type === 'exclude-inherited-host' && value.matching) showRule(value.matching);
-    if (isManager && (message.type === 'save' || message.type === 'replace-scope')) notifyRule('ruleSaved');
+    if (isManager && (message.type === 'save' || message.type === 'replace-scope')) {
+      showSavedScope(message.rule);
+      notifyRule('ruleSaved');
+    }
     if (isManager && message.type === 'remove') {
       notifyRule('ruleTrashed');
       highlightPanel($('.trash-panel'));
@@ -489,6 +492,12 @@ async function send(message) {
   return response;
 }
 
+function showSavedScope(draftRule) {
+  if (!draftRule.includeParentDomain) return;
+  const saved = selected();
+  if (saved) showRule(saved);
+}
+
 function saveCheckboxChange(event) {
   const checkbox = event.currentTarget;
   sectionToReplace = undefined;
@@ -503,7 +512,10 @@ function saveCheckboxChange(event) {
       const value = await send({ type: 'replace-scope', id: previous.id, rule });
       if (editingId) editingId = normalizeRule(rule).id;
       render(value, undefined, previous.id);
-      if (isManager) notifyRule('ruleSaved');
+      if (isManager) {
+        showSavedScope(rule);
+        notifyRule('ruleSaved');
+      }
     } catch (error) {
       checkbox.checked = !checkbox.checked;
       throw error;
