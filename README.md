@@ -6,7 +6,9 @@
 
 Use Chromium's built-in dark mode on the websites and sections you choose. Save a rule once and the extension applies it when you return.
 
-**Version 0.6.0** adds a DevTools-inspired icon, a more accessible interface, collapsible domain groups, and a preview and confirmation for replacement imports.
+**Version 0.7.0** adds Soft dark and High contrast website themes, more precise domain and path rules, and safer removal from the popup and rule manager. [Release notes](docs/RELEASE-0.7.0.md)
+
+This project was built with AI assistance using OpenAI Codex.
 
 ## Install the extension
 
@@ -31,11 +33,11 @@ Click either screenshot to open it at full resolution.
 
 ### Extension popup
 
-<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="1200" style="max-width: 100%; height: auto;" alt="Extension popup showing an Amazon regional rule, text size controls, and quick access to the rule manager"></a>
+<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="1200" style="max-width: 100%; height: auto;" alt="Extension popup showing an unsaved regional rule for Amazon, text size controls, and quick access to the rule manager"></a>
 
 ### Rule manager
 
-<a href="docs/screenshots/rule-manager.png"><img src="docs/screenshots/rule-manager.png" width="1200" style="max-width: 100%; height: auto;" alt="Rule manager showing the editor, search and sorting controls, rule status and dates, JSON backups, and trash"></a>
+<a href="docs/screenshots/rule-manager.png"><img src="docs/screenshots/rule-manager.png" width="1200" style="max-width: 100%; height: auto;" alt="Rule manager showing the editor, search and sorting controls, saved rule statuses, and JSON backups"></a>
 
 ## Use the extension
 
@@ -84,7 +86,7 @@ The [Manifest V3 extension](extension/manifest.json) has a popup, a full-page ru
 
 The extension uses `debugger` for native emulation, HTTP and HTTPS site access to match URLs and apply custom themes, `scripting` to apply custom themes in tabs that were already open, and `storage` to keep rules on the device. The extension makes no external network requests.
 
-Custom themes preserve image, video, and canvas pixels and leave image-backed backgrounds in place. They darken light CSS gradients that contain no images and theme shadow roots that Chromium exposes to extensions. Text over photos and frames where the browser blocks injection can retain the site's original appearance. Rules with custom themes export as JSON version 2. The extension can still import version 1.
+Custom themes preserve image, video, and canvas pixels and leave image-backed backgrounds in place. They darken light CSS gradients that contain no images and theme shadow roots that Chromium exposes to extensions. Text over photos and frames where the browser blocks injection can retain the site's original appearance. The extension imports backup versions 1, 2, and 3. Exports use version 3 when a rule matches an exact path only, version 2 when custom themes are present, and version 1 otherwise.
 
 ## Optional launcher for the debugging banner
 

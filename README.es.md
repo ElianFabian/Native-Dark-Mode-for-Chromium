@@ -6,7 +6,9 @@
 
 Usa el modo oscuro integrado en Chromium en las webs y secciones que elijas. Guarda una regla una vez y la extensión la aplicará cuando vuelvas.
 
-La **versión 0.6.0** incorpora un icono inspirado en DevTools, una interfaz más accesible, grupos de dominios plegables y una vista previa con confirmación al reemplazar reglas.
+La **versión 0.7.0** añade los temas web Oscuro suave y Alto contraste, reglas de dominio y ruta más precisas y confirmaciones de borrado en el popup y el gestor. [Notas de la versión en inglés](docs/RELEASE-0.7.0.md)
+
+Este proyecto se desarrolló con la ayuda de IA mediante OpenAI Codex.
 
 ## Instalar la extensión
 
@@ -31,11 +33,11 @@ Haz clic en una captura para abrirla a resolución completa.
 
 ### Panel de la extensión
 
-<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="1200" style="max-width: 100%; height: auto;" alt="Panel con una regla regional de Amazon, controles de tamaño del texto y acceso al gestor de reglas"></a>
+<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="1200" style="max-width: 100%; height: auto;" alt="Panel con una regla regional de Amazon sin guardar, controles de tamaño del texto y acceso al gestor de reglas"></a>
 
 ### Gestor de reglas
 
-<a href="docs/screenshots/rule-manager.png"><img src="docs/screenshots/rule-manager.png" width="1200" style="max-width: 100%; height: auto;" alt="Gestor con editor, búsqueda, orden, estado y fecha de añadido, copias JSON y papelera"></a>
+<a href="docs/screenshots/rule-manager.png"><img src="docs/screenshots/rule-manager.png" width="1200" style="max-width: 100%; height: auto;" alt="Gestor con editor, búsqueda, orden, estados de las reglas guardadas y copias JSON"></a>
 
 ## Usar la extensión
 
@@ -82,7 +84,7 @@ La [extensión Manifest V3](extension/manifest.json) tiene un panel, un gestor d
 
 La extensión usa permisos de depuración para el modo nativo, acceso a sitios HTTP y HTTPS para evaluar las reglas y aplicar los temas personalizados, el permiso `scripting` para aplicar esos temas en pestañas que ya estaban abiertas y almacenamiento para guardar las reglas en el dispositivo. No hace peticiones a servidores externos.
 
-Los temas personalizados conservan los píxeles de imágenes, vídeos y canvas, así como las imágenes de fondo. Oscurecen los degradados CSS claros sin imágenes y aplican el tema a los Shadow DOM que Chromium expone a las extensiones. El texto sobre fotografías y los marcos en los que el navegador impide la inyección pueden conservar el aspecto del sitio. Las reglas con temas personalizados se exportan como JSON en versión 2. La extensión sigue aceptando archivos de la versión 1.
+Los temas personalizados conservan los píxeles de imágenes, vídeos y canvas, así como las imágenes de fondo. Oscurecen los degradados CSS claros sin imágenes y aplican el tema a los Shadow DOM que Chromium expone a las extensiones. El texto sobre fotografías y los marcos en los que el navegador impide la inyección pueden conservar el aspecto del sitio. La extensión importa copias en las versiones 1, 2 y 3. Al exportar, usa la versión 3 si alguna regla se limita a una ruta exacta, la 2 si hay temas personalizados y la 1 en los demás casos.
 
 ## Acceso directo opcional para ocultar el aviso de depuración
 
