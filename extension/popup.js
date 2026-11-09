@@ -702,7 +702,20 @@ function refreshDraftScope() {
 $('#address').addEventListener('input', refreshDraftScope);
 $('#scope').addEventListener('change', () => {
   const address = $('#address');
-  if (tab && readChoice($('#scope')) === 'section' && address.value === suggestedAddress) {
+  const scope = readChoice($('#scope'));
+  const isSuggested = address.value === suggestedAddress;
+  if (scope === 'website') {
+    const url = draft(false).url;
+    if (url) {
+      try {
+        const base = new URL(url.includes('://') ? url : `https://${url}`);
+        if (['http:', 'https:'].includes(base.protocol) && !base.username && !base.password) {
+          address.value = `${base.origin}/`;
+          if (isSuggested) suggestedAddress = address.value;
+        }
+      } catch { /* Leave incomplete addresses available for editing. */ }
+    }
+  } else if (tab && isSuggested) {
     const scopeAddress = new URL(address.value);
     const tabAddress = new URL(tab.url);
     const section = scopeAddress.host === tabAddress.host ? tabAddress : scopeAddress;
