@@ -13,7 +13,18 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .language-control { box-sizing: border-box; padding: .5rem .65rem .65rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--panel); }
 .language-label { display: inline-flex; align-items: center; gap: .45em; color: var(--accent-text); font-size: 1rem; font-weight: 700; }
 .language-flag-icon { mask-image: url("language-flag.svg"); }
-.toolbar-appearance { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.text-size-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+.toolbar-text-size, .toolbar-appearance { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.toolbar-appearance { justify-content: flex-end; }
+.text-size-toolbar #manage-extension { justify-self: center; }
+#appearance-status { grid-column: 1 / -1; }
+@media (max-width: 900px) {
+  .text-size-toolbar { grid-template-columns: minmax(0, 1fr) auto; }
+  .toolbar-appearance { grid-column: 1 / -1; }
+}
 .toolbar-appearance .choice-group, .toolbar-appearance .choices, .toolbar-appearance > label { margin: 0; }
 .toolbar-appearance .choices label > span { min-block-size: 44px; padding: 6px 10px; }
 .language-option-flag {
@@ -104,10 +115,8 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 #backup-status:empty, #scope-hint:empty { margin: 0; }
 .list-controls { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: end; }
 .list-controls > * { min-width: 0; max-width: 100%; }
-.rules-control-heading {
-  display: inline-block;
-  padding-block-end: .2em;
-  border-block-end: 2px solid var(--border);
+.rules-control-heading, .rule-field > legend {
+  font-size: .875rem;
   color: var(--accent-text);
   font-weight: 700;
 }

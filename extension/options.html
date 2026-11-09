@@ -6,32 +6,32 @@
 <link rel="stylesheet" href="popup.css">
 <link rel="stylesheet" href="options.css">
 <div class="text-size-toolbar">
-  <div class="text-size" role="group" aria-labelledby="text-size-title">
-    <button type="button" id="text-smaller" data-i18n-label="smallerText" aria-label="Decrease text size">A−</button>
-    <output id="text-scale">100%</output>
-    <button type="button" id="text-larger" data-i18n-label="largerText" aria-label="Increase text size">A+</button>
-  </div>
-  <span id="text-size-title" data-i18n="textSize">Text size</span>
-  <div class="toolbar-actions">
-    <div class="toolbar-appearance">
-      <label class="contrast-chip">
-        <input id="high-contrast" class="toggle-switch" type="checkbox" role="switch" aria-labelledby="high-contrast-label">
-        <span id="high-contrast-label" class="visually-hidden" data-i18n="highContrast">High contrast</span>
-        <span class="contrast-chip-labels" aria-hidden="true">
-          <span class="contrast-off" data-i18n="contrastOff">High contrast off</span>
-          <span class="contrast-on" data-i18n="contrastOn">High contrast on</span>
-        </span>
-      </label>
-      <fieldset id="ui-theme" class="choice-group">
-        <legend class="visually-hidden" data-i18n="theme">Theme</legend>
-        <div class="choices">
-          <label><input type="radio" name="ui-theme" value="system" checked><span data-i18n="systemTheme">Follow system</span></label>
-          <label><input type="radio" name="ui-theme" value="light"><span data-i18n="lightTheme">Light</span></label>
-          <label><input type="radio" name="ui-theme" value="dark"><span data-i18n="darkTheme">Dark</span></label>
-        </div>
-      </fieldset>
+  <div class="toolbar-text-size">
+    <div class="text-size" role="group" aria-labelledby="text-size-title">
+      <button type="button" id="text-smaller" data-i18n-label="smallerText" aria-label="Decrease text size">A−</button>
+      <output id="text-scale">100%</output>
+      <button type="button" id="text-larger" data-i18n-label="largerText" aria-label="Increase text size">A+</button>
     </div>
-    <button id="manage-extension" type="button" class="opens-tab"><span data-i18n="manageExtension">Manage extension</span><span class="external-link-icon" aria-hidden="true"></span></button>
+    <span id="text-size-title" data-i18n="textSize">Text size</span>
+  </div>
+  <button id="manage-extension" type="button" class="opens-tab"><span data-i18n="manageExtension">Manage extension</span><span class="external-link-icon" aria-hidden="true"></span></button>
+  <div class="toolbar-appearance">
+    <label class="contrast-chip">
+      <input id="high-contrast" class="toggle-switch" type="checkbox" role="switch" aria-labelledby="high-contrast-label">
+      <span id="high-contrast-label" class="visually-hidden" data-i18n="highContrast">High contrast</span>
+      <span class="contrast-chip-labels" aria-hidden="true">
+        <span class="contrast-off" data-i18n="contrastOff">High contrast off</span>
+        <span class="contrast-on" data-i18n="contrastOn">High contrast on</span>
+      </span>
+    </label>
+    <fieldset id="ui-theme" class="choice-group">
+      <legend class="visually-hidden" data-i18n="theme">Theme</legend>
+      <div class="choices">
+        <label><input type="radio" name="ui-theme" value="light"><span data-i18n="lightTheme">Light</span></label>
+        <label><input type="radio" name="ui-theme" value="dark"><span data-i18n="darkTheme">Dark</span></label>
+        <label><input type="radio" name="ui-theme" value="system" checked><span data-i18n="systemTheme">Follow system</span></label>
+      </div>
+    </fieldset>
   </div>
   <p id="appearance-status" role="status"></p>
 </div>
