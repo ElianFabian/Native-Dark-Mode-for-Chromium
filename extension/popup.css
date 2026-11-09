@@ -79,8 +79,14 @@ main { padding: 20px; }
 .popup-header button { width: auto; max-width: 100%; margin: 0; }
 .popup-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: .5rem; }
 .popup-row > * { flex: 1 1 12rem; min-inline-size: 0; margin: 0; }
-.popup-scope-options { row-gap: .125rem; }
-.popup-scope-options span { overflow-wrap: anywhere; }
+.popup-scope-options { row-gap: 0; }
+:is(.popup-scope-options, .rule-scope-options) > label:has(> input[type=checkbox]) {
+  min-block-size: 2rem;
+}
+:is(.popup-scope-options, .rule-scope-options) > label > span {
+  overflow-wrap: anywhere;
+  translate: 0 -.06em;
+}
 .has-tooltip { position: relative; }
 .has-tooltip:has(> button[hidden]) { display: none; }
 .popup-row .has-tooltip > button { display: block; height: 100%; margin: 0; }
