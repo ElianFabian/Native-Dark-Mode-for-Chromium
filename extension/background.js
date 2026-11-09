@@ -50,6 +50,7 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
     else if (message.type === 'replace-scope') await manager.replaceScope(message.id, message.rule);
     else if (message.type === 'update') await manager.update(message.id, message.patch ?? {});
     else if (message.type === 'remove') await manager.remove(message.id);
+    else if (message.type === 'remove-group' && fromManager && Array.isArray(message.ids)) await manager.removeMany(message.ids);
     else if (message.type === 'restore') await manager.restore(message.id);
     else if (message.type !== 'status') throw new Error('Unknown request.');
     if (message.type === 'status' && !fromManager) {

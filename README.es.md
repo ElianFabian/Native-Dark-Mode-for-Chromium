@@ -51,7 +51,7 @@ Haz clic en una captura para abrirla a resolución completa.
 | Opción | Qué cubre |
 | --- | --- |
 | **Web completa** | El nombre de host indicado en el campo de URL. |
-| **Sección por ruta** | Una ruta y sus subrutas. Por ejemplo, `/articulos` incluye `/articulos/guia`. |
+| **Sección por ruta** | Una ruta concreta, como `/articulos`. **Incluir subrutas** está activado por defecto y abarca también rutas como `/articulos/guia`. Desactívalo para que la regla se aplique solo a `/articulos`. |
 | **Incluir subdominios** | Los subdominios del sitio. Con esta opción, `www.android.com` se trata como `android.com` y puede cubrir `developer.android.com`. |
 | **Incluir dominios regionales** | Varía el sufijo público y conserva el nombre registrado y el subdominio específico. Por ejemplo, `amazon.es` pasa a `amazon.*` y `fonts.google.com` a `fonts.google.*`. |
 | **Aplicar a todo …** | Desde un subdominio como `fonts.google.com`, incluye el dominio base `google.com` y todos sus subdominios. Combínalo con los dominios regionales para abarcar la misma familia en otros sufijos públicos reconocidos. Si la página ya hereda una regla activa del dominio base, el popup muestra el interruptor marcado y bloqueado. Usa la acción de exclusión para exceptuar solo el subdominio actual. |
@@ -62,7 +62,7 @@ Para excluir una ruta dentro de una web o sección activa, introduce la URL más
 
 **Gestionar reglas** abre la lista completa en otra pestaña. Puedes buscar y ordenar por nombre o fecha de añadido, en orden ascendente o descendente. **Agrupar por dominio** muestra grupos plegables con el botón **Expandir todos / Contraer todos**. La fecha aparece cuando está guardada en la regla.
 
-**Eliminar** mueve la regla a la **Papelera**, debajo del editor. Puedes recuperarla con sus ajustes o elegir **Vaciar papelera** y confirmar el borrado definitivo. Si ya existe una regla para el mismo alcance, la copia eliminada se queda en la papelera al intentar restaurarla.
+**Eliminar** mueve la regla a la **Papelera**, debajo del editor. **Eliminar grupo** pide confirmación antes de mover todas las reglas de un grupo a la papelera, incluidas las ocultas por la búsqueda. Puedes recuperarlas con sus ajustes o elegir **Vaciar papelera** y confirmar el borrado definitivo. Si ya existe una regla para el mismo alcance, la copia eliminada se queda en la papelera al intentar restaurarla.
 
 Con **Exportar configuración de reglas** puedes guardar una copia de las reglas. **Importar configuración de reglas** muestra una vista previa y te permite añadir solo las reglas nuevas, añadirlas y actualizar las coincidencias, o reemplazar toda la lista. El reemplazo muestra una lista desplazable de las reglas que se eliminarán y pide confirmación. La papelera y las preferencias de apariencia se guardan aparte.
 

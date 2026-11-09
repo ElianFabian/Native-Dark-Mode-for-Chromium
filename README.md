@@ -51,7 +51,7 @@ Click either screenshot to open it at full resolution.
 | Option | What it covers |
 | --- | --- |
 | **Entire website** | The hostname in the URL field. |
-| **Path section** | A path and its descendants, such as `/articles` and `/articles/guide`. |
+| **Path section** | A specific path, such as `/articles`. **Include subpaths** is on by default and also covers paths such as `/articles/guide`. Turn it off to match only `/articles`. |
 | **Include subdomains** | Child hostnames. With this option enabled, `www.android.com` is treated as `android.com`, so the rule can also cover `developer.android.com`. |
 | **Include regional domains** | Vary the public suffix while keeping the registered name and any specific subdomain. For example, `amazon.es` becomes `amazon.*`, and `fonts.google.com` becomes `fonts.google.*`. |
 | **Apply to all of …** | From a subdomain such as `fonts.google.com`, include the base domain `google.com` and all its subdomains. Combine with regional domains to cover the same family across recognized public suffixes. When the current page already inherits an enabled base-domain rule, the popup shows this switch checked and disabled. Use the exclusion action to exempt just the current subdomain. |
@@ -62,7 +62,7 @@ To exclude a path from an enabled site or section, enter the more specific URL, 
 
 **Manage rules** opens a full tab where you can search and sort by name or date added, in either direction. **Group by domain** shows collapsible groups with an **Expand all / Collapse all** button. Dates are shown for rules with a saved creation date.
 
-**Remove** moves a rule to **Trash**, below the editor. You can restore a rule with its settings or choose **Empty trash** and confirm permanent deletion. If a saved rule already occupies the same scope, the deleted copy stays in Trash when you try to restore it.
+**Remove** moves a rule to **Trash**, below the editor. In a domain group, **Remove group** asks for confirmation before moving all its rules to Trash, including rules hidden by search. You can restore a rule with its settings or choose **Empty trash** and confirm permanent deletion. If a saved rule already occupies the same scope, the deleted copy stays in Trash when you try to restore it.
 
 The manager also offers **Export rule settings** and **Import rule settings**. The import dialog previews new and matching rules. By default it adds only new rules. You can also update matching rules or replace the entire list. The replacement option shows a scrollable list of the current rules it will delete and asks for confirmation. The JSON covers the main rule list. Trash and display preferences stay in local storage.
 

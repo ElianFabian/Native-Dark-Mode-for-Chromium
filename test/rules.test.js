@@ -6,6 +6,31 @@ import { DarkModeController } from '../extension/controller.js';
 
 const rule = (url, enabled = true, extra = {}) => normalizeRule({ url, enabled, scope: 'section', ...extra });
 
+test('exact paths exclude descendants and distinguish the home page from the full website', () => {
+  const section = rule('example.com/blog', false, { includeSubpaths: false });
+  const website = rule('example.com');
+  const home = rule('example.com', false, { includeSubpaths: false });
+  assert.notEqual(home.id, website.id);
+  assert.equal(matchingRule([website, home], 'https://example.com/?query#hash'), home);
+  assert.equal(matchingRule([website, section], 'https://example.com/blog/'), section);
+  assert.equal(matchingRule([website, section], 'https://example.com/blog/post'), website);
+  assert.equal(matchingRule([section], 'https://example.com/blogger'), undefined);
+});
+
+test('group removal moves only the confirmed rules to trash', async () => {
+  const { manager } = integration();
+  const first = rule('example.com');
+  const second = rule('example.com/blog', false, { includeSubpaths: false });
+  await manager.save({ url: 'example.com', enabled: true });
+  await manager.save({ url: 'example.com/blog', includeSubpaths: false });
+  await manager.save({ url: 'example.com/shop', enabled: true });
+  await manager.removeMany([first.id, second.id]);
+  assert.deepEqual((await manager.list()).map(entry => entry.path), ['/shop']);
+  const trash = await manager.listTrash();
+  assert.deepEqual(trash.map(entry => entry.rule.id), [first.id, second.id]);
+  assert.equal(trash[1].rule.includeSubpaths, false);
+});
+
 test('domain grouping keeps regional exceptions and ordinary subdomains together', () => {
   const exception = rule('www.amazon.com.au', false);
   const regional = rule('amazon.es', true, { includeRegionalDomains: true, includeSubdomains: true });

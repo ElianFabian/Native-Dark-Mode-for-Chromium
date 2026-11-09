@@ -16,6 +16,14 @@ test('backup version 2 round-trips custom presets and rejects unknown presets', 
 const rule = (url, enabled = true, includeSubdomains = false) => normalizeRule({ url, scope: 'section', enabled, includeSubdomains });
 const encode = rules => JSON.stringify(createBackup(rules));
 
+test('backup version 3 preserves exact-only path rules', () => {
+  const home = normalizeRule({ url: 'example.com', scope: 'section', includeSubpaths: false, preset: 'soft' });
+  const backup = createBackup([home, rule('example.com')]);
+  assert.equal(backup.version, 3);
+  assert.deepEqual(parseBackup(JSON.stringify(backup)), [home, rule('example.com')]);
+  assert.throws(() => parseBackup(JSON.stringify({ ...backup, version: 2 })), /invalid/i);
+});
+
 test('import preview resolves older removal IDs without losing the confirmation list', () => {
   const removed = rule('example.com/old');
   const kept = rule('example.com/new');

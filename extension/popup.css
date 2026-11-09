@@ -17,6 +17,8 @@
   --warning: #754400;
   --warning-border: #94601d;
   --warning-bg: #fff0d1;
+  --positive-highlight-bg: #e4f4ea;
+  --positive-highlight-border: #31744f;
   --danger: #9a222a;
   --danger-bg: #ffe2e5;
   --focus: #174cab;
@@ -38,6 +40,8 @@
   --warning: #ffd88b;
   --warning-border: #c69b5f;
   --warning-bg: #362d20;
+  --positive-highlight-bg: #203d31;
+  --positive-highlight-border: #8ac7a5;
   --danger: #ffadad;
   --danger-bg: #45262e;
   --focus: #c4d6ff;
@@ -66,6 +70,8 @@
   --warning: var(--text);
   --warning-border: var(--text);
   --warning-bg: var(--page);
+  --positive-highlight-bg: var(--panel);
+  --positive-highlight-border: var(--text);
   --danger: var(--text);
   --danger-bg: var(--page);
   --focus: var(--text);
@@ -80,7 +86,8 @@ main { padding: 20px; }
 .popup-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: .5rem; }
 .popup-row > * { flex: 1 1 12rem; min-inline-size: 0; margin: 0; }
 .popup-scope-options { row-gap: 0; }
-.popup-scope-options ~ #scope-hint { min-block-size: 2lh; overflow-wrap: anywhere; }
+.popup-scope-options ~ #scope-hint { margin-block-end: .25rem; overflow-wrap: anywhere; }
+.popup-scope-options ~ #scope-hint + .note { margin-block-start: 0; }
 :is(.popup-scope-options, .rule-scope-options) > label:has(> input[type=checkbox]) {
   min-block-size: 2rem;
 }
@@ -94,7 +101,6 @@ main { padding: 20px; }
 .tooltip {
   visibility: hidden;
   transition: visibility 0s;
-  pointer-events: none;
   user-select: none;
   position: absolute;
   z-index: 1;
@@ -108,14 +114,27 @@ main { padding: 20px; }
   overflow-wrap: anywhere;
 }
 :root[data-high-contrast] .tooltip { background: var(--text); color: var(--page); }
-.has-tooltip:not([data-tooltip-dismissed]):has(> :is(button, label):hover, :focus-visible) > .tooltip {
+.has-tooltip:not([data-tooltip-dismissed]):has(> :is(button, label, .tooltip):hover, :focus-visible) > .tooltip {
   visibility: visible;
 }
 .has-tooltip:not([data-tooltip-dismissed], :has(:focus-visible)):has(> :is(button, label):hover) > .tooltip {
-  transition-delay: 250ms;
+  transition-delay: 400ms;
 }
 h1 { font-size: 1.2rem; margin: 0 0 8px; }
 #site { overflow-wrap: anywhere; color: var(--accent-text); }
+.popup-site-row { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; margin-block: .875rem; }
+.popup-site-row > #site { margin: 0; min-inline-size: 0; }
+#popup-rule-state {
+  border: 1px solid var(--border);
+  border-radius: 1em;
+  padding: .1em .6em;
+  font-size: .8125rem;
+  font-weight: 650;
+}
+#popup-rule-state[data-enabled] { border-color: var(--positive-highlight-border); background: var(--positive-highlight-bg); }
+#popup-rule-state[data-disabled] { color: var(--warning); border-color: var(--warning-border); background: var(--warning-bg); }
+:root[data-high-contrast] #popup-rule-state:not([data-enabled], [data-disabled]) { border-style: dashed; }
+:root[data-high-contrast] #popup-rule-state[data-disabled] { color: var(--page); background: var(--text); }
 button { width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--primary); color: var(--primary-text); overflow-wrap: anywhere; font: inherit; font-weight: 650; cursor: pointer; }
 button:disabled, button[aria-disabled="true"] { opacity: .5; cursor: default; }
 #toggle:not([data-disables]):enabled:hover { background: var(--primary-hover); }

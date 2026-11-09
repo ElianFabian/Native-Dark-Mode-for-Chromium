@@ -1,4 +1,7 @@
 {
+  "removeDomainGroup": "Gruppe entfernen",
+  "confirmRemoveDomainGroup": "Alle Regeln für {domain} ({count}) in den Papierkorb verschieben?",
+  "unsavedScope": "Keine gespeicherte Regel für diesen Bereich",
   "disableInheritedRule": "Gesamte Regel für {scope} deaktivieren",
   "includeInheritedParentDomain": "Auf die gesamte Domain {domain} anwenden (geerbt)",
   "includeParentDomain": "Auf die gesamte Domain {domain} anwenden",
@@ -106,7 +109,9 @@
   "saveHelp": "Speichert Bereich und Einstellungen, ohne den Status der Regel zu ändern. Neue Regeln werden deaktiviert gespeichert.",
   "excludeHostHelp": "Erstellt eine Ausnahme für den aktuellen Host und behält die übergeordnete Regel bei.",
   "scopeWebsiteHelp": "Gilt für die gesamte Domain. Beispiel: example.com umfasst example.com/blog und example.com/shop.",
-  "scopeSectionHelp": "Gilt für den gewählten Pfad und seine Unterpfade. Beispiel: example.com/blog umfasst example.com/blog/post und schließt example.com/shop aus.",
+  "scopeSectionHelp": "Gilt für den ausgewählten Pfad. Mit aktivierten Unterpfaden umfasst example.com/blog auch example.com/blog/post.",
+  "includeSubpaths": "Unterpfade einbeziehen",
+  "scopeSectionExact": "Nur dieser Pfad.",
   "sortByDate": "Hinzufügedatum",
   "sortAscending": "Aufsteigend",
   "sortDescending": "Absteigend",

@@ -83,6 +83,7 @@
             </p>
           </fieldset>
           <div class="rule-scope-options">
+            <label id="subpaths-option" hidden><input id="subpaths" class="toggle-switch" type="checkbox" role="switch" checked> <span data-i18n="includeSubpaths">Include subpaths</span></label>
             <label><input id="subdomains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="subdomains">Include subdomains</span></label>
             <label><input id="regional" class="toggle-switch" type="checkbox" role="switch" disabled> <span data-i18n="regionalDomains">Include regional domains</span></label>
             <label id="parent-domain-option" hidden><input id="parent-domain" class="toggle-switch" type="checkbox" role="switch"> <span id="parent-domain-label"></span></label>
@@ -102,13 +103,13 @@
             <h3 data-i18n="backup">Backup and restore</h3>
             <button id="export" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M4,22V20H20v2H4Zm8-4L5,9H9V2h6V9h4l-7,9Zm0-3.25L14.9,11H13V4H11v7H9.1L12,14.75ZM12,11Z"/>
+                <path d="M12,16L7,11L8.4,9.55l2.6,2.6V4h2v8.15l2.6-2.6L17,11l-5,5ZM6,20q-0.82,0-1.41-0.59T4,18V15H6v3H18V15h2v3q0,0.82-0.59,1.41T18,20H6Z"/>
               </svg>
               <span data-i18n="export">Export rule settings</span>
             </button>
             <button id="import" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M11,19h2V14.83l1.6,1.6L16,15l-4-4L8,15l1.43,1.4L11,14.83V19ZM6,22q-0.82,0-1.41-0.59T4,20V4Q4,3.17 4.59,2.59T6,2h8l6,6V20q0,0.82-0.59,1.41T18,22H6ZM13,9V4H6V20H18V9H13ZM6,4V9V4V9V20V4Z"/>
+                <path d="M11,16V7.85l-2.6,2.6L7,9l5-5l5,5l-1.4,1.45L13,7.85V16H11ZM6,20q-0.82,0-1.41-0.59T4,18V15H6v3H18V15h2v3q0,0.82-0.59,1.41T18,20H6Z"/>
               </svg>
               <span data-i18n="import">Import rule settings</span>
             </button>

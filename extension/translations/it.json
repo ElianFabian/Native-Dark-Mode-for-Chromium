@@ -1,4 +1,7 @@
 {
+  "removeDomainGroup": "Rimuovi gruppo",
+  "confirmRemoveDomainGroup": "Spostare nel cestino tutte le regole di {domain} ({count})?",
+  "unsavedScope": "Nessuna regola salvata per questo ambito",
   "disableInheritedRule": "Disattiva l’intera regola per {scope}",
   "includeInheritedParentDomain": "Applica a tutto il dominio {domain} (ereditato)",
   "includeParentDomain": "Applica a tutto il dominio {domain}",
@@ -106,7 +109,9 @@
   "saveHelp": "Salva l’ambito e le impostazioni senza cambiare lo stato della regola. Le nuove regole vengono salvate come disattivate.",
   "excludeHostHelp": "Crea un’eccezione per l’host corrente e mantiene la regola più ampia.",
   "scopeWebsiteHelp": "Copre tutto il dominio. Ad esempio, example.com include example.com/blog e example.com/shop.",
-  "scopeSectionHelp": "Copre il percorso scelto e i suoi sottopercorsi. Ad esempio, example.com/blog include example.com/blog/post ed esclude example.com/shop.",
+  "scopeSectionHelp": "Copre il percorso scelto. Se includi i sottopercorsi, example.com/blog copre anche example.com/blog/post.",
+  "includeSubpaths": "Includi sottopercorsi",
+  "scopeSectionExact": "Solo questo percorso.",
   "sortByDate": "Data di aggiunta",
   "sortAscending": "Crescente",
   "sortDescending": "Decrescente",

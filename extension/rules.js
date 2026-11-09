@@ -49,6 +49,7 @@ export function normalizeRule(input) {
     throw new Error('Enter an HTTP or HTTPS website without credentials.');
   }
   const path = input.scope === 'website' ? '/' : url.pathname.replace(/\/+$/, '') || '/';
+  const exactPath = input.scope !== 'website' && input.includeSubpaths === false;
   const parent = input.includeParentDomain && regionalBaseForHost(url.hostname);
   if (parent?.subdomain) url.hostname = parent.domain;
   const includeSubdomains = Boolean(input.includeSubdomains || parent?.subdomain);
@@ -65,9 +66,11 @@ export function normalizeRule(input) {
       regionalSubdomain: regional.subdomain });
     identity.push(true);
   }
+  if (exactPath && path === '/') identity.push('exact-path');
   return {
     id: JSON.stringify(identity),
     host, path, includeSubdomains,
+    ...(exactPath ? { includeSubpaths: false } : {}),
     ...(regional ? { includeRegionalDomains: true, regionalName: regional.name } : {}),
     ...(regional?.subdomain ? { regionalSubdomain: regional.subdomain } : {}),
     enabled: Boolean(input.enabled),
@@ -92,13 +95,16 @@ export function matchingRule(rules, address) {
         subdomain === prefix || (rule.includeSubdomains && (!prefix || subdomain.endsWith(`.${prefix}`)))
       )
       : localMatch;
-    return hostMatches && (rule.path === '/' || url.pathname === rule.path || url.pathname.startsWith(`${rule.path}/`));
+    return hostMatches && (rule.includeSubpaths === false
+      ? (url.pathname.replace(/\/+$/, '') || '/') === rule.path
+      : rule.path === '/' || url.pathname === rule.path || url.pathname.startsWith(`${rule.path}/`));
   }).sort((a, b) => b.path.length - a.path.length ||
     Number(Boolean(a.includeRegionalDomains)) - Number(Boolean(b.includeRegionalDomains)) ||
     (a.includeRegionalDomains && b.includeRegionalDomains
       ? (b.regionalSubdomain?.length ?? 0) - (a.regionalSubdomain?.length ?? 0)
       : b.host.length - a.host.length) ||
-    Number(a.includeSubdomains) - Number(b.includeSubdomains))[0];
+    Number(a.includeSubdomains) - Number(b.includeSubdomains) ||
+    Number(a.includeSubpaths !== false) - Number(b.includeSubpaths !== false))[0];
 }
 
 export function inheritedExclusion(rule, address) {
@@ -108,13 +114,14 @@ export function inheritedExclusion(rule, address) {
     const parent = new URL(ruleAddress(rule)).hostname;
     if (!rule.includeSubdomains || !url.hostname.endsWith(`.${parent}`) || url.hostname === `www.${parent}`) return undefined;
   }
-  return normalizeRule({ url: url.origin + rule.path, scope: 'section', enabled: false });
+  return normalizeRule({ url: url.origin + rule.path, scope: 'section', enabled: false,
+    includeSubpaths: rule.includeSubpaths });
 }
 
 function normalizeStoredRule(stored) {
   const rule = normalizeRule({ url: ruleAddress(stored), scope: 'section', enabled: stored.enabled,
     includeSubdomains: stored.includeSubdomains, includeRegionalDomains: stored.includeRegionalDomains,
-    preset: stored.preset });
+    preset: stored.preset, includeSubpaths: stored.includeSubpaths });
   if (Number.isSafeInteger(stored.createdAt)) rule.createdAt = stored.createdAt;
   return rule;
 }
@@ -160,7 +167,7 @@ export class RuleManager {
     return this.mutate(rules => {
       const section = rules.find(existing => existing.id === replacedSectionId);
       if (replacedSectionId) {
-        const broader = section && section.path !== '/' &&
+        const broader = section && (section.path !== '/' || section.includeSubpaths === false) &&
           normalizeRule({ ...section, url: ruleAddress(section), scope: 'website' });
         if (!broader || broader.id !== rule.id) {
           throw new Error('The original rule changed. Reopen the popup to edit it.');
@@ -219,13 +226,18 @@ export class RuleManager {
   }
 
   remove(id) {
+    return this.removeMany([id]);
+  }
+
+  removeMany(ids) {
+    const confirmed = new Set(ids);
     return this.enqueueMutation(async () => {
       const rules = await this.list();
-      const rule = rules.find(entry => entry.id === id);
-      if (!rule) return;
+      const removed = rules.filter(rule => confirmed.has(rule.id));
+      if (!removed.length) return;
       const trash = await this.listTrash();
-      await this.api.storage.local.set({ rules: rules.filter(entry => entry.id !== id),
-        trash: [{ id: crypto.randomUUID(), rule }, ...trash] });
+      await this.api.storage.local.set({ rules: rules.filter(rule => !confirmed.has(rule.id)),
+        trash: [...removed.map(rule => ({ id: crypto.randomUUID(), rule })), ...trash] });
     });
   }
 

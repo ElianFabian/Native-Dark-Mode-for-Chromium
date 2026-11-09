@@ -1,4 +1,7 @@
 {
+  "removeDomainGroup": "Eliminar grupo",
+  "confirmRemoveDomainGroup": "¿Mover a la papelera todas las reglas de {domain} ({count})?",
+  "unsavedScope": "Sin regla guardada para este alcance",
   "disableInheritedRule": "Deshabilitar toda la regla de {scope}",
   "includeInheritedParentDomain": "Aplicar a todo {domain} (heredado)",
   "includeParentDomain": "Aplicar a todo {domain}",
@@ -106,7 +109,9 @@
   "saveHelp": "Guarda el alcance y sus ajustes sin cambiar el estado de la regla. Las reglas nuevas se guardan desactivadas.",
   "excludeHostHelp": "Crea una excepción para el sitio actual y conserva la regla más general.",
   "scopeWebsiteHelp": "Cubre todo el dominio. Por ejemplo, example.com incluye example.com/blog y example.com/shop.",
-  "scopeSectionHelp": "Cubre la ruta elegida y sus subrutas. Por ejemplo, example.com/blog incluye example.com/blog/post y deja fuera example.com/shop.",
+  "scopeSectionHelp": "Abarca la ruta seleccionada. Con Incluir subrutas activado, example.com/blog también abarca example.com/blog/post.",
+  "includeSubpaths": "Incluir subrutas",
+  "scopeSectionExact": "Solo esta ruta.",
   "sortByDate": "Fecha de añadido",
   "sortAscending": "Ascendente",
   "sortDescending": "Descendente",

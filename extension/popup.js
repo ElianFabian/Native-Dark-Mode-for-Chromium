@@ -39,6 +39,7 @@ for (const trigger of document.querySelectorAll('.has-tooltip')) {
   const reset = () => trigger.removeAttribute('data-tooltip-dismissed');
   trigger.firstElementChild.addEventListener('pointerenter', reset);
   trigger.addEventListener('focusin', reset);
+  trigger.querySelector('.tooltip').addEventListener('click', () => trigger.setAttribute('data-tooltip-dismissed', ''));
 }
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || $('#import-preview')?.open) return;
@@ -48,7 +49,7 @@ document.addEventListener('keydown', event => {
     appearanceTrigger.focus();
     return;
   }
-  const visible = document.querySelectorAll('.has-tooltip:not([data-tooltip-dismissed]):has(> :is(button, label):hover, :focus-visible)');
+  const visible = document.querySelectorAll('.has-tooltip:not([data-tooltip-dismissed]):has(> :is(button, label, .tooltip):hover, :focus-visible)');
   if (!visible.length) return;
   event.preventDefault();
   visible.forEach(trigger => trigger.setAttribute('data-tooltip-dismissed', ''));
@@ -99,6 +100,7 @@ function draft(enabled) {
   return {
     url: $('#address').value.replace(/[ \t]*[\r\n]+[ \t]*/g, '').trim(), scope: readChoice($('#scope')),
     includeSubdomains: $('#subdomains').checked,
+    includeSubpaths: $('#subpaths').checked,
     includeParentDomain: $('#parent-domain').checked,
     includeRegionalDomains: $('#regional').checked,
     preset: readChoice($('#website-preset')),
@@ -114,6 +116,9 @@ function selected() {
 }
 
 function updateButton() {
+  const isPathScope = readChoice($('#scope')) === 'section';
+  $('#subpaths-option').hidden = !isPathScope;
+  $('#subpaths').disabled = busy || !isPathScope;
   let host;
   try { host = normalizeRule({ url: draft(false).url }).host; }
   catch { /* The address may be incomplete while being edited. */ }
@@ -142,6 +147,11 @@ function updateButton() {
     : t(disables ? 'disableSave' : 'enableSave');
   const canEdit = isManager ? Boolean(snapshot) : Boolean(tab?.id);
   if (!isManager) {
+    const state = $('#popup-rule-state');
+    state.hidden = !snapshot || !host;
+    state.toggleAttribute('data-enabled', displayedRule?.enabled === true);
+    state.toggleAttribute('data-disabled', displayedRule?.enabled === false);
+    state.textContent = t(displayedRule ? (displayedRule.enabled ? 'enabled' : 'disabled') : 'unsavedScope');
     const exclusion = inheritedExclusion(matching, tab?.url);
     $('#exclude-host').hidden = !exclusion;
     $('#exclude-host').disabled = busy || !exclusion;
@@ -165,8 +175,8 @@ function updateButton() {
       ? t(rule.includeSubdomains ? 'scopeRegionalFamily' : rule.regionalSubdomain ? 'scopeRegionalSubdomain' : 'scopeRegional',
         { scope: ruleHostPattern(rule) + rule.path })
       : t(rule.includeSubdomains ? 'scopeFamily' : 'scopeExact', { scope: `${rule.host}${rule.path}` });
-    const sectionHint = readChoice($('#scope')) === 'section'
-      ? t(rule.path === '/' ? 'scopeSectionRoot' : 'scopeSectionDescendants')
+    const sectionHint = isPathScope
+      ? t(rule.includeSubpaths === false ? 'scopeSectionExact' : rule.path === '/' ? 'scopeSectionRoot' : 'scopeSectionDescendants')
       : '';
     $('#scope-hint').textContent = [scope, sectionHint].filter(Boolean).join(' ');
   } catch { $('#scope-hint').textContent = ''; }
@@ -195,6 +205,12 @@ function ruleHeading(rule, dateFormatter) {
   path.textContent = rule.path;
   address.append(domain, path);
   heading.append(address);
+  if (rule.includeSubpaths === false) {
+    const scope = document.createElement('span');
+    scope.className = 'rule-preset';
+    scope.textContent = t('scopeSectionExact');
+    heading.append(scope);
+  }
   const state = document.createElement('span');
   state.className = 'rule-state';
   renderRuleState(state, rule.enabled);
@@ -249,7 +265,8 @@ function showRule(rule) {
     suggestedAddress = address.href;
   }
   $('#address').value = suggestedAddress;
-  writeChoice($('#scope'), rule && rule.path !== '/' ? 'section' : 'website');
+  writeChoice($('#scope'), rule && (rule.path !== '/' || rule.includeSubpaths === false) ? 'section' : 'website');
+  $('#subpaths').checked = rule?.includeSubpaths !== false;
   $('#subdomains').checked = Boolean(rule?.includeSubdomains && !inheritsParent);
   $('#parent-domain').checked = inheritsParent;
   $('#regional').checked = Boolean(rule?.includeRegionalDomains);
@@ -285,6 +302,8 @@ function renderRules(previousEditedId) {
   const groups = $('#group-domains').checked
     ? groupRulesByDomain(visible, rules, order, document.documentElement.lang)
     : [[null, visible]];
+  const completeGroups = query && $('#group-domains').checked
+    ? new Map(groupRulesByDomain(rules, rules, 'newest')) : null;
   const dateFormatter = new Intl.DateTimeFormat(document.documentElement.lang, { dateStyle: 'medium' });
   for (const [domain, group] of groups) {
     let container = list;
@@ -299,6 +318,20 @@ function renderRules(previousEditedId) {
       list.append(container);
     }
     for (const rule of group) container.append(renderRule(rule, dateFormatter));
+    if (domain) {
+      const removeGroup = document.createElement('button');
+      removeGroup.type = 'button';
+      removeGroup.className = 'rule-remove remove-domain-group';
+      removeGroup.textContent = t('removeDomainGroup');
+      removeGroup.addEventListener('click', () => {
+        const ids = (completeGroups?.get(domain) ?? group).map(rule => rule.id);
+        const count = new Intl.NumberFormat(document.documentElement.lang).format(ids.length);
+        if (window.confirm(t('confirmRemoveDomainGroup', { domain, count }))) {
+          void request({ type: 'remove-group', ids }, { removedRow: container });
+        }
+      });
+      container.append(removeGroup);
+    }
   }
   updateGroupToggle();
 }
@@ -368,7 +401,7 @@ async function animateRuleHeight(target, direction = 'normal') {
 
 function animateRuleRemoval(row) {
   const group = row.parentElement;
-  return animateRuleHeight(group.matches('.domain-group') && group.childElementCount === 2 ? group : row);
+  return animateRuleHeight(group.matches('.domain-group') && group.querySelectorAll(':scope > .rule').length === 1 ? group : row);
 }
 
 async function revealRestoredRule(id) {
@@ -477,7 +510,7 @@ async function request(message, { retainedButton, removedRow } = {}) {
       showSavedScope(message.rule);
       notifyRule('ruleSaved');
     }
-    if (isManager && message.type === 'remove') {
+    if (isManager && (message.type === 'remove' || message.type === 'remove-group')) {
       notifyRule('ruleTrashed');
       highlightPanel($('.trash-panel'));
     }
@@ -710,10 +743,20 @@ $('#empty-trash')?.addEventListener('click', async () => {
   const ids = snapshot?.trash?.map(entry => entry.id) ?? [];
   if (!ids.length || !window.confirm(t('confirmEmptyTrash'))) return;
   await withBusy(async () => {
-    render(await send({ type: 'empty-trash', ids }));
+    const value = await send({ type: 'empty-trash', ids });
+    const panel = $('.trash-panel');
+    const before = panel.getBoundingClientRect().height;
+    render(value);
     $('#trash-status').textContent = '';
     notifyRule('trashEmptied');
-  }, t('saving'), $('#trash-status'));
+    const after = panel.getBoundingClientRect().height;
+    if (before !== after && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const animation = panel.animate([before, after].map(height => ({
+        height: `${height}px`, boxSizing: 'border-box', overflow: 'hidden'
+      })), { duration: 220, easing: 'ease-in-out' });
+      await animation.finished.catch(() => {});
+    }
+  }, undefined, $('#trash-status'));
   ($('#empty-trash').disabled ? $('#trash-title') : $('#empty-trash')).focus();
 });
 $('#manage')?.addEventListener('click', async () => {
@@ -742,7 +785,8 @@ $('#scope').addEventListener('change', () => {
   const address = $('#address');
   const scope = readChoice($('#scope'));
   const isSuggested = address.value === suggestedAddress;
-  sectionToReplace = scope === 'website' && !isManager && displayedRule && displayedRule.path !== '/'
+  sectionToReplace = scope === 'website' && !isManager && displayedRule &&
+    (displayedRule.path !== '/' || displayedRule.includeSubpaths === false)
     ? displayedRule : undefined;
   if (scope === 'website') {
     const url = draft(false).url;
@@ -784,6 +828,7 @@ $('#website-preset').addEventListener('change', () => {
   }, isManager ? t('saving') : undefined);
 });
 $('#subdomains').addEventListener('change', saveCheckboxChange);
+$('#subpaths').addEventListener('change', saveCheckboxChange);
 $('#regional').addEventListener('change', saveCheckboxChange);
 $('#parent-domain').addEventListener('change', saveCheckboxChange);
 

@@ -11,14 +11,15 @@ function validateRule(input, index, version) {
       /[\s/\\?#@]/.test(input.host) ||
       typeof input.path !== 'string' || !input.path.startsWith('/') || /[\\?#]/.test(input.path) ||
       typeof input.enabled !== 'boolean' || typeof input.includeSubdomains !== 'boolean' ||
-      (input.preset !== undefined && (version !== 2 || !CUSTOM_PRESETS.includes(input.preset))) ||
+      (input.preset !== undefined && (version < 2 || !CUSTOM_PRESETS.includes(input.preset))) ||
+      (input.includeSubpaths !== undefined && (version < 3 || typeof input.includeSubpaths !== 'boolean')) ||
       (input.createdAt !== undefined && (!Number.isSafeInteger(input.createdAt) || input.createdAt < 0)) ||
       (input.includeRegionalDomains !== undefined && typeof input.includeRegionalDomains !== 'boolean')) fail();
   let rule;
   try {
     rule = normalizeRule({ url: ruleAddress(input), scope: 'section',
       enabled: input.enabled, includeSubdomains: input.includeSubdomains,
-      includeRegionalDomains: input.includeRegionalDomains, preset: input.preset });
+      includeRegionalDomains: input.includeRegionalDomains, preset: input.preset, includeSubpaths: input.includeSubpaths });
   } catch { fail(); }
   const parsed = new URL(ruleAddress(input));
   if (parsed.host !== input.host.toLowerCase() || rule.path !== (input.path.replace(/\/+$/, '') || '/')) fail();
@@ -32,8 +33,8 @@ export function parseBackup(text) {
   let document;
   try { document = JSON.parse(text.replace(/^\uFEFF/, '')); }
   catch { throw new Error('The selected file is not valid JSON.'); }
-  if (!document || document.format !== FORMAT || ![1, 2].includes(document.version) || !Array.isArray(document.rules)) {
-    throw new Error('Unsupported backup. Expected Native Dark Mode rules, format version 1 or 2.');
+  if (!document || document.format !== FORMAT || ![1, 2, 3].includes(document.version) || !Array.isArray(document.rules)) {
+    throw new Error('Unsupported backup. Expected Native Dark Mode rules, format version 1, 2 or 3.');
   }
   if (document.rules.length > MAX_BACKUP_RULES) throw new Error('A backup can contain at most 1,000 rules.');
   const rules = document.rules.map((rule, index) => validateRule(rule, index, document.version));
@@ -46,9 +47,10 @@ export function parseBackup(text) {
 export function createBackup(rules) {
   const document = {
     format: FORMAT,
-    version: rules.some(rule => rule.preset !== undefined) ? 2 : 1,
-    rules: rules.map(({ host, path, enabled, includeSubdomains, includeRegionalDomains, createdAt, preset }) => ({
+    version: rules.some(rule => rule.includeSubpaths === false) ? 3 : rules.some(rule => rule.preset !== undefined) ? 2 : 1,
+    rules: rules.map(({ host, path, enabled, includeSubdomains, includeRegionalDomains, includeSubpaths, createdAt, preset }) => ({
       host, path, enabled, includeSubdomains,
+      ...(includeSubpaths === false ? { includeSubpaths } : {}),
       ...(preset === undefined ? {} : { preset }),
       ...(createdAt === undefined ? {} : { createdAt }),
       ...(includeRegionalDomains ? { includeRegionalDomains: true } : {})

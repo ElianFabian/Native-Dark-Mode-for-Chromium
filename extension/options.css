@@ -67,21 +67,15 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .rule-scope-options { display: grid; }
 .rule-scope-options > label { margin: 0; }
 :root {
-  --positive-highlight-bg: #e4f4ea;
-  --positive-highlight-border: #31744f;
   --disabled-rule-bg: rgb(0 0 0 / .16);
 }
 .rule-editor, .trash-panel, .domain-group, .domain-group summary {
   transition: background-color 180ms ease-out, border-color 180ms ease-out, box-shadow 180ms ease-out;
 }
 :root[data-theme="dark"] {
-  --positive-highlight-bg: #203d31;
-  --positive-highlight-border: #8ac7a5;
   --disabled-rule-bg: rgb(0 0 0 / .48);
 }
 :root[data-high-contrast] {
-  --positive-highlight-bg: var(--panel);
-  --positive-highlight-border: var(--text);
   --disabled-rule-bg: #dedede;
 }
 :root[data-high-contrast][data-theme="dark"] {
@@ -162,6 +156,14 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .domain-group summary:hover { background: var(--secondary-hover); }
 .domain-group[open] summary { border-bottom: 1px solid var(--border); border-radius: .65rem .65rem 0 0; }
 .domain-group > .rule { margin-inline: .8rem; }
+.domain-group > .remove-domain-group {
+  display: block;
+  width: auto;
+  margin-block: .5rem .8rem;
+  margin-inline: auto .8rem;
+  background: transparent;
+  color: var(--danger);
+}
 .domain-group summary + .rule { border-top: 0; }
 .trash-panel { margin-block-start: 20px; background: #e8ebf0; }
 [data-theme="dark"] .trash-panel { background: #252b35; }
