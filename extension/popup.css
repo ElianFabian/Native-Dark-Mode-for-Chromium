@@ -163,7 +163,7 @@ main > #scope-hint + .note { margin-block-start: 0; }
   visibility: visible;
 }
 .has-tooltip:not([data-tooltip-dismissed], :has(:focus-visible)):has(> :is(button, label):hover) > .tooltip {
-  transition-delay: 600ms;
+  transition-delay: 900ms;
 }
 h1 { font-size: 1.2rem; margin: 0 0 8px; }
 #site { overflow-wrap: anywhere; color: var(--accent-text); }
