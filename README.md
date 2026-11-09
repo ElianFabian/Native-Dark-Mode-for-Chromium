@@ -76,6 +76,8 @@ The language selector uses bundled SVGs from [flag-icons](https://github.com/lip
 
 Use the text size controls at the top left of the popup or rule manager to adjust text from 75% to 200%. Each view saves its own text size. Open **Appearance** in the popup or use the controls directly in the rule manager toolbar to enable high contrast or choose a light or dark theme. Both views share the theme and contrast preferences. The theme follows your system by default. Website dark mode is controlled separately by your rules.
 
+Turn on **Popup border** in **Appearance** to make the popup edges easier to see.
+
 ## How it works
 
 The [Manifest V3 extension](extension/manifest.json) has a popup, a full-page rule manager, and a [background service worker](extension/background.js). It requires the [extension debugger API](https://developer.chrome.com/docs/extensions/reference/api/debugger) and Chromium's experimental [native darkening command](https://chromedevtools.github.io/devtools-protocol/tot/Emulation/#method-setAutoDarkModeOverride).
@@ -92,21 +94,29 @@ Custom themes preserve image, video, and canvas pixels and leave image-backed ba
 
 You can use the extension as soon as it is loaded. If the browser shows a debugging banner and you want to hide it, use the optional launcher below. It passes `--silent-debugger-extension-api`, which suppresses banners for **all** debugger extensions in that session when the browser supports it. Closing the banner or opening DevTools can disconnect the session.
 
-Run the installer for your system from the project folder. The three installers are at the top level of `scripts/`, and their helpers stay in `scripts/internal/`. Each installer looks for Brave, Google Chrome, Chromium, Microsoft Edge, Vivaldi, and Opera in the usual locations for that platform. It creates one set of shortcuts per browser it finds, using the name **Browser Name - Native Dark Mode**.
+Run the installer for your system from the project folder. The three installers are at the top level of `scripts/`, and their helpers stay in `scripts/internal/`. When creating shortcuts, the installers look for Brave, Google Chrome, Chromium, Microsoft Edge, Vivaldi, and Opera in the usual locations and use the name **Browser Name - Native Dark Mode**.
 
 | Platform | Installer | Where to open the launcher |
 | --- | --- | --- |
-| Windows | Double-click [install-launcher-windows.cmd](scripts/install-launcher-windows.cmd) | Start menu and your Desktop. |
+| Windows | Double-click [install-launcher-windows.cmd](scripts/install-launcher-windows.cmd) and confirm the list of shortcuts it finds. | Your existing shortcuts. |
 | Linux | `sh scripts/install-launcher-linux.sh` | Your application menu and, when available, your configured desktop directory. Your desktop environment may require you to mark the desktop copy as trusted before opening it. |
 | macOS | `sh scripts/install-launcher-macos.command` | Your `~/Applications` folder and a link on your Desktop, when the Desktop folder exists. |
 
 The console explains what the installer is about to do and prints the path of each shortcut it creates. On Windows, the report groups shortcuts by browser and uses color in Windows Terminal. When you run the installer interactively, press Enter at the end to dismiss the prompt.
 
-Installer messages are available in English and Spanish. The installer reads your Windows regional format or your shell locale on Linux and macOS, with the macOS regional preference as a fallback. Other languages use English. Set `NATIVE_DARK_MODE_LANG` to `en` or `es` to override the detected locale.
+On Windows, the installer and restorer use the Windows display language and support the same nine languages as the extension. The Linux and macOS installers offer English and Spanish based on the shell locale, with the macOS regional preference as a fallback. If the detected language is unsupported or unavailable, messages appear in English. Set `NATIVE_DARK_MODE_LANG` to a supported language code to override detection.
 
 For a browser in a custom location or outside the detection list, append `--browser "ABSOLUTE_PATH_TO_BROWSER_EXECUTABLE"` to the installer command. This selects just that executable and uses the name **Chromium Browser - Native Dark Mode**. With `--output-directory PATH`, the installer writes only to that directory, which is useful for testing or keeping shortcuts for multiple custom executables separate.
 
-Fully quit the target browser before opening the new launcher so the flag takes effect. Check **Command Line** on your browser's version page (for example, `chrome://version`, `edge://version`, or `brave://version`) for `--silent-debugger-extension-api`. The installers use tools included with the operating system. Windows uses Windows Script Host to create a `.lnk`. Linux and macOS use shell scripts.
+Fully quit the target browser before opening the updated or new launcher so the flag takes effect. Check **Command Line** on your browser's version page (for example, `chrome://version`, `edge://version`, or `brave://version`) for `--silent-debugger-extension-api`. The installers use tools included with the operating system. Windows uses Windows Script Host to manage `.lnk` files. Linux and macOS use shell scripts.
+
+On Windows, the installer searches the Desktop, Start menu, and taskbar pins stored as `.lnk` files. It lists shortcuts to recognized browsers before asking for confirmation. It skips web app shortcuts and shortcuts that already have the flag. For each update it backs up the original as `.lnk.bak` and preserves the existing arguments. Shared shortcuts may require additional Windows permissions.
+
+If Windows denies write access, the installer lists the pending shortcuts and offers to open a separate administrator console. If you accept the Windows permission prompt, that console asks you to confirm the pending updates before writing. You can decline either prompt and keep the updates already made with normal permissions.
+
+To undo the changes, double-click [restore-launcher-windows.cmd](scripts/restore-launcher-windows.cmd) and confirm the list. It searches the same locations and restores each matching original from its `.lnk.bak`. If Windows denies write access, it offers the same administrator retry. For backups outside the usual locations, use `--scan-directory "PATH"`.
+
+From the command line, use `--scan-directory "PATH"` to search a specific folder and its subfolders or `--update-shortcut "PATH"` to select one shortcut. Combine either option with `--browser "ABSOLUTE_PATH_TO_BROWSER_EXECUTABLE"` to require an exact target match. Use `--create-shortcuts` to create separate shortcuts in the Start menu and on the Desktop.
 
 The installer was tested on Windows 11, where banner suppression was confirmed in Brave. The Linux and macOS installers have automated checks for generated files, but have yet to be tested on actual Linux or macOS systems. Banner suppression in other browsers still needs hands-on verification.
 

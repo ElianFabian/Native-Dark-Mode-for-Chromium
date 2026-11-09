@@ -1,4 +1,5 @@
 {
+  "popupBorder": "Popup-Rahmen",
   "removeInheritedRuleHelp": "Diese Regel wird geerbt. Entferne sie unter „Regeln verwalten“.",
   "moveRuleToTrash": "Regel in den Papierkorb verschieben",
   "removeDomainGroup": "Gruppe entfernen",

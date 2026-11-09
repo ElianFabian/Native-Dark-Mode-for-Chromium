@@ -1,4 +1,5 @@
 {
+  "popupBorder": "Bordure de la fenêtre contextuelle",
   "removeInheritedRuleHelp": "Cette règle est héritée. Supprimez-la dans Gérer les règles.",
   "moveRuleToTrash": "Déplacer la règle vers la corbeille",
   "removeDomainGroup": "Supprimer le groupe",

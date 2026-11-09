@@ -1,4 +1,5 @@
 {
+  "popupBorder": "Borde del popup",
   "removeInheritedRuleHelp": "Esta regla es heredada. Puedes eliminarla en Gestionar reglas.",
   "moveRuleToTrash": "Mover regla a la papelera",
   "removeDomainGroup": "Eliminar grupo",

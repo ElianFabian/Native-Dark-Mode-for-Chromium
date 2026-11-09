@@ -74,6 +74,8 @@ La interfaz sigue el idioma del navegador por defecto. En **Idioma** puedes eleg
 
 Usa **A−** y **A+** en la parte superior para ajustar el texto del 75 % al 200 %. Cada vista guarda su propio tamaño de texto. En el panel, abre **Apariencia** para cambiar de tema o activar **Alto contraste**. En el gestor, esos controles están en la barra superior. Ambas vistas comparten el tema y el contraste. El tema sigue al sistema por defecto. El modo oscuro de las webs se controla por separado con las reglas.
 
+Activa **Borde del popup** en **Apariencia** para distinguir mejor los límites del panel.
+
 ## Cómo funciona
 
 La [extensión Manifest V3](extension/manifest.json) tiene un panel, un gestor de reglas y un [servicio en segundo plano](extension/background.js).
@@ -92,16 +94,24 @@ Puedes usar la extensión en cuanto esté cargada. Si el navegador muestra el av
 
 | Sistema | Instalador | Dónde aparece el acceso |
 | --- | --- | --- |
-| Windows | Haz doble clic en [install-launcher-windows.cmd](scripts/install-launcher-windows.cmd). | Menú Inicio y escritorio. |
+| Windows | Haz doble clic en [install-launcher-windows.cmd](scripts/install-launcher-windows.cmd) y confirma la lista de accesos encontrados. | Tus accesos directos habituales. |
 | Linux | Ejecuta `sh scripts/install-launcher-linux.sh`. | Menú de aplicaciones y escritorio, si está configurado. El entorno de escritorio puede pedirte que marques el acceso como de confianza. |
 | macOS | Ejecuta `sh scripts/install-launcher-macos.command`. | Carpeta `~/Applications` y un enlace en el escritorio, si la carpeta existe. |
 
-1. El instalador busca Brave, Chrome, Chromium, Edge, Vivaldi y Opera. La consola muestra qué accesos crea y dónde. Pulsa **Enter** al terminar.
-2. Cierra completamente el navegador y ábrelo desde su nuevo acceso **Nombre del navegador - Native Dark Mode**.
+1. La consola muestra qué acceso actualiza o qué accesos crea y dónde. Pulsa **Enter** al terminar.
+2. Cierra completamente el navegador y ábrelo desde el acceso que acabas de actualizar o crear.
 
 El acceso añade `--silent-debugger-extension-api` al inicio. Si el navegador admite ese parámetro, se ocultan los avisos de todas las extensiones de depuración durante esa sesión. Puedes comprobar que recibió el argumento en la página de versión del navegador, en el campo **Línea de comandos**.
 
-Los instaladores usan herramientas del sistema y muestran mensajes en español o inglés según la configuración regional. Si el navegador está en una ruta personalizada, puedes pasar `--browser "RUTA_ABSOLUTA_AL_EJECUTABLE"`.
+Los instaladores usan herramientas del sistema. En Windows, el instalador y el restaurador siguen el idioma de la interfaz de Windows y ofrecen los mismos nueve idiomas que la extensión. Los instaladores de Linux y macOS ofrecen español e inglés según el idioma de la consola, con la preferencia regional de macOS como alternativa. Si el idioma no está disponible o no tiene traducción, se usa el inglés. Puedes fijar el idioma con `NATIVE_DARK_MODE_LANG` y un código admitido. Si el navegador está en una ruta personalizada, puedes pasar `--browser "RUTA_ABSOLUTA_AL_EJECUTABLE"`.
+
+En Windows, el instalador busca en el escritorio, el menú Inicio y los anclajes de la barra de tareas guardados como archivos `.lnk`. Muestra los accesos a navegadores reconocidos y pide confirmación. Omite los accesos a aplicaciones web y los que ya tienen el parámetro. Para cada actualización guarda una copia original `.lnk.bak` y conserva los argumentos existentes. Los accesos compartidos pueden requerir permisos adicionales en Windows.
+
+Si Windows deniega la escritura, el instalador muestra los accesos pendientes y ofrece abrir una consola de administrador aparte. Si aceptas el aviso de permisos de Windows, esa consola te pide confirmar los cambios pendientes antes de escribir. Puedes cancelar en cualquiera de los avisos y conservar los cambios ya realizados con permisos normales.
+
+Para deshacer los cambios, haz doble clic en [restore-launcher-windows.cmd](scripts/restore-launcher-windows.cmd) y confirma la lista. Busca en las mismas ubicaciones y restaura cada original que coincide con su copia `.lnk.bak`. Si Windows deniega la escritura, ofrece el mismo reintento como administrador. Para buscar copias fuera de las ubicaciones habituales, usa `--scan-directory "RUTA"`.
+
+Desde la consola, usa `--scan-directory "RUTA"` para buscar en una carpeta y sus subcarpetas o `--update-shortcut "RUTA"` para seleccionar un único acceso. Combina cualquiera de las dos opciones con `--browser "RUTA_ABSOLUTA_AL_EJECUTABLE"` para exigir que coincida con ese ejecutable. Usa `--create-shortcuts` para crear accesos separados en el menú Inicio y el escritorio.
 
 El acceso y la supresión del aviso se probaron en **Brave con Windows 11**. Linux y macOS tienen pruebas automatizadas de los archivos generados y siguen pendientes de probarse en esos sistemas. También queda por verificar la supresión del aviso en otros navegadores.
 

@@ -11,6 +11,8 @@ export async function initializeAppearance() {
   const systemDark = matchMedia('(prefers-color-scheme: dark)');
   const theme = document.querySelector('#ui-theme');
   const contrast = document.querySelector('#high-contrast');
+  const popupBorder = document.querySelector('#popup-border');
+  if (popupBorder) defaults.uiPopupBorder = false;
   const smaller = document.querySelector('#text-smaller');
   const larger = document.querySelector('#text-larger');
   const output = document.querySelector('#text-scale');
@@ -24,6 +26,10 @@ export async function initializeAppearance() {
     root.dataset.theme = selectedTheme === 'system' ? (systemDark.matches ? 'dark' : 'light') : selectedTheme;
     contrast.checked = uiHighContrast === true;
     root.toggleAttribute('data-high-contrast', contrast.checked);
+    if (popupBorder) {
+      popupBorder.checked = preferences.uiPopupBorder === true;
+      root.toggleAttribute('data-popup-border', popupBorder.checked);
+    }
     const storedScale = preferences[scaleKey];
     const scale = scales.includes(storedScale) ? storedScale : defaultScale;
     root.style.fontSize = `${scale}%`;
@@ -71,6 +77,7 @@ export async function initializeAppearance() {
   });
   theme.addEventListener('change', () => save('uiTheme', readChoice(theme)));
   contrast.addEventListener('change', () => save('uiHighContrast', contrast.checked));
+  popupBorder?.addEventListener('change', () => save('uiPopupBorder', popupBorder.checked));
   smaller.addEventListener('click', () => step(-1));
   larger.addEventListener('click', () => step(1));
   return render;

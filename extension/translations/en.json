@@ -1,4 +1,5 @@
 {
+  "popupBorder": "Popup border",
   "removeInheritedRuleHelp": "This rule is inherited. Remove it from Manage rules.",
   "moveRuleToTrash": "Move rule to Trash",
   "removeDomainGroup": "Remove group",

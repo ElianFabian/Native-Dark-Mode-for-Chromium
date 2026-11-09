@@ -81,6 +81,21 @@
 [hidden] { display: none !important; }
 #website-preset[data-loading] { visibility: hidden; }
 body { margin: 0; width: 544px; max-width: 100%; background: var(--page); color: var(--text); font-size: .875rem; }
+:root[data-popup-border] {
+  --popup-border-width: 4px;
+  --popup-border-inset: calc(2px + var(--popup-border-width));
+}
+:root[data-popup-border][data-high-contrast] { --popup-border-width: 6px; }
+:root[data-popup-border]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  border: 2px solid var(--page);
+  outline: var(--popup-border-width) solid var(--focus);
+  outline-offset: calc(-1 * var(--popup-border-inset));
+}
 main { padding: 20px; }
 .popup-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
 .popup-header h1 { margin: 0; overflow-wrap: anywhere; }

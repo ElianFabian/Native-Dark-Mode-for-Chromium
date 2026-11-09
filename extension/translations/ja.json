@@ -1,4 +1,5 @@
 {
+  "popupBorder": "ポップアップの枠線",
   "removeInheritedRuleHelp": "このルールは継承されています。「ルールの管理」から削除できます。",
   "moveRuleToTrash": "ルールをゴミ箱に移動",
   "removeDomainGroup": "グループを削除",

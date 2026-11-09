@@ -28,7 +28,7 @@ const appearanceTrigger = appearanceMenu?.querySelector('summary');
 if (appearanceMenu) {
   $('#close-appearance').addEventListener('click', () => {
     appearanceMenu.open = false;
-    appearanceTrigger.focus();
+    appearanceTrigger.focus({ preventScroll: true });
   });
   document.addEventListener('pointerdown', event => {
     if (appearanceMenu.open && !appearanceMenu.contains(event.target)) appearanceMenu.open = false;
@@ -46,7 +46,7 @@ document.addEventListener('keydown', event => {
   if (appearanceMenu?.open) {
     event.preventDefault();
     appearanceMenu.open = false;
-    appearanceTrigger.focus();
+    appearanceTrigger.focus({ preventScroll: true });
     return;
   }
   const visible = document.querySelectorAll('.has-tooltip:not([data-tooltip-dismissed]):has(> :is(button, label, .tooltip):hover, :focus-visible)');
