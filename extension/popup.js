@@ -169,6 +169,8 @@ function updateButton() {
   if (isManager) {
     $('#toggle').hidden = Boolean(editingId);
     $('#cancel-edit').hidden = !editingId;
+    $('#remove-editor-rule').hidden = !editingId;
+    $('#remove-editor-rule').disabled = busy;
     $('#export').disabled = busy || !snapshot;
     $('#import').disabled = busy || !snapshot;
     $('#confirm-import').disabled = busy || !pendingImport;
@@ -780,10 +782,11 @@ $('#manage-extension').addEventListener('click', async () => {
 });
 $('#exclude-host')?.addEventListener('click', () => request({ type: 'exclude-inherited-host', url: tab.url }));
 const removeRuleDialog = $('#remove-rule-dialog');
-$('#remove-popup-rule')?.addEventListener('click', event => {
-  if (event.currentTarget.hidden || busy || !displayedRule) return;
-  const rule = displayedRule;
-  $('#remove-rule-address').textContent = `${rule.includeSubdomains ? '*.' : ''}${rule.host}${rule.path}`;
+const ruleToRemove = () => isManager ? snapshot?.rules.find(rule => rule.id === editingId) : displayedRule;
+$('#remove-editor-rule, #remove-popup-rule').addEventListener('click', event => {
+  const rule = ruleToRemove();
+  if (event.currentTarget.hidden || busy || !rule) return;
+  $('#remove-rule-address').textContent = `${rule.includeSubdomains ? '*.' : ''}${ruleHostPattern(rule)}${rule.path}`;
   removeRuleDialog.dataset.ruleId = rule.id;
   removeRuleDialog.showModal();
 });
@@ -791,7 +794,7 @@ removeRuleDialog?.addEventListener('submit', event => {
   event.preventDefault();
   const { ruleId } = removeRuleDialog.dataset;
   removeRuleDialog.close();
-  if (event.submitter?.value === 'remove' && displayedRule?.id === ruleId) {
+  if (event.submitter?.value === 'remove' && ruleToRemove()?.id === ruleId) {
     void request({ type: 'remove', id: ruleId });
   }
 });

@@ -96,6 +96,7 @@
             <span id="save-help" class="tooltip" role="tooltip" data-i18n="saveHelp">Saves this scope and its settings without switching the rule on or off. New rules are saved disabled.</span>
           </div>
           <button id="cancel-edit" hidden data-i18n="cancel">Cancel</button>
+          <button id="remove-editor-rule" type="button" hidden data-i18n="moveRuleToTrash">Move rule to Trash</button>
           <p class="note" data-i18n="rulesNote">Saved locally. Disabled rules remain as exclusions. More specific sections take priority. Queries and fragments are ignored.</p>
           <section class="backup-panel">
             <h3 data-i18n="backup">Backup and restore</h3>
@@ -175,6 +176,14 @@
     </div>
   </dialog>
 </main>
+<dialog id="remove-rule-dialog" aria-labelledby="remove-rule-title" aria-describedby="remove-rule-address">
+  <h2 id="remove-rule-title" data-i18n="moveRuleToTrash">Move rule to Trash</h2>
+  <p id="remove-rule-address"></p>
+  <form method="dialog" class="popup-row">
+    <button value="cancel" autofocus data-i18n="cancel">Cancel</button>
+    <button value="remove" data-i18n="remove">Remove</button>
+  </form>
+</dialog>
 <div id="rule-toast" role="status"></div>
 <script src="popup.js" type="module"></script>
 </html>
