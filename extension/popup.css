@@ -115,6 +115,7 @@ button { width: 100%; padding: 11px; border: 1px solid var(--border); border-rad
 button:disabled, button[aria-disabled="true"] { opacity: .5; cursor: default; }
 #toggle:not([data-disables]):enabled:hover { background: var(--primary-hover); }
 #toggle[data-disables] {
+  overflow-wrap: anywhere;
   background: var(--warning-bg);
   border-color: var(--warning-border);
   color: var(--warning);

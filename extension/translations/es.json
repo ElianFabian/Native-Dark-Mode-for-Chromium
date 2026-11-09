@@ -1,4 +1,5 @@
 {
+  "disableInheritedRule": "Deshabilitar toda la regla de {scope}",
   "includeInheritedParentDomain": "Aplicar a todo {domain} (heredado)",
   "includeParentDomain": "Aplicar a todo {domain}",
   "scopeRegionalSubdomain": "Se aplica a {scope} en los dominios regionales.",

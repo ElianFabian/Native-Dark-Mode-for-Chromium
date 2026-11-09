@@ -137,8 +137,11 @@ function updateButton() {
       { domain: parentDomain });
   }
   const disables = Boolean(displayedRule?.enabled && !needsResume);
+  const disablesInheritedRule = disables && !isManager && inheritedExclusion(displayedRule, tab?.url);
   $('#toggle').toggleAttribute('data-disables', disables);
-  $('#toggle').textContent = t(disables ? 'disableSave' : 'enableSave');
+  $('#toggle').textContent = disablesInheritedRule
+    ? t('disableInheritedRule', { scope: ruleHostPattern(displayedRule) + displayedRule.path.replace(/^\/$/, '') })
+    : t(disables ? 'disableSave' : 'enableSave');
   const canEdit = isManager ? Boolean(snapshot) : Boolean(tab?.id);
   if (!isManager) {
     const exclusion = inheritedExclusion(matching, tab?.url);

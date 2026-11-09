@@ -1,4 +1,5 @@
 {
+  "disableInheritedRule": "停用 {scope} 的整条规则",
   "includeInheritedParentDomain": "应用于整个 {domain} 域（已继承）",
   "includeParentDomain": "应用于整个 {domain} 域",
   "scopeRegionalSubdomain": "在各区域域名中应用于 {scope}。",
