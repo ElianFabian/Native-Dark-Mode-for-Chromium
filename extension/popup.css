@@ -118,7 +118,7 @@ label:has(> input:is([type=checkbox], [type=radio])) { user-select: none; }
 .note { font-size: .8125rem; color: var(--muted); }
 pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8125rem; }
 label { display: block; margin: 10px 0; }
-input[type=text], select {
+input[type=text], textarea, select {
   box-sizing: border-box;
   width: 100%;
   min-height: 2.75rem;
@@ -129,6 +129,13 @@ input[type=text], select {
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: .6rem;
+}
+#address {
+  display: block;
+  field-sizing: content;
+  max-block-size: 8lh;
+  overflow-wrap: anywhere;
+  resize: vertical;
 }
 select { background: var(--secondary); font-weight: 600; }
 select:enabled { cursor: pointer; }
@@ -157,7 +164,7 @@ h2 { font-size: 1rem; }
 #exclude-host { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
 
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-input::placeholder { color: var(--muted); opacity: 1; }
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 label:has(> input[type=checkbox]) {
   display: flex;
   align-items: center;

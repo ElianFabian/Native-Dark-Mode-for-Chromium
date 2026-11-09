@@ -120,7 +120,7 @@ function updateLanguageFlag(choice) {
 
 function draft(enabled) {
   return {
-    url: $('#address').value.trim(), scope: readChoice($('#scope')),
+    url: $('#address').value.replace(/[ \t]*[\r\n]+[ \t]*/g, '').trim(), scope: readChoice($('#scope')),
     includeSubdomains: $('#subdomains').checked,
     includeRegionalDomains: $('#regional').checked,
     preset: readChoice($('#website-preset')),
@@ -451,7 +451,7 @@ async function withBusy(operation, progress, statusElement = $('#status'), retai
   if (busy) return;
   busy = true;
   if (progress) statusElement.textContent = progress;
-  document.querySelectorAll('button, input, select').forEach(element => {
+  document.querySelectorAll('button, input, select, textarea').forEach(element => {
     if (element !== retainedButton) element.disabled = true;
   });
   try {
@@ -461,7 +461,7 @@ async function withBusy(operation, progress, statusElement = $('#status'), retai
     if (isManager) $('#diagnostic').textContent = String(error.message ?? error);
   } finally {
     busy = false;
-    document.querySelectorAll('button, input, select').forEach(element => { element.disabled = false; });
+    document.querySelectorAll('button, input, select, textarea').forEach(element => { element.disabled = false; });
     updateButton();
   }
 }
