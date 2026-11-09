@@ -549,7 +549,7 @@ function saveCheckboxChange(event) {
       checkbox.checked = !checkbox.checked;
       throw error;
     }
-  }, t('saving'));
+  }, isManager ? t('saving') : undefined);
 }
 
 $('#export')?.addEventListener('click', () => withBusy(async () => {
