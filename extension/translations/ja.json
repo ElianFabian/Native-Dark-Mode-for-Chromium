@@ -81,7 +81,7 @@
   "restoreRule": "復元",
   "ruleTrashed": "ルールをゴミ箱に移動しました。",
   "ruleRestored": "ルールを復元しました。",
-  "excludeRegionalHost": "このホスト名を除外",
+  "excludeRegionalHost": "{host} を除外",
   "errorInheritedRuleChanged": "このタブはルールを継承していません。ポップアップを開き直してください。",
   "appearance": "外観とアクセシビリティ",
   "textSize": "文字サイズ",

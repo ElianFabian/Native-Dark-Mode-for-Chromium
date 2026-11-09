@@ -81,7 +81,7 @@
   "restoreRule": "恢复",
   "ruleTrashed": "规则已移至回收站。",
   "ruleRestored": "规则已恢复。",
-  "excludeRegionalHost": "排除此主机名",
+  "excludeRegionalHost": "排除 {host}",
   "errorInheritedRuleChanged": "此标签页已不再继承规则。请重新打开面板。",
   "appearance": "外观与无障碍",
   "textSize": "文字大小",

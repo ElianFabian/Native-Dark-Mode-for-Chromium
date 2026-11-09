@@ -16,6 +16,13 @@ test('backup version 2 round-trips custom presets and rejects unknown presets', 
 const rule = (url, enabled = true, includeSubdomains = false) => normalizeRule({ url, scope: 'section', enabled, includeSubdomains });
 const encode = rules => JSON.stringify(createBackup(rules));
 
+test('legacy exact www and base rules import as one scope with the explicit base rule', () => {
+  const base = rule('example.com/blog', false);
+  const backup = createBackup([base]);
+  backup.rules.unshift({ ...backup.rules[0], host: 'www.example.com', enabled: true });
+  assert.deepEqual(parseBackup(JSON.stringify(backup)), [base]);
+});
+
 test('backup version 3 preserves exact-only path rules', () => {
   const home = normalizeRule({ url: 'example.com', scope: 'section', includeSubpaths: false, preset: 'soft' });
   const backup = createBackup([home, rule('example.com')]);

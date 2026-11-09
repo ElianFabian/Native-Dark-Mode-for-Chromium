@@ -54,11 +54,11 @@ The trash icon beside **Save settings** shows the selected saved rule for the cu
 | --- | --- |
 | **Entire website** | The hostname in the URL field. |
 | **Path section** | A specific path, such as `/articles`. **Include subpaths** is on by default and also covers paths such as `/articles/guide`. Turn it off to match only `/articles`. |
-| **Include subdomains** | Child hostnames. With this option enabled, `www.android.com` is treated as `android.com`, so the rule can also cover `developer.android.com`. |
+| **Include subdomains** | Child hostnames such as `developer.android.com`. The base domain and its `www` alias share a rule regardless of this option. |
 | **Include regional domains** | Vary the public suffix while keeping the registered name and any specific subdomain. For example, `amazon.es` becomes `amazon.*`, and `fonts.google.com` becomes `fonts.google.*`. |
 | **Apply to all of …** | From a subdomain such as `fonts.google.com`, include the base domain `google.com` and all its subdomains. Combine with regional domains to cover the same family across recognized public suffixes. When the current page already inherits an enabled base-domain rule, the popup shows this switch checked and disabled. Use the exclusion action to exempt just the current subdomain. |
 
-More specific paths take priority. At the same path, a rule for a single domain takes priority over a regional pattern. Regional patterns match names across suffixes. Use a single-domain rule when you want to limit the scope to one domain. When a page inherits an enabled rule, the popup can offer **Exclude this subdomain** or **Exclude this hostname** to save an exception for the current hostname and inherited path.
+More specific paths take priority. At the same path, a rule for a single domain takes priority over a regional pattern. Regional patterns match names across suffixes. When a page inherits an enabled rule, the popup can offer an exclusion for the current hostname and inherited path. Excluding `amazon.es` also excludes `www.amazon.es`.
 
 To exclude a path from an enabled site or section, enter the more specific URL, choose **Path section**, and use **Save settings** to create a disabled rule. For example, a disabled rule for `example.com/blog/private` excludes that path and its descendants from an enabled rule for `example.com/blog`. If a rule for the exact path is already enabled, disable it from the list.
 

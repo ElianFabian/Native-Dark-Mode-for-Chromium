@@ -37,11 +37,18 @@ export function parseBackup(text) {
     throw new Error('Unsupported backup. Expected Native Dark Mode rules, format version 1, 2 or 3.');
   }
   if (document.rules.length > MAX_BACKUP_RULES) throw new Error('A backup can contain at most 1,000 rules.');
-  const rules = document.rules.map((rule, index) => validateRule(rule, index, document.version));
-  if (new Set(rules.map(rule => rule.id)).size !== rules.length) {
-    throw new Error('The backup contains duplicate website or section scopes.');
+  const rules = new Map();
+  for (const [index, input] of document.rules.entries()) {
+    const rule = validateRule(input, index, document.version);
+    const alias = input.host.toLowerCase() !== rule.host;
+    const existing = rules.get(rule.id);
+    if (existing && (existing.merged || existing.alias === alias || rule.includeSubdomains || rule.includeRegionalDomains)) {
+      throw new Error('The backup contains duplicate website or section scopes.');
+    }
+    // Older backups could contain both exact forms. Keep the explicit base rule.
+    rules.set(rule.id, { rule: existing && alias ? existing.rule : rule, alias, merged: Boolean(existing) });
   }
-  return rules;
+  return [...rules.values()].map(entry => entry.rule);
 }
 
 export function createBackup(rules) {

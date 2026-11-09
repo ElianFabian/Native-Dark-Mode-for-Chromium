@@ -54,11 +54,11 @@ El icono de papelera junto a **Guardar ajustes** muestra la regla guardada selec
 | --- | --- |
 | **Web completa** | El nombre de host indicado en el campo de URL. |
 | **Sección por ruta** | Una ruta concreta, como `/articulos`. **Incluir subrutas** está activado por defecto y abarca también rutas como `/articulos/guia`. Desactívalo para que la regla se aplique solo a `/articulos`. |
-| **Incluir subdominios** | Los subdominios del sitio. Con esta opción, `www.android.com` se trata como `android.com` y puede cubrir `developer.android.com`. |
+| **Incluir subdominios** | Nombres como `developer.android.com`. El dominio base y su alias `www` comparten regla con independencia de esta opción. |
 | **Incluir dominios regionales** | Varía el sufijo público y conserva el nombre registrado y el subdominio específico. Por ejemplo, `amazon.es` pasa a `amazon.*` y `fonts.google.com` a `fonts.google.*`. |
 | **Aplicar a todo …** | Desde un subdominio como `fonts.google.com`, incluye el dominio base `google.com` y todos sus subdominios. Combínalo con los dominios regionales para abarcar la misma familia en otros sufijos públicos reconocidos. Si la página ya hereda una regla activa del dominio base, el popup muestra el interruptor marcado y bloqueado. Usa la acción de exclusión para exceptuar solo el subdominio actual. |
 
-Las rutas más específicas tienen prioridad. Para la misma ruta, un dominio concreto tiene prioridad sobre una regla regional. Si la página hereda una regla activa, el panel puede ofrecer **Excluir este subdominio** o **Excluir este nombre de host** para guardar una excepción.
+Las rutas más específicas tienen prioridad. Para la misma ruta, un dominio concreto tiene prioridad sobre una regla regional. Si la página hereda una regla activa, el panel puede ofrecer una exclusión para el nombre de host actual y la ruta heredada. Excluir `amazon.es` también excluye `www.amazon.es`.
 
 Para excluir una ruta dentro de una web o sección activa, introduce la URL más específica, elige **Sección por ruta** y pulsa **Guardar ajustes** para crear una regla desactivada. Por ejemplo, una regla desactivada para `example.com/blog/privado` excluye esa ruta y sus subrutas de una regla activa para `example.com/blog`. Si ya hay una regla activa para esa ruta exacta, desactívala desde el listado.
 

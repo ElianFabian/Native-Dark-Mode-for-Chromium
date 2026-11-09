@@ -81,7 +81,7 @@
   "restoreRule": "Ripristina",
   "ruleTrashed": "Regola spostata nel cestino.",
   "ruleRestored": "Regola ripristinata.",
-  "excludeRegionalHost": "Escludi questo host",
+  "excludeRegionalHost": "Escludi {host}",
   "errorInheritedRuleChanged": "La scheda non eredita più una regola. Riapri il pannello.",
   "appearance": "Aspetto e accessibilità",
   "textSize": "Dimensione del testo",

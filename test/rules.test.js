@@ -64,16 +64,19 @@ test('hostname boundaries, explicit subdomains, exact matches and ports', () => 
   assert.equal(matchingRule([rule('example.com:8765')], 'http://example.com:8766/'), undefined);
 });
 
-test('www is optional with subdomains enabled and exact otherwise', async () => {
+test('www aliases the base domain independently of the subdomain setting', async () => {
   const family = rule('www.android.com/guide', true, { includeSubdomains: true });
   assert.equal(family.host, 'android.com');
   assert.equal(matchingRule([family], 'https://developer.android.com/guide/topics').enabled, true);
   assert.equal(matchingRule([family], 'https://android.com/guide').enabled, true);
   const exact = rule('www.android.com');
-  assert.equal(exact.host, 'www.android.com');
+  assert.equal(exact.host, 'android.com');
+  assert.equal(exact.id, rule('android.com').id);
+  assert.equal(matchingRule([exact], 'https://www.android.com/'), exact);
+  assert.equal(matchingRule([exact], 'https://android.com/'), exact);
   assert.equal(matchingRule([exact], 'https://developer.android.com/'), undefined);
   const { api, manager } = integration();
-  const legacy = { ...rule('www.android.com'), includeSubdomains: true };
+  const legacy = { ...exact, host: 'www.android.com', includeSubdomains: true };
   await api.storage.local.set({ rules: [legacy, rule('android.com', false, { includeSubdomains: true })] });
   const migrated = await manager.list();
   assert.equal(migrated.length, 1);
@@ -296,11 +299,11 @@ test('a regional rule offers an exact exclusion for its www alias without subdom
   const { manager, tab } = integration();
   const [regional] = await manager.save({ url: 'amazon.es', includeRegionalDomains: true, enabled: true });
   tab.url = 'https://www.amazon.com.au/';
-  assert.equal(inheritedExclusion(regional, tab.url).host, 'www.amazon.com.au');
+  assert.equal(inheritedExclusion(regional, tab.url).host, 'amazon.com.au');
   const rules = await manager.excludeInheritedHost(7, tab.url);
   assert.equal(matchingRule(rules, tab.url).enabled, false);
   assert.equal(matchingRule(rules, 'https://www.amazon.es/').enabled, true);
-  assert.equal(matchingRule(rules, 'https://amazon.com.au/').enabled, true);
+  assert.equal(matchingRule(rules, 'https://amazon.com.au/').enabled, false);
 });
 
 test('native activation requires no CSS scripting even with a legacy input field', async () => {

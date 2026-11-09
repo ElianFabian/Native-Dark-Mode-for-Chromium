@@ -81,7 +81,7 @@
   "restoreRule": "Restore",
   "ruleTrashed": "Rule moved to Trash.",
   "ruleRestored": "Rule restored.",
-  "excludeRegionalHost": "Exclude this hostname",
+  "excludeRegionalHost": "Exclude {host}",
   "errorInheritedRuleChanged": "The tab no longer inherits a rule. Reopen the popup.",
   "appearance": "Appearance and accessibility",
   "textSize": "Text size",

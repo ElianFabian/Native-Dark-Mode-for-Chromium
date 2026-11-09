@@ -13,6 +13,10 @@ export function ruleHostPattern(rule) {
   return `${prefix}${rule.regionalName}.*`;
 }
 
+function canonicalHost(url) {
+  return regionalDomain(url.hostname)?.subdomain === 'www' ? url.host.slice(4) : url.host;
+}
+
 export function orderRules(rules, order, locale) {
   const ordered = [...rules];
   if (order === 'newest') {
@@ -53,9 +57,9 @@ export function normalizeRule(input) {
   const parent = input.includeParentDomain && regionalBaseForHost(url.hostname);
   if (parent?.subdomain) url.hostname = parent.domain;
   const includeSubdomains = Boolean(input.includeSubdomains || parent?.subdomain);
-  // Treat a leading www as optional only when the user opts into subdomains.
+  // Preserve the existing normalization of broader www-prefixed rules.
   let host = includeSubdomains && url.hostname.startsWith('www.') && url.hostname.slice(4).includes('.')
-    ? url.host.slice(4).toLowerCase() : url.host.toLowerCase();
+    ? url.host.slice(4) : canonicalHost(url);
   const identity = [host, path, includeSubdomains];
   let regional;
   if (input.includeRegionalDomains === true) {
@@ -83,9 +87,10 @@ export function matchingRule(rules, address) {
   try { url = new URL(address); } catch { return undefined; }
   if (!['http:', 'https:'].includes(url.protocol)) return undefined;
   const regional = url.port ? undefined : regionalBaseForHost(url.hostname);
+  const currentHost = canonicalHost(url);
   return rules.filter(rule => {
     const host = new URL(ruleAddress(rule));
-    const localMatch = url.host === rule.host || (
+    const localMatch = currentHost === rule.host || (
       rule.includeSubdomains && url.port === host.port && url.hostname.endsWith(`.${host.hostname}`)
     );
     const prefix = rule.regionalSubdomain ?? '';

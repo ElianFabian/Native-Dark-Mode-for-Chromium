@@ -154,14 +154,16 @@ function updateButton() {
     state.toggleAttribute('data-disabled', displayedRule?.enabled === false);
     state.textContent = t(displayedRule ? (displayedRule.enabled ? 'enabled' : 'disabled') : 'unsavedScope');
     const remove = $('#remove-popup-rule');
-    const tabHost = tab && new URL(tab.url).host;
+    const tabHost = tab && normalizeRule({ url: tab.url }).host;
     remove.hidden = !tabHost || !displayedRule || displayedRule.includeRegionalDomains ||
       (displayedRule.host !== tabHost && !(displayedRule.includeSubdomains && `www.${displayedRule.host}` === tabHost));
     remove.disabled = busy;
     const exclusion = inheritedExclusion(matching, tab?.url);
     $('#exclude-host').hidden = !exclusion;
     $('#exclude-host').disabled = busy || !exclusion;
-    $('#exclude-host').textContent = t(matching?.includeRegionalDomains ? 'excludeRegionalHost' : 'excludeSubdomain');
+    $('#exclude-host').textContent = matching?.includeRegionalDomains && exclusion
+      ? t('excludeRegionalHost', { host: exclusion.host })
+      : t('excludeSubdomain');
   }
   $('#toggle').disabled = busy || !canEdit;
   $('#save').disabled = busy || !canEdit;

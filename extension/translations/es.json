@@ -81,7 +81,7 @@
   "restoreRule": "Restaurar",
   "ruleTrashed": "Regla movida a la papelera.",
   "ruleRestored": "Regla restaurada.",
-  "excludeRegionalHost": "Excluir este nombre de host",
+  "excludeRegionalHost": "Excluir {host}",
   "errorInheritedRuleChanged": "La pestaña ya no hereda una regla. Vuelve a abrir el panel.",
   "appearance": "Apariencia y accesibilidad",
   "textSize": "Tamaño del texto",

@@ -81,7 +81,7 @@
   "restoreRule": "Wiederherstellen",
   "ruleTrashed": "Regel in den Papierkorb verschoben.",
   "ruleRestored": "Regel wiederhergestellt.",
-  "excludeRegionalHost": "Diesen Hostnamen ausschließen",
+  "excludeRegionalHost": "{host} ausschließen",
   "errorInheritedRuleChanged": "Der Tab erbt keine Regel mehr. Öffne das Popup erneut.",
   "appearance": "Darstellung und Barrierefreiheit",
   "textSize": "Textgröße",

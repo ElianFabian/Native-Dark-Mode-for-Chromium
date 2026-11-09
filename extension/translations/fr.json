@@ -81,7 +81,7 @@
   "restoreRule": "Restaurer",
   "ruleTrashed": "Règle déplacée dans la corbeille.",
   "ruleRestored": "Règle restaurée.",
-  "excludeRegionalHost": "Exclure cet hôte",
+  "excludeRegionalHost": "Exclure {host}",
   "errorInheritedRuleChanged": "Cet onglet n’hérite plus d’une règle. Rouvrez le panneau.",
   "appearance": "Apparence et accessibilité",
   "textSize": "Taille du texte",

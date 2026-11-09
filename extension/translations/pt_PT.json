@@ -81,7 +81,7 @@
   "restoreRule": "Restaurar",
   "ruleTrashed": "Regra movida para a reciclagem.",
   "ruleRestored": "Regra restaurada.",
-  "excludeRegionalHost": "Excluir este nome de host",
+  "excludeRegionalHost": "Excluir {host}",
   "errorInheritedRuleChanged": "O separador já não herda uma regra. Reabra o painel.",
   "appearance": "Aspeto e acessibilidade",
   "textSize": "Tamanho do texto",

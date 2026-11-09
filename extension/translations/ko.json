@@ -81,7 +81,7 @@
   "restoreRule": "복원",
   "ruleTrashed": "규칙을 휴지통으로 이동했습니다.",
   "ruleRestored": "규칙을 복원했습니다.",
-  "excludeRegionalHost": "이 호스트 이름 제외",
+  "excludeRegionalHost": "{host} 제외",
   "errorInheritedRuleChanged": "이 탭은 더 이상 규칙을 상속하지 않습니다. 팝업을 다시 여세요.",
   "appearance": "모양 및 접근성",
   "textSize": "텍스트 크기",
