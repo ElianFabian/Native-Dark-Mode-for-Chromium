@@ -298,6 +298,8 @@ test('the subdomain action excludes the current host at the inherited section an
 test('a regional rule offers an exact exclusion for its www alias without subdomains enabled', async () => {
   const { manager, tab } = integration();
   const [regional] = await manager.save({ url: 'amazon.es', includeRegionalDomains: true, enabled: true });
+  assert.equal(inheritedExclusion(regional, 'https://amazon.es/'), undefined);
+  assert.equal(inheritedExclusion(regional, 'https://www.amazon.es/'), undefined);
   tab.url = 'https://www.amazon.com.au/';
   assert.equal(inheritedExclusion(regional, tab.url).host, 'amazon.com.au');
   const rules = await manager.excludeInheritedHost(7, tab.url);

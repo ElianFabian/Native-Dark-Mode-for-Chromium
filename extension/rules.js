@@ -115,6 +115,7 @@ export function matchingRule(rules, address) {
 export function inheritedExclusion(rule, address) {
   if (!rule?.enabled || !matchingRule([rule], address)) return undefined;
   const url = new URL(address);
+  if (canonicalHost(url) === rule.host) return undefined;
   if (!rule.includeRegionalDomains) {
     const parent = new URL(ruleAddress(rule)).hostname;
     if (!rule.includeSubdomains || !url.hostname.endsWith(`.${parent}`) || url.hostname === `www.${parent}`) return undefined;

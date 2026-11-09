@@ -140,10 +140,11 @@ function updateButton() {
       { domain: parentDomain });
   }
   const disables = Boolean(displayedRule?.enabled && !needsResume);
-  const disablesInheritedRule = disables && !isManager && inheritedExclusion(displayedRule, tab?.url);
+  const disablesBroadRule = disables && !isManager &&
+    (displayedRule.includeRegionalDomains || inheritedExclusion(displayedRule, tab?.url));
   $('#toggle').toggleAttribute('data-disables', disables);
   $('#toggle').toggleAttribute('data-reenables', displayedRule?.enabled === false);
-  $('#toggle').textContent = disablesInheritedRule
+  $('#toggle').textContent = disablesBroadRule
     ? t('disableInheritedRule', { scope: ruleHostPattern(displayedRule) + displayedRule.path.replace(/^\/$/, '') })
     : t(disables ? 'disableSave' : 'enableSave');
   const canEdit = isManager ? Boolean(snapshot) : Boolean(tab?.id);
@@ -155,7 +156,7 @@ function updateButton() {
     state.textContent = t(displayedRule ? (displayedRule.enabled ? 'enabled' : 'disabled') : 'unsavedScope');
     const remove = $('#remove-popup-rule');
     const tabHost = tab && normalizeRule({ url: tab.url }).host;
-    remove.hidden = !tabHost || !displayedRule || displayedRule.includeRegionalDomains ||
+    remove.hidden = !tabHost || !displayedRule ||
       (displayedRule.host !== tabHost && !(displayedRule.includeSubdomains && `www.${displayedRule.host}` === tabHost));
     remove.disabled = busy;
     const exclusion = inheritedExclusion(matching, tab?.url);
