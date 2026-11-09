@@ -773,8 +773,9 @@ try {
     [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id) throw new Error('The active tab could not be found.');
     if (!/^https?:\/\//i.test(tab.url ?? '')) throw new Error('Open an HTTP or HTTPS page to manage rules.');
-    $('#site').textContent = new URL(tab.url).hostname;
-    suggestedAddress = tab.url;
+    const tabAddress = new URL(tab.url);
+    $('#site').textContent = tabAddress.hostname;
+    suggestedAddress = `${tabAddress.origin}/`;
     $('#address').value = suggestedAddress;
     chrome.storage.onChanged.addListener((changes, area) => {
       const state = changes[`tab:${tab?.id}`]?.newValue;

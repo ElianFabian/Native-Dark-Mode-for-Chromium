@@ -40,7 +40,7 @@ Haz clic en una captura para abrirla a resolución completa.
 ## Usar la extensión
 
 1. Abre una web HTTP o HTTPS y pulsa el icono de la extensión.
-2. Elige **Web completa** para usar la dirección base del sitio o **Sección por ruta** para usar una ruta. El popup sugiere la ruta de la pestaña actual sin parámetros de consulta ni fragmento. Puedes editar la URL antes de guardar.
+2. Para una regla nueva, el popup empieza en **Web completa** y muestra la dirección base del sitio. Elige **Sección por ruta** para usar la ruta de la pestaña actual sin parámetros de consulta ni fragmento. Puedes editar la URL antes de guardar.
 3. En **Tema de la web**, elige **Nativo**, **Oscuro suave** o **Alto contraste** y pulsa **Activar y guardar**. La extensión recuerda tu elección para esa web o sección.
 4. Pulsa **Desactivar y guardar** para guardar una exclusión, o abre **Gestionar reglas** para editar, buscar o eliminar reglas guardadas.
 
