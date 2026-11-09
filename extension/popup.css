@@ -125,6 +125,15 @@ main > #scope-hint + .note { margin-block-start: 0; }
 }
 #remove-rule-dialog::backdrop { background: rgb(0 0 0 / .55); }
 #remove-rule-dialog h2 { margin-block-start: 0; }
+#remove-rule-address {
+  padding: .55em .75em;
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  background: var(--page);
+  color: var(--accent-text);
+  font-size: 1rem;
+  font-weight: 700;
+}
 #remove-rule-dialog .popup-row > button { flex-basis: 7rem; }
 #remove-rule-dialog button[value="cancel"] { background: var(--secondary); color: var(--text); }
 #remove-rule-dialog button[value="remove"] { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
