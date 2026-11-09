@@ -63,12 +63,12 @@ let languageCardSize;
 let languageCardAnimation;
 
 if (isManager) {
-  const editorColumn = $('.editor-column');
+  const editor = $('.rule-editor');
   const toolbar = $('.text-size-toolbar');
-  // A tall column scrolls with the page until its bottom fits in the viewport.
+  // A tall editor scrolls with the page until its bottom fits in the viewport.
   new ResizeObserver(([entry]) => {
-    editorColumn.style.setProperty('--editor-column-height', `${entry.borderBoxSize[0].blockSize}px`);
-  }).observe(editorColumn);
+    editor.style.setProperty('--editor-height', `${entry.borderBoxSize[0].blockSize}px`);
+  }).observe(editor);
   new ResizeObserver(([entry]) => {
     document.documentElement.style.setProperty('--text-toolbar-height', `${entry.borderBoxSize[0].blockSize}px`);
   }).observe(toolbar);

@@ -39,13 +39,16 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .workspace { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 1.7fr); gap: 20px; align-items: start; }
 .editor-column {
   min-width: 0;
-  position: sticky;
-  top: min(calc(var(--text-toolbar-height) + 24px), calc(100dvh - var(--editor-column-height, 0px) - var(--manager-bottom-padding)));
+  align-self: stretch;
 }
 .rules-column { min-width: 0; }
 .rules-column > details { margin-block-start: .65rem; }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
-.rule-editor { background: var(--page); }
+.rule-editor {
+  background: var(--page);
+  position: sticky;
+  top: min(calc(var(--text-toolbar-height) + 24px), calc(100dvh - var(--editor-height, 0px) - var(--manager-bottom-padding)));
+}
 #remove-editor-rule { background: transparent; color: var(--danger); border-color: var(--danger); }
 #remove-editor-rule:enabled:hover { background: var(--danger-bg); }
 .panel h2 { margin-top: 0; font-size: 1.2rem; line-height: 1.25; }
@@ -279,7 +282,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 }
 @container (max-width: 46em) {
   .workspace { grid-template-columns: minmax(0, 1fr); }
-  .editor-column { position: static; }
+  .rule-editor { position: static; }
 }
 
 .panel { min-width: 0; overflow-wrap: anywhere; }
