@@ -142,7 +142,6 @@ function updateButton() {
   let regionalBase;
   try { regionalBase = regionalBaseForHost(normalizeRule({ ...draft(false), includeSubdomains: false, includeRegionalDomains: false }).host); }
   catch { /* The address may be incomplete while being edited. */ }
-  $('#regional-option').hidden = !isManager && !regionalBase;
   if (!regionalBase) $('#regional').checked = false;
   $('#regional').disabled = busy || !regionalBase;
   const needsResume = snapshot?.state.suspended || snapshot?.state.error;
