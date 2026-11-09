@@ -502,18 +502,17 @@ function selectExistingParentScope(checkbox) {
   if (isManager || checkbox.id !== 'parent-domain') return false;
   const rule = draft(false);
   const current = displayedRule;
-  const alternate = { ...rule, includeRegionalDomains: !rule.includeRegionalDomains };
   const exact = normalizeRule({ ...rule, includeParentDomain: false,
     includeSubdomains: false, includeRegionalDomains: false });
-  const exclusion = snapshot?.rules.find(entry => entry.id === exact.id && !entry.enabled);
-  if (!exclusion) return false;
+  const exactRule = snapshot?.rules.find(entry => entry.id === exact.id);
+  if (!exactRule) return false;
   if (!checkbox.checked && current?.includeSubdomains) {
-    showRule(exclusion);
+    showRule(exactRule);
     return true;
   }
-  if (checkbox.checked && current?.id === exclusion.id) {
+  if (checkbox.checked && current?.id === exactRule.id) {
     const parent = selected() ?? (rule.includeRegionalDomains ? undefined
-      : snapshot.rules.find(entry => entry.id === normalizeRule(alternate).id));
+      : snapshot.rules.find(entry => entry.id === normalizeRule({ ...rule, includeRegionalDomains: true }).id));
     if (parent) {
       showRule(parent);
       return true;
