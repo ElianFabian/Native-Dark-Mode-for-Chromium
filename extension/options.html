@@ -78,8 +78,10 @@
             </div>
             <p class="note" id="website-preset-help">Native uses Chromium.</p>
           </fieldset>
-          <label><input id="subdomains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="subdomains">Include subdomains</span></label>
-          <label id="regional-option"><input id="regional" class="toggle-switch" type="checkbox" role="switch" disabled> <span data-i18n="regionalDomains">Include regional domains</span></label>
+          <div class="rule-scope-options">
+            <label><input id="subdomains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="subdomains">Include subdomains</span></label>
+            <label id="regional-option"><input id="regional" class="toggle-switch" type="checkbox" role="switch" disabled> <span data-i18n="regionalDomains">Include regional domains</span></label>
+          </div>
           <p class="note" id="scope-hint"></p>
           <div class="has-tooltip">
             <button id="toggle" aria-describedby="toggle-help" disabled>Please wait…</button>

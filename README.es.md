@@ -67,7 +67,7 @@ Con **Exportar configuración de reglas** puedes guardar una copia de las reglas
 
 La interfaz sigue el idioma del navegador por defecto. En **Idioma** puedes elegir español, inglés, francés, portugués europeo, italiano, chino simplificado, japonés, coreano o alemán.
 
-Usa **A−** y **A+** en la parte superior para ajustar el texto del 75 % al 200 %. En el panel, abre **Apariencia** para cambiar de tema o activar **Alto contraste**. En el gestor, esos controles están en la barra superior. El tema sigue al sistema por defecto. Las preferencias se comparten entre ambas vistas. El modo oscuro de las webs se controla por separado con las reglas.
+Usa **A−** y **A+** en la parte superior para ajustar el texto del 75 % al 200 %. Cada vista guarda su propio tamaño de texto. En el panel, abre **Apariencia** para cambiar de tema o activar **Alto contraste**. En el gestor, esos controles están en la barra superior. Ambas vistas comparten el tema y el contraste. El tema sigue al sistema por defecto. El modo oscuro de las webs se controla por separado con las reglas.
 
 ## Cómo funciona
 
