@@ -92,10 +92,25 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 }
 .backup-panel { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 12px; }
 .backup-panel h3 { margin: 0 0 5px; font-size: .95rem; }
-.backup-panel button { width: auto; max-inline-size: calc(100% - 8px); margin-right: 8px; }
+.backup-panel button {
+  display: inline-flex;
+  align-items: center;
+  gap: .45em;
+  width: auto;
+  max-inline-size: calc(100% - 8px);
+  margin-right: 8px;
+}
+.backup-panel button svg { flex: none; inline-size: 1.5em; block-size: 1.5em; fill: currentColor; }
 #backup-status:empty, #scope-hint:empty { margin: 0; }
 .list-controls { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: end; }
 .list-controls > * { min-width: 0; max-width: 100%; }
+.rules-control-heading {
+  display: inline-block;
+  padding-inline: .45em 0;
+  border-inline-start: 2px solid var(--accent-text);
+  color: var(--accent-text);
+  font-weight: 700;
+}
 #sort-direction, #toggle-domain-groups {
   display: inline-flex;
   align-items: center;

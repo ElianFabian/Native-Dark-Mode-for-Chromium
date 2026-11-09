@@ -95,8 +95,18 @@
           <p class="note" data-i18n="rulesNote">Saved locally. Disabled rules remain as exclusions. More specific sections take priority. Queries and fragments are ignored.</p>
           <section class="backup-panel">
             <h3 data-i18n="backup">Backup and restore</h3>
-            <button id="export" disabled data-i18n="export">Export rule settings</button>
-            <button id="import" disabled data-i18n="import">Import rule settings</button>
+            <button id="export" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M4,22V20H20v2H4Zm8-4L5,9H9V2h6V9h4l-7,9Zm0-3.25L14.9,11H13V4H11v7H9.1L12,14.75ZM12,11Z"/>
+              </svg>
+              <span data-i18n="export">Export rule settings</span>
+            </button>
+            <button id="import" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M11,19h2V14.83l1.6,1.6L16,15l-4-4L8,15l1.43,1.4L11,14.83V19ZM6,22q-0.82,0-1.41-0.59T4,20V4Q4,3.17 4.59,2.59T6,2h8l6,6V20q0,0.82-0.59,1.41T18,22H6ZM13,9V4H6V20H18V9H13ZM6,4V9V4V9V20V4Z"/>
+              </svg>
+              <span data-i18n="import">Import rule settings</span>
+            </button>
             <input id="import-file" type="file" accept=".json,application/json" hidden>
             <p id="backup-status" role="status" aria-live="polite"></p>
           </section>
@@ -115,10 +125,10 @@
       <div class="rules-column">
         <section class="panel" aria-labelledby="rules-title">
           <h2 id="rules-title" data-i18n="savedRules">Saved websites and sections</h2>
-          <label><span data-i18n="searchRules">Search rules</span><input id="search" type="text"></label>
+          <label><span class="rules-control-heading" data-i18n="searchRules">Search rules</span><input id="search" type="text"></label>
           <div class="list-controls">
             <fieldset id="sort-rules" class="choice-group">
-              <legend data-i18n="sortRules">Sort rules</legend>
+              <legend class="rules-control-heading" data-i18n="sortRules">Sort rules</legend>
               <div class="choices">
                 <label><input type="radio" name="sort-rules" value="alphabetical" checked><span data-i18n="alphabetical">Alphabetical</span></label>
                 <label><input type="radio" name="sort-rules" value="date"><span data-i18n="sortByDate">Date added</span></label>
