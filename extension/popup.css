@@ -463,6 +463,11 @@ summary { cursor: pointer; overflow-wrap: anywhere; }
 }
 .rule-field > legend > label { margin: 0; }
 .rule-field > .note { margin-block: .5rem 0; }
+#website-preset-help { display: grid; }
+#website-preset-help > span { grid-area: 1 / 1; visibility: hidden; }
+#website-preset:has(input[value="native"]:checked) [data-preset="native"],
+#website-preset:has(input[value="soft"]:checked) [data-preset="soft"],
+#website-preset:has(input[value="contrast"]:checked) [data-preset="contrast"] { visibility: visible; }
 .choices { display: flex; flex-wrap: wrap; gap: .4rem; margin-block-start: .25rem; }
 .choices label { position: relative; min-inline-size: 0; margin: 0; }
 .choices .has-tooltip { min-inline-size: 0; max-inline-size: 100%; }

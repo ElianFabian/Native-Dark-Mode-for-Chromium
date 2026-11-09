@@ -114,8 +114,6 @@ function selected() {
 }
 
 function updateButton() {
-  const preset = readChoice($('#website-preset'));
-  $('#website-preset-help').textContent = t(`${presetLabels[preset]}Help`);
   let host;
   try { host = normalizeRule({ url: draft(false).url }).host; }
   catch { /* The address may be incomplete while being edited. */ }
@@ -783,7 +781,7 @@ $('#website-preset').addEventListener('change', () => {
       writeChoice($('#website-preset'), rule.preset ?? 'native');
       throw error;
     }
-  }, t('saving'));
+  }, isManager ? t('saving') : undefined);
 });
 $('#subdomains').addEventListener('change', saveCheckboxChange);
 $('#regional').addEventListener('change', saveCheckboxChange);
