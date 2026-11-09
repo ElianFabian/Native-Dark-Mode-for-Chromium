@@ -6,7 +6,7 @@
 
 Usa el modo oscuro integrado en Chromium en las webs y secciones que elijas. Guarda una regla una vez y la extensión la aplicará cuando vuelvas.
 
-La **versión 0.7.0** añade los temas web Oscuro suave y Alto contraste, reglas de dominio y ruta más precisas y confirmaciones de borrado en el popup y el gestor. [Notas de la versión en inglés](docs/RELEASE-0.7.0.md)
+La **versión 0.8.0** añade un borde opcional al popup y permite actualizar o restaurar los accesos directos de navegador existentes en Windows. [Notas de la versión en inglés](docs/RELEASE-0.8.0.md)
 
 Este proyecto se desarrolló con la ayuda de IA mediante OpenAI Codex.
 

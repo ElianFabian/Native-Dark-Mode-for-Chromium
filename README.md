@@ -6,7 +6,7 @@
 
 Use Chromium's built-in dark mode on the websites and sections you choose. Save a rule once and the extension applies it when you return.
 
-**Version 0.7.0** adds Soft dark and High contrast website themes, more precise domain and path rules, and safer removal from the popup and rule manager. [Release notes](docs/RELEASE-0.7.0.md)
+**Version 0.8.0** adds an optional popup border and lets Windows users update or restore their existing browser shortcuts. [Release notes](docs/RELEASE-0.8.0.md)
 
 This project was built with AI assistance using OpenAI Codex.
 
