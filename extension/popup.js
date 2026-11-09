@@ -24,38 +24,14 @@ let ruleToastTimer;
 
 const appearanceMenu = $('.appearance-menu');
 const appearanceTrigger = appearanceMenu?.querySelector('summary');
-let openedByHover = false;
-let appearanceCloseTimer;
-
-function closeAppearanceMenu() {
-  clearTimeout(appearanceCloseTimer);
-  openedByHover = false;
-  appearanceMenu.open = false;
-}
 
 if (appearanceMenu) {
   $('#close-appearance').addEventListener('click', () => {
-    closeAppearanceMenu();
+    appearanceMenu.open = false;
     appearanceTrigger.focus();
   });
-  appearanceTrigger.addEventListener('pointerenter', event => {
-    if (event.pointerType !== 'mouse' || appearanceMenu.open) return;
-    appearanceMenu.open = true;
-    openedByHover = true;
-  });
-  appearanceMenu.addEventListener('pointerenter', () => clearTimeout(appearanceCloseTimer));
-  appearanceMenu.addEventListener('pointerleave', event => {
-    if (event.pointerType !== 'mouse' || !openedByHover) return;
-    appearanceCloseTimer = setTimeout(() => {
-      if (!appearanceMenu.contains(document.activeElement)) closeAppearanceMenu();
-    }, 220);
-  });
-  appearanceTrigger.addEventListener('click', () => {
-    openedByHover = false;
-    clearTimeout(appearanceCloseTimer);
-  });
   document.addEventListener('pointerdown', event => {
-    if (appearanceMenu.open && !appearanceMenu.contains(event.target)) closeAppearanceMenu();
+    if (appearanceMenu.open && !appearanceMenu.contains(event.target)) appearanceMenu.open = false;
   });
 }
 
@@ -68,7 +44,7 @@ document.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || $('#import-preview')?.open) return;
   if (appearanceMenu?.open) {
     event.preventDefault();
-    closeAppearanceMenu();
+    appearanceMenu.open = false;
     appearanceTrigger.focus();
     return;
   }
