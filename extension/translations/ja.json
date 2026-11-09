@@ -1,4 +1,5 @@
 {
+  "includeInheritedParentDomain": "{domain} 全体に適用（継承）",
   "includeParentDomain": "{domain} 全体に適用",
   "scopeRegionalSubdomain": "各地域ドメインの {scope} に適用します。",
   "title": "ネイティブダークモード",

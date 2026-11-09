@@ -124,7 +124,6 @@ function updateButton() {
   const parentDomain = regionalBase?.subdomain && regionalBase.domain;
   $('#parent-domain-option').hidden = !parentDomain;
   if (!parentDomain) parent.checked = false;
-  else $('#parent-domain-label').textContent = t('includeParentDomain', { domain: parentDomain });
   $('#subdomains').disabled = busy || parent.checked;
   if (!regionalBase) $('#regional').checked = false;
   $('#regional').disabled = busy || !regionalBase;
@@ -133,6 +132,10 @@ function updateButton() {
   const matching = snapshot?.matching;
   const inheritsActiveParent = !isManager && parent.checked && matching?.enabled && displayedRule?.id === matching.id;
   parent.disabled = busy || !parentDomain || inheritsActiveParent;
+  if (parentDomain) {
+    $('#parent-domain-label').textContent = t(inheritsActiveParent ? 'includeInheritedParentDomain' : 'includeParentDomain',
+      { domain: parentDomain });
+  }
   const disables = Boolean(displayedRule?.enabled && !needsResume);
   $('#toggle').toggleAttribute('data-disables', disables);
   $('#toggle').textContent = t(disables ? 'disableSave' : 'enableSave');

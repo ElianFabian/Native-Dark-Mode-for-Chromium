@@ -1,4 +1,5 @@
 {
+  "includeInheritedParentDomain": "{domain} 전체에 적용(상속됨)",
   "includeParentDomain": "{domain} 전체에 적용",
   "scopeRegionalSubdomain": "지역별 도메인의 {scope}에 적용합니다.",
   "title": "기본 다크 모드",

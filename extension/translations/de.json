@@ -1,4 +1,5 @@
 {
+  "includeInheritedParentDomain": "Auf die gesamte Domain {domain} anwenden (geerbt)",
   "includeParentDomain": "Auf die gesamte Domain {domain} anwenden",
   "scopeRegionalSubdomain": "Gilt für {scope} in regionalen Domains.",
   "title": "Nativer Dunkelmodus",
