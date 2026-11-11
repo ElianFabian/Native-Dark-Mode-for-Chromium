@@ -6,7 +6,7 @@ Native Dark Mode is a Manifest V3 extension for desktop Chromium browsers. It de
 
 Simulated Native is inspired by Chromium, not a pixel-for-pixel replica. Its goal includes improving readability, contrast, interaction states, and configurable separation where the native filter performs poorly. Preserve source icon geometry, useful color relationships, imagery, and layout when possible. Share structural classification, contrast measurements, scheduling, and general repairs across custom themes; keep palette policy and Chromium-derived color conversion distinct. Do not promise perfect rendering, universal superiority to Native, or accessibility conformance from a contrast threshold alone.
 
-Native remains the default in 0.11.0. Its possible replacement by Simulated Native, and any product or preset rename, are undecided future work. Do not remove the debugger renderer, reinterpret existing native rules, or rename public/internal identifiers as incidental cleanup. See [Roadmap](docs/ROADMAP.md).
+Native remains the default in 0.12.0. Its possible replacement by Simulated Native, and any product or preset rename, are undecided future work. Do not remove the debugger renderer, reinterpret existing native rules, or rename public/internal identifiers as incidental cleanup. See [Roadmap](docs/ROADMAP.md).
 
 The extension is still in development and has not been published. Backward compatibility with backups from earlier development versions is a low priority, not a release requirement. Prefer a simpler, well-validated format over retaining obsolete readers or adding migrations solely for those files. Existing legacy support describes current behavior, not a promise to preserve it. When deliberately changing support, update the format documentation, tests, and import errors together. Keep validation, safe writes, and destructive-action safeguards regardless of format compatibility.
 
@@ -83,3 +83,12 @@ Brave has been used for hands-on extension checks. The launcher was tested on Wi
 ## Releases
 
 Use [extension/manifest.json](extension/manifest.json) as the extension version source. The npm manifest is private and provides development commands. For an intentional version bump, update the manifest and the release summary in both README files. Run the relevant checks, commit the release, and add an annotated `vX.Y.Z` tag to that commit. Check whether the tag already exists before creating it. Push commits and tags when requested.
+
+
+## Efficient rendering repair loop
+
+Use [Reporting and fast testing](docs/REPORTING-AND-FAST-TESTING.md) for the diagnostic handoff and measured testing shortcuts. Start with URL/case, theme, level and trigger; inspect the selector-scoped issue bundle before inferring missing styles from a screenshot. Its raw facts, ancestor/generated layers and deterministic property differences remain separate from defect classification. Keep missing selectors, unmatched nodes and unsupported/authenticated states explicit. Do not export live labels without the existing opt-in.
+
+For a narrow mechanism change, `npm run verify -- --focus GROUPS` retains all unit/syntax tests and the selected shared browser groups. Choose all affected groups and retain preservation controls; source classification/scheduling changes often require broader verification. Focused results never substitute for complete `npm run verify -- --browser` release checks. `npm test` discovers test files only under `test/`; keep new unit tests there. Do not cache test success or shorten assertions to claim a speed improvement. Prefer waiting for the actual bounded state transition over fixed sleeps/frame-count assumptions.
+
+Preserve semantic border color when strengthening selection/status frames: keep the repaired Off ink constant and extend eligible uniform strokes inward without changing layout or replacing authored shadows. Numeric hue retention is not sufficient visual acceptance; retain screenshot-pixel checks and distinguish reporter confirmation from isolated-browser measurements.

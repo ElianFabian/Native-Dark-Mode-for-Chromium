@@ -570,8 +570,14 @@
     let svg;
     try { svg = decodeURIComponent(match[1].replace(/\\(["\\])/g, '$1')); } catch { return null; }
     const root = /^<svg\b[^>]*>/i.exec(svg)?.[0];
-    const width = Number(/\bwidth=['"](\d+)['"]/i.exec(root)?.[1]);
-    const height = Number(/\bheight=['"](\d+)['"]/i.exec(root)?.[1]);
+    const viewBox = /\bviewBox=['"]\s*(-?[\d.]+)[ ,]+(-?[\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)\s*['"]/i.exec(root);
+    const hasDimensions = /\b(?:width|height)\s*=/.test(root ?? '');
+    const inferViewport = !hasDimensions && (/^\d+(?:\.\d+)?px(?: \d+(?:\.\d+)?px)?$/.test(style.backgroundSize) ||
+      boundedBox && ['contain', 'cover'].includes(style.backgroundSize));
+    // A small viewBox-only glyph has a usable coordinate viewport. Preserve
+    // its nonzero origin and path, rather than replacing it with a CSS arrow.
+    const width = Number(/\bwidth=['"](\d+)['"]/i.exec(root)?.[1] ?? (inferViewport && viewBox?.[3]));
+    const height = Number(/\bheight=['"](\d+)['"]/i.exec(root)?.[1] ?? (inferViewport && viewBox?.[4]));
     let glyph = null;
     const explicitFill = /\bfill\s*=/.test(root) ||
       [...svg.matchAll(/<(?:path|circle|ellipse|line|polygon|polyline|rect)\b[^>]*>/gi)]
@@ -768,7 +774,11 @@
       const canvas = document.createElement('canvas'); canvas.width = Math.ceil(width); canvas.height = Math.ceil(height);
       const context = canvas.getContext('2d', { willReadFrequently: true });
       context.drawImage(image, x, y, dw, dh);
-      return solidSilhouetteInk(context.getImageData(0, 0, canvas.width, canvas.height).data);
+      // Tiny antialiased arrows may contain fewer than sixteen near-opaque
+      // pixels. Scale only this bounded crop's evidence floor; retain the
+      // single-ink and transparency checks and the artwork default elsewhere.
+      return solidSilhouetteInk(context.getImageData(0, 0, canvas.width, canvas.height).data,
+        Math.min(16, Math.max(8, Math.ceil(canvas.width * canvas.height * .06))));
     } catch { return null; }
     finally { decoder?.close(); if (objectUrl) URL.revokeObjectURL(objectUrl); }
   }
@@ -778,7 +788,15 @@
         style.mixBlendMode !== 'normal' || chromiumSrgb(style.backgroundColor)?.[3] !== 0 ||
         style.maskImage !== 'none' || !element.closest(interactive) || element.closest(':disabled,[aria-disabled="true"]') ||
         element.matches('[role="img"]') || element.closest('[id*="logo" i],[class*="logo" i],[id*="avatar" i],[class*="avatar" i]')) return '';
-    if (!pseudo && (element.childElementCount || element.textContent.trim())) return '';
+    if (!pseudo && (Array.prototype.some.call(element.childNodes, textNode) ||
+        Array.from(element.children).some(child => {
+          const paint = getComputedStyle(child);
+          // Accessible labels can live inside a sprite without contributing
+          // visible pixels. Do not reject that crop, or tint visible content.
+          return paint.display !== 'none' && paint.visibility !== 'hidden' &&
+            !/^circle\(0(?:px|%)?\)$/.test(paint.clipPath) &&
+            paint.clip !== 'rect(0px, 0px, 0px, 0px)';
+        }))) return '';
     const width = pseudo ? parseFloat(style.width) : element.clientWidth;
     const height = pseudo ? parseFloat(style.height) : element.clientHeight;
     if (!(width > 0 && height > 0 && width <= 48 && height <= 48) || style.backgroundOrigin !== 'padding-box') return '';
@@ -1745,7 +1763,7 @@
     return changed ? `content: url("data:image/svg+xml,${encodeURIComponent(svg)}") !important;` : '';
   }
 
-  function solidSilhouetteInk(pixels) {
+  function solidSilhouetteInk(pixels, minimumOpaque = 16) {
     if (!pixels) return null;
     let ink, transparent = 0, opaque = 0;
     for (let index = 0; index < pixels.length; index += 4) {
@@ -1756,7 +1774,7 @@
       if (color.some((channel, i) => Math.abs(channel - ink[i]) > 8)) return null;
       opaque++;
     }
-    return opaque >= 16 && transparent >= pixels.length / 80 ? ink : null;
+    return opaque >= minimumOpaque && transparent >= pixels.length / 80 ? ink : null;
   }
 
   function artworkTintLevel(backdrop) {
@@ -2028,21 +2046,48 @@
   }
 
   function coloredControlBorder(element, style, getBackdrop) {
-    if (!element.matches(interactive) ||
-        element.matches(':disabled,[aria-disabled="true"],[aria-pressed],[aria-selected],[aria-current],[role="tab"]') ||
+    if (element.matches(':disabled,[aria-disabled="true"]') ||
         style.borderImageSource !== 'none') return '';
+    const control = element.matches(interactive) &&
+      !element.matches('[aria-pressed],[aria-selected],[aria-current],[role="tab"]');
+    if (!control && !paintedBorderSides(style).length) return '';
     const source = authoredBackdropStyle(element);
-    if (chromiumSrgb(source.backgroundColor)?.[3] > .2) return '';
+    if (!control || chromiumSrgb(source.backgroundColor)?.[3] > .2) {
+      // A selected card can paint its meaningful edge on a noninteractive
+      // container around heading links. Do not recolor matching button fills
+      // or arbitrary colored decoration as though they were such a boundary.
+      const ink = chromiumSrgb(source.borderTopColor), backing = authoredSolidBackdrop(element);
+      const width = parseFloat(source.borderTopWidth);
+      if (!ink?.[3] || !(width > 0 && width <= 2) || !backing ||
+          Math.max(...backing.slice(0, 3)) - Math.min(...backing.slice(0, 3)) > 24 ||
+          contrastRatio(luminance(compositeColor(ink, backing)), luminance(backing)) < 3 ||
+          !borderEdges.every(side => source[`border${side}Style`] === 'solid' &&
+            source[`border${side}Color`] === source.borderTopColor && parseFloat(source[`border${side}Width`]) === width) ||
+          !(element.matches('article,aside,[role="option"],[role="tab"],[aria-selected="true"],[aria-current="true"]') ||
+            element.querySelector('h1 a[href],h2 a[href],h3 a[href],h4 a[href],h5 a[href],h6 a[href]'))) return '';
+    }
     const backdrop = getBackdrop(element);
     if (!backdrop || luminance(backdrop) >= .18) return '';
-    return borderEdges.map(side => {
+    const colors = [];
+    const declarations = borderEdges.map(side => {
       const width = parseFloat(source[`border${side}Width`]);
       const ink = chromiumSrgb(source[`border${side}Color`]);
       if (!(width > 0 && width <= 2) || source[`border${side}Style`] !== 'solid' || !ink?.[3] ||
           Math.max(...ink.slice(0, 3)) - Math.min(...ink.slice(0, 3)) < 45) return '';
       const color = contrastingGlyphInk(ink, backdrop, 4.5, true) ?? ink;
+      colors.push(rgba(color));
       return `border-${side.toLowerCase()}-color: ${rgba(color)} !important;`;
     }).join('');
+    // Selection/status color is information, not a neutral separator. Extend
+    // a uniform frame inward in its repaired Off ink instead of washing it
+    // toward white. An inset extension joins the actual border without changing
+    // layout or replacing the authored soft shadow. Leave mixed sides alone.
+    if (!emphasizeSeparators || colors.length !== 4 || new Set(colors).size !== 1 ||
+        !borderEdges.every(side => source[`border${side}Width`] === source.borderTopWidth)) return declarations;
+    const level = separatorLevels[emphasizeSeparators];
+    const spread = Math.round(level.opacity * level.edgeWidth * 100) / 100;
+    const shadow = source.boxShadow === 'none' ? '' : `, ${source.boxShadow}`;
+    return declarations + `box-shadow: inset 0 0 0 ${spread}px ${colors[0]}${shadow} !important;`;
   }
 
   function authoredFrameBorder(element, style, backdrop, sourceBackground) {

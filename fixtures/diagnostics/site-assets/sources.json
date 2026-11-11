@@ -174,5 +174,13 @@
     "sha256": "8312fef2720e639e903cf4a00c35a1ceed50f616df0934a113e66ab7f18f3e60",
     "provenance": "Original preference-button SVG paths from reporter HTML; extension markers/classes omitted",
     "retrieved": "2026-11-11"
+  },
+  {
+    "file": "amazon-ui-sprite.png",
+    "url": "https://m.media-amazon.com/images/S/sash/McBZv0ZvnbehkIx.png",
+    "bytes": 16237,
+    "sha256": "d47c1e50db91bb597b75edc63362cd0c568e4f5f15a3f8be1b6adff24e89e447",
+    "provenance": "Public asset, original bytes; small next-arrow crop at -105px -7px, 11x15 CSS pixels, 400x900 background size",
+    "retrieved": "2026-11-11"
   }
 ]

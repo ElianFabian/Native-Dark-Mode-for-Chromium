@@ -11,6 +11,7 @@ These public logos and drawings belong to their respective owners. They are reta
 - Training school / funding banner: original logo PNG and the reported Government of Spain / European funding PNG.
 - InfoJobs: original linked wordmark SVG.
 - formacion.cc: original static GIF.
+- Amazon: original public 400x900 PNG sprite; the small carousel arrow uses its 11x15 crop at -105px -7px. The reconstruction retains the nested button/inner/icon/hidden-label structure and `clip-path:circle(0px)` from public CSS. A visible-child negative must not receive a whole-element filter.
 
 Keep asset identity separate from delivery semantics. The original Indeed backdrop and Junta glyphs are embedded `data:image/svg+xml` backgrounds in the source CSS; the fixture must keep them embedded. Their decoded files are retained as provenance, not substituted as external CSS URLs. The Indeed logo remains inline in its logo-marked anchor, with original `currentColor` inheritance for navigation/preference icons. Replacing these details can create failures absent from the real page. The surrounding layout is reduced and is not a pixel-perfect website archive.
 

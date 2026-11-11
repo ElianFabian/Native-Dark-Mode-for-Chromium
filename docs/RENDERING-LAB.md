@@ -111,3 +111,6 @@ Flow-image text regression: the manufactured four-direction halo also outlined t
 
 
 The image-text follow-up uses weighted word-region sampling and the shared perceptual candidate policy documented in [Text over images](IMAGE-TEXT-CONTRAST.md). The colorful source specimen itself has weak text, so source preservation is not treated as a readability pass. Bright/dark picture controls exercise opposite ink choices; all three custom themes retain source shadows/decoration and stable ink over 24 resampling frames. Internal uncertainty and candidate statistics do not currently add a new UI badge; picture rows remain partially checked, and visual/spatial masking review remains necessary. The report renderer hash now covers the color primitive, image-text policy and renderer together.
+
+
+For selector-scoped issue bundles, focused browser groups and measured unit-discovery improvements, see [Reporting and fast testing](REPORTING-AND-FAST-TESTING.md). The full browser verification now also checks issue-bundle creation and redaction. The changed-backing scroll probe waits for four real bounded transitions while recording all intermediate frames, rather than assuming 32 frames always exercise a transition.

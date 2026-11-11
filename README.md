@@ -6,7 +6,7 @@
 
 Use Chromium's built-in dark mode on the websites and sections you choose. Save a rule once and the extension applies it when you return.
 
-**Version 0.11.0** adds a local rendering lab, deterministic diagnostics and a unified verification command. It improves shared image-text, icon, artwork, card and border rendering, including scroll stability and source-aware border emphasis. [Release notes](docs/RELEASE-0.11.0.md)
+**Version 0.12.0** adds element-focused diagnostic bundles and faster focused verification. It improves carousel arrow contrast and strengthens colored card borders without washing out their colors, across all custom themes. [Release notes](docs/RELEASE-0.12.0.md)
 
 This project was built with AI assistance using OpenAI Codex.
 
@@ -61,7 +61,7 @@ Click either screenshot to open it at full resolution.
 
 On protected extension stores, internal browser or extension pages, and detected PDF viewers, the popup shows a warning explaining why darkening is unavailable and disables the rule controls. You can still open **Manage rules**. Detection cannot identify every embedded viewer in advance.
 
-**Simulated Native** softens bright decorative separators by default. Use **Emphasize separators** to choose Off, Very low, Low, Medium, High, or Maximum. Higher levels strengthen eligible separators, card edges, and compact icon controls without resizing them. Off adds no optional edge, but keeps the theme’s normal borders and contrast repairs. The rule shares this level across **Simulated Native**, **Soft dark**, and **High contrast** for the website or section it covers and includes it in backups.
+**Simulated Native** softens bright decorative separators by default. Use **Emphasize separators** to choose Off, Very low, Low, Medium, High, or Maximum. Higher levels strengthen eligible separators, card edges, and compact icon controls without resizing them. Eligible uniform colored frames keep their adapted Off color and gain visual stroke weight inward, preserving selection/status colors and existing soft shadows. Off adds no optional edge, but keeps the theme’s normal borders and contrast repairs. The rule shares this level across **Simulated Native**, **Soft dark**, and **High contrast** for the website or section it covers and includes it in backups.
 
 In the rule manager, open **Rule defaults** to choose the theme, separator level, scope, and domain switches for new rules. Entire website and Path section keep separate domain settings. Path section also lets you choose whether to include subpaths. Existing rules keep their settings. The parent-domain and regional-domain switches apply where the address supports them.
 
@@ -192,3 +192,10 @@ Run `npm run lab` and open **http://127.0.0.1:8787**. Click **Run local smoke su
 **Capture extended gallery** adds six generic visual groups plus five groups with original website elements and public artwork (including Indeed, Gradle and government resources): icons, transparent PNG/SVG artwork, real static/animated GIFs, selectors, borders, surfaces and interaction examples. Reports automatically group and prioritize potential issues using original/themed measurements; acceptable appearances can be marked separately without changing the raw evidence. Pixel and motion checks remain explicitly limited.
 
 For a single verification command including that browser smoke suite, use `npm run verify -- --quick --browser` (or omit `--quick` to include launcher artifacts). The initial suite tests steady states, not every historical regression or animation. See [Rendering lab](docs/RENDERING-LAB.md) for supported measurements, CLI/offline operations and remaining coverage.
+
+
+### Faster error reports and focused tests
+
+For a rendering error, send the URL or local case name, theme, border level, triggering action and screenshot. A selector is useful when available; a full HTML document is usually unnecessary. The agent can generate a compact original/themed issue bundle with `npm run diagnose -- --issue --url "https://example.org/page" --selector ".affected-control"`. Default live captures omit labels, HTML, screenshots and input values; inspect artifacts before sharing. Isolated captures do not share your login or reproduce hover/scroll state automatically.
+
+Use `npm run verify -- --focus borders` (or groups such as `icons,contact`) during a narrow repair. It keeps all syntax and Node tests and the selected browser group's full expectations. Use `npm run verify -- --browser` for the full release path. See [Reporting and fast testing](docs/REPORTING-AND-FAST-TESTING.md) for commands, measured timings and coverage limits.

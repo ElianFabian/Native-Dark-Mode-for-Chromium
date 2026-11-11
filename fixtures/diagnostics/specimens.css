@@ -24,6 +24,9 @@ figure img { display: block; width: 100%; height: 64px; object-fit: contain; mar
 .border-grid { align-items: stretch; }.border-grid>* { padding: 12px; }.chip { background: #f7f7f8; border: 1px solid #f7f7f8; border-radius: 2px; }.fractional { border: .8px solid #b6b6b6; }.transparent-edge { border: 2px solid transparent; background: #f7f7f8; }
 .authored-dark-frame { background: #1c2533; color: #e8eef8; border: 1px solid #64738b; border-radius: 12px; width: 270px; }
 .authored-strong-frame { border-color: #ccc; }
+.selection-card { background: white; border: 1px solid #2557a7; border-radius: 20px; width: 300px; }
+.selection-card {box-shadow:0 2px 4px #00000014;}
+.matching-blue-fill { background: #2557a7; border: 1px solid #2557a7; color: white; border-radius: 20px; }
 .shadow-card { display: grid; gap: 8px; width: 210px; padding: 18px; border-radius: 22px; background: #fff; box-shadow: 0 2px 12px #0003; text-decoration: none; }
 .social { width: 44px; height: 44px; color: white; background: #18477e; border-radius: 0 12px 12px; text-decoration: none; font-weight: bold; }
 .generated-frame { position: relative; }.generated-frame::after { content: ''; position: absolute; inset: 0; border: 1px solid #ddd; pointer-events: none; }

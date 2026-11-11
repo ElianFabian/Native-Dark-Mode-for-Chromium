@@ -6,7 +6,7 @@
 
 Usa el modo oscuro integrado en Chromium en las webs y secciones que elijas. Guarda una regla una vez y la extensión la aplicará cuando vuelvas.
 
-La **versión 0.11.0** añade un laboratorio local de renderizado, diagnósticos deterministas y un comando unificado de verificación. Mejora el texto sobre imágenes, los iconos, las imágenes transparentes, las tarjetas y los bordes, incluida su estabilidad al hacer scroll y el énfasis relativo al borde original. [Notas de la versión en inglés](docs/RELEASE-0.11.0.md)
+La **versión 0.12.0** añade diagnósticos centrados en un elemento y verificaciones focalizadas más rápidas. Mejora el contraste de las flechas de carrusel y refuerza los bordes de color de las tarjetas sin blanquearlos, en todos los temas personalizados. [Notas de la versión en inglés](docs/RELEASE-0.12.0.md)
 
 Este proyecto se desarrolló con la ayuda de IA mediante OpenAI Codex.
 
@@ -61,7 +61,7 @@ Haz clic en una captura para abrirla a resolución completa.
 
 En tiendas de extensiones protegidas, páginas internas del navegador o de extensiones y visores PDF detectados, el popup muestra una advertencia que explica por qué no se puede aplicar el tema y desactiva los controles de la regla. Puedes seguir abriendo **Gestionar reglas**. No es posible detectar de antemano todos los visores integrados.
 
-**Nativo simulado** suaviza los separadores decorativos claros de forma predeterminada. Usa **Resaltar separadores** para elegir Desactivado, Muy bajo, Bajo, Medio, Alto o Máximo. Los niveles superiores refuerzan los separadores, los bordes de tarjetas y los controles compactos de icono compatibles sin cambiar su tamaño. Desactivado no añade contornos opcionales, pero conserva los bordes normales del tema y sus correcciones de contraste. La regla comparte este nivel entre **Nativo simulado**, **Oscuro suave** y **Alto contraste** para la web o sección que cubre y lo incluye en las copias de seguridad.
+**Nativo simulado** suaviza los separadores decorativos claros de forma predeterminada. Usa **Resaltar separadores** para elegir Desactivado, Muy bajo, Bajo, Medio, Alto o Máximo. Los niveles superiores refuerzan los separadores, los bordes de tarjetas y los controles compactos de icono compatibles sin cambiar su tamaño. Los marcos de color uniformes compatibles conservan el color adaptado de Desactivado y refuerzan el trazo hacia dentro, manteniendo los colores de selección o estado y las sombras suaves originales. Desactivado no añade contornos opcionales, pero conserva los bordes normales del tema y sus correcciones de contraste. La regla comparte este nivel entre **Nativo simulado**, **Oscuro suave** y **Alto contraste** para la web o sección que cubre y lo incluye en las copias de seguridad.
 
 En el gestor de reglas, abre **Valores predeterminados** para elegir el tema, el nivel de separadores, el alcance y las opciones de dominio de las reglas nuevas. Web completa y Ruta guardan sus opciones de dominio por separado. En Ruta también puedes elegir si se incluyen las subrutas. Las reglas guardadas conservan sus ajustes. Las opciones de dominio base y dominios regionales se aplican cuando la dirección las admite.
 
@@ -180,3 +180,10 @@ Ejecuta `npm run lab` y abre **http://127.0.0.1:8787**. Pulsa **Run local smoke 
 **Capture extended gallery** añade seis grupos genéricos y cinco grupos con elementos originales de webs y recursos públicos (incluidos Indeed, Gradle y organismos del gobierno): iconos, imágenes PNG/SVG transparentes, GIF reales estáticos y animados, selectores, bordes, superficies y ejemplos de interacción. Los informes agrupan y priorizan automáticamente los posibles problemas comparando las mediciones originales y las del tema; puedes marcar una apariencia como aceptable sin alterar las pruebas recogidas. Las comprobaciones de píxeles y movimiento mantienen sus límites explícitos.
 
 Para incluir esa prueba de navegador en una sola verificación, usa `npm run verify -- --quick --browser` (omite `--quick` si también quieres comprobar los launchers). La primera entrega comprueba estados estáticos; todavía no cubre todas las regresiones históricas ni las animaciones. Consulta la [guía del laboratorio, en inglés](docs/RENDERING-LAB.md) para conocer las mediciones admitidas, los comandos y lo que sigue pendiente.
+
+
+### Informes de errores y pruebas enfocadas
+
+Para un error de renderizado, envía la URL o el nombre del caso local, el tema, el nivel de borde, la acción que lo provoca y una captura. Un selector ayuda si lo tienes; normalmente no hace falta copiar todo el HTML. El agente puede generar una comparación compacta original/tema con `npm run diagnose -- --issue --url "https://example.org/page" --selector ".affected-control"`. Por defecto, las capturas de webs omiten etiquetas visibles, HTML, imágenes de pantalla y valores de formularios; revisa los archivos antes de compartirlos. El navegador aislado no comparte tu sesión ni reproduce automáticamente el estado de hover/scroll.
+
+Usa `npm run verify -- --focus borders` (o grupos como `icons,contact`) durante una corrección concreta. Conserva todas las comprobaciones de sintaxis y tests de Node, además de las expectativas completas del grupo de navegador elegido. Para una release, usa `npm run verify -- --browser`. Consulta [Informes y pruebas rápidas, en inglés](docs/REPORTING-AND-FAST-TESTING.md) para ver los comandos, tiempos medidos y límites de cobertura.

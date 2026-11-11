@@ -96,3 +96,8 @@ The logo's original img points to an external CDN and taints canvas (`SecurityEr
 For portable cross-origin checks, run `python scripts/dev/serve-fixtures.py` and open `http://127.0.0.1:8765/contrast-controls.html`. The fixture references `localhost` as a second origin. Only `/cors/` resource paths receive the permissive CORS response; the ordinary path deliberately denies the cross-origin read. The allowed monochrome SVG receives a filter, while multicolor, animated and denied-CORS controls retain their paint. A plain `python -m http.server` still serves baseline fixtures but does not supply the positive `/cors/` endpoint.
 
 Brave/Chromium 157.0.8103.50 on Windows at 125% passed all three custom themes, repeated resampling, unchanged glyph paths/border dimensions, negative controls and disable cleanup. The login page was public and no credentials were entered. This is not authenticated-state validation.
+
+
+## Faster reports and focused iteration
+
+Use [Reporting and fast testing](REPORTING-AND-FAST-TESTING.md) for the selector-scoped `--issue` bundle, ancestor/generated-layer evidence, privacy defaults and focused browser groups. `npm test` now searches only the `test/` tree. Narrow `verify --focus` runs retain all unit checks and the selected groups' full expectations; they do not replace full release checks. The changed-backing probe waits for actual bounded transitions and checks each intervening frame instead of assuming fixed frame counts.

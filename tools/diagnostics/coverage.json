@@ -56,7 +56,9 @@
     "id": "4757809dc11d",
     "symptom": "A colored outline action keeps an unreadable original border",
     "status": "partial",
+    "evidence": "Uniform selected/nested-heading card borders across all six levels and three custom themes: constant repaired Off ink, increasing same-color inward stroke extension, original shadow retention, unchanged border width/layout and no neutral outline. Screenshot pixels confirm increased blue coverage at Maximum. User computed layers locate a single 0.8px blue border; exact live page remains blocked.",
     "cases": [
+      "extended-borders",
       "extended-controls"
     ]
   },
@@ -304,8 +306,10 @@
     "symptom": "A carousel arrow or pagination dot disappears",
     "status": "partial",
     "cases": [
-      "extended-states"
-    ]
+      "extended-states",
+      "extended-icons"
+    ],
+    "evidence": "Includes public viewBox-only carousel SVG with original path, nonzero viewport origin, displayed geometry, rotated control and sampled ink checks; confirmed one public Amazon arrow across all custom themes. Original PNG 11x15 arrow crop with clipped accessible label also passes all custom themes locally; visible-child and multicolor negatives retain paint. Supplied personalized carousel remains locally reconstructed."
   },
   {
     "id": "79c78c9e6e17",

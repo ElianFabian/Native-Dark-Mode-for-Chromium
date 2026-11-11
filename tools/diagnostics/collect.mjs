@@ -70,6 +70,8 @@ export function collectPaint(options = {}) {
       opacity: s.opacity, filter: s.filter.includes('url(') ? '[filter resource]' : s.filter, blend: s.mixBlendMode, mask: s.maskImage === 'none' ? 'none' : '[mask]',
       transform: s.transform, position: s.position, width: s.width, height: s.height, display: s.display,
       outline: s.outline, shadow: s.boxShadow, radius: s.borderRadius,
+      boxSizing:s.boxSizing,padding:s.padding,overflow:s.overflow,textShadow:s.textShadow,
+      decorationLine:s.textDecorationLine,decorationColor:s.textDecorationColor,decorationThickness:s.textDecorationThickness,underlineOffset:s.textUnderlineOffset,
       borders: ['Top', 'Right', 'Bottom', 'Left'].map(side => ({ width: parseFloat(s[`border${side}Width`]), style: s[`border${side}Style`], color: s[`border${side}Color`] })) };
   };
   const rows = []; let skipped = 0, rootCount = 0, uninspectedFrames = 0, visited = 0, walkLimitReached = false;
@@ -94,6 +96,13 @@ export function collectPaint(options = {}) {
         hasText: Array.prototype.some.call(e.childNodes, n => n.nodeType === 3 && n.textContent.trim()),
         bounds: [r.x, r.y, r.width, r.height], backdrop: bg, outside: backing(parent(e)), layers,
         image: e instanceof HTMLImageElement ? { loaded: e.complete && e.naturalWidth > 0, size: [e.naturalWidth, e.naturalHeight], filter: s.filter, pixels: 'not sampled' } : null };
+      if(options.context && options.selector && e.matches(options.selector)) {
+        row.context=[];
+        for(let ancestor=parent(e),depth=0;ancestor&&depth<4;ancestor=parent(ancestor),depth++) {
+          row.context.push({key:locator(ancestor),tag:ancestor.localName,role:ancestor.getAttribute('role'),
+            layers:['','::before','::after'].map(p=>layer(ancestor,p))});
+        }
+      }
       const landmark = e.closest('nav,main,aside,header,footer,form,[role="dialog"]');
       const label = options.labels ? (e.getAttribute('aria-label') || e.getAttribute('alt') || (e.matches('input,textarea,select') ? '' : e.textContent)).replace(/\s+/g, ' ').trim().slice(0, 100) : '';
       row.location = { label: `${label ? label + ' · ' : ''}${e.localName}${landmark ? ' in ' + landmark.localName : ''} at (${Math.round(r.x)}, ${Math.round(r.y)}) CSS px`,

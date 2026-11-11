@@ -6,6 +6,13 @@ import { color, composite, contrast, analyze, compare, validateReport } from '..
 import { cases } from '../tools/diagnostics/cases.mjs';
 import { triage, summaryMarkdown } from '../tools/diagnostics/triage.mjs';
 
+test('viewBox-only arrow reproduction retains original public drawing bytes', async()=>{
+  const css=await readFile(new URL('../fixtures/diagnostics/arrow-reproduction.css',import.meta.url),'utf8');
+  const value=css.match(/background-image:(url\(".*"\));background-repeat/)[1];
+  const svg=decodeURIComponent(JSON.parse(value.slice(4,-1)).split('data:image/svg+xml,')[1]);
+  assert.equal(createHash('sha256').update(svg).digest('hex'),'4b1f5385634b07c02d433aa8f43fb7739a8d0bcbe3c041c35235afec27b73beb');
+});
+
 function sample({ ink = 'rgb(255, 255, 255)', background = [18, 18, 18, 1], width = .8, edge = 'rgb(60,60,60)' } = {}) {
   const layer = { pseudo: '', content: 'normal', color: ink, textFill: ink, backgroundColor: 'rgba(0,0,0,0)', backgroundImage: 'none', fontSize: 18, fontWeight: '400', opacity: '1', filter: 'none', mask: 'none', borders: Array.from({ length: 4 }, () => ({ width, style: 'solid', color: edge })) };
   return { key: 'fixture:control', identity: 'fixture', signature: 'div:0:', hasText: true, disabled: false, bounds: [0, 0, 100, 40], backdrop: { color: background, reason: 'test backing' }, outside: { color: background },

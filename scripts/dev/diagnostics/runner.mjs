@@ -7,6 +7,7 @@ import { launchBrowser, root, until } from './browser.mjs';
 import { collectPaint } from '../../../tools/diagnostics/collect.mjs';
 import { analyze, compare } from '../../../tools/diagnostics/analysis.mjs';
 import { cases } from '../../../tools/diagnostics/cases.mjs';
+import { issueMarkdown } from '../../../tools/diagnostics/issue.mjs';
 import { triage, summaryMarkdown } from '../../../tools/diagnostics/triage.mjs';
 
 async function fixtureDigest() {
@@ -33,7 +34,7 @@ async function stable(page, options) {
   } while (performance.now() < end);
   return { ...sample, settled: false };
 }
-export async function captureSuite({ base, browser, url, selector, labels = false, gallery = false, outputDirectory, scales = [1.25], themes = ['chromium', 'soft', 'contrast'], levels = ['off', 'maximum'], full = false, comparison, signal } = {}) {
+export async function captureSuite({ base, browser, url, selector, labels = false, issue = false, gallery = false, outputDirectory, scales = [1.25], themes = ['chromium', 'soft', 'contrast'], levels = ['off', 'maximum'], full = false, comparison, signal } = {}) {
   if (full) { scales = [1, 1.25, 1.5]; levels = ['off', 'very-low', 'low', 'medium', 'high', 'maximum']; }
   const started = performance.now();
   const name = 'run-' + Date.now() + '-' + randomUUID().slice(0, 8);
@@ -65,6 +66,10 @@ export async function captureSuite({ base, browser, url, selector, labels = fals
         await page.send('Emulation.setDeviceMetricsOverride', { width: 1000, height: 900, deviceScaleFactor: 1, mobile: false });
         await page.send('Page.navigate', { url: address }); await page.send('Page.bringToFront');
         await until(() => page.evaluate(`document.readyState==='complete' && !!document.body && ${url ? 'true' : "document.documentElement.dataset.fixtureReady==='yes'"}`), 'specimen load');
+        if(issue) {
+          const found=await page.evaluate(`(()=>{const elements=document.querySelectorAll(${JSON.stringify(selector)});elements[0]?.scrollIntoView({block:'center',behavior:'instant'});return elements.length})()`);
+          if(!found) throw Error('Issue selector matched no element. Check the URL, selector and frame; isolated profiles do not share your login.');
+        }
         const readiness = await page.evaluate(`(async()=>{
           document.documentElement.style.zoom=${scale};
           const bounded=async work=>{let timer;try{return await Promise.race([work.then(()=>true,()=>false),new Promise(resolve=>{timer=setTimeout(()=>resolve(false),2000)})]);}finally{clearTimeout(timer);}};
@@ -76,7 +81,8 @@ export async function captureSuite({ base, browser, url, selector, labels = fals
           await owned.rule(address, theme, level);
           await until(() => page.evaluate("!!document.querySelector('[data-native-dark-mode-paint]')"), 'theme paint');
         }
-        const sample = await stable(page, { targeted: !url, selector, labels: !url || labels });
+        const sample = await stable(page, { targeted: !url, selector, context:issue, limit:issue?50:1500, labels: !url || labels });
+        if(issue&&!sample.rows.length) throw Error('No visible inspectable rows for the issue selector; frame, visibility or traversal limits may prevent inspection.');
         sample.readiness = readiness;
         if (!readiness.fontsReady || !readiness.visibleImagesReady) sample.settled = false;
         const id = `${specimen.id}/${scale}/${theme}/${level}/default`;
@@ -92,6 +98,8 @@ export async function captureSuite({ base, browser, url, selector, labels = fals
         console.log(`${id}: ${sample.rows.length} elements, ${sample.settled ? 'stable' : 'UNSTABLE'}`);
       }
     }
+    if(issue) report.issue={url:new URL(url).origin+new URL(url).pathname,selector,labels:Boolean(labels),contextDepth:4,
+      limitations:'Fresh isolated profile; default state only. No shared login, hover trigger, closed roots, frame selection or exact image pixels. Source/themed structural matching is best-effort.'};
     const analysis = analyze(report);
     if (!url) {
       for (const capture of report.captures.filter(c => c.theme !== 'source' && cases.find(s => s.id === c.specimen)?.status === 'automated')) {
@@ -126,6 +134,7 @@ export async function captureSuite({ base, browser, url, selector, labels = fals
     report.timings = { captureAndAnalysisMs: Math.round(performance.now() - started) };
     await writeFile(path.join(directory, 'capture.json'), JSON.stringify(report, null, 2));
     await writeFile(path.join(directory, 'analysis.json'), JSON.stringify(analysis, null, 2));
+    if(issue) await writeFile(path.join(directory,'issue.md'),issueMarkdown(report));
     const queue = triage(report, analysis);
     await writeFile(path.join(directory, 'triage.json'), JSON.stringify(queue, null, 2));
     await writeFile(path.join(directory, 'summary.md'), summaryMarkdown(queue));
