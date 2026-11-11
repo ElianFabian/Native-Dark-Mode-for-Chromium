@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Hidden pagination labels</title>
+<style>body { background: white; color: #222; font: 18px sans-serif; } .markers { display: flex; gap: 8px; } button { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; font-size: 0; color: transparent; background: #777; } button[aria-current] { background: #fc4d50; }</style>
+<h1>Marker paint and hidden numeric labels are separate</h1>
+<p>These buttons have zero-sized numeric labels. Do not report their hidden text as a contrast failure; measure the visible marker separately when supported.</p>
+<div class="markers" role="group" aria-label="Slides"><button aria-label="Slide 1" aria-current="true">1</button>
+<button aria-label="Slide 2">2</button><button aria-label="Slide 3">3</button>
+</div>
+</html>

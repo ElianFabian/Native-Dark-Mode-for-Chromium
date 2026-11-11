@@ -68,13 +68,35 @@
     return light >= .022 ? light : light + (.022 - light) ** 1.414;
   }
 
-  globalThis.nativeDarkModePerceptualContrast = (text, background) => {
-    const ink = perceptualLuminance(text);
-    const backdrop = perceptualLuminance(background);
+  function perceptualScore(ink, backdrop, inkDark, inkLight, backdropDark, backdropLight) {
     if (Math.abs(backdrop - ink) < .0005) return 0;
     const darkInk = backdrop > ink;
-    const score = darkInk ? 1.14 * (backdrop ** .56 - ink ** .57) : 1.14 * (backdrop ** .65 - ink ** .62);
+    const score = darkInk ? 1.14 * ((backdropDark ?? backdrop ** .56) - (inkDark ?? ink ** .57)) :
+      1.14 * ((backdropLight ?? backdrop ** .65) - (inkLight ?? ink ** .62));
     if (Math.abs(score) < .1) return 0;
     return 100 * (score + (darkInk ? -.027 : .027));
+  }
+
+  globalThis.nativeDarkModePerceptualContrast = (text, background) =>
+    perceptualScore(perceptualLuminance(text), perceptualLuminance(background));
+
+  // Prepare immutable opaque background samples once when comparing several
+  // foregrounds. This uses the same equations, not a quantized approximation.
+  globalThis.nativeDarkModePerceptualContrast.prepare = backgrounds => {
+    const prepared = backgrounds.map(background => {
+      const value = perceptualLuminance(background);
+      return [value, value ** .56, value ** .65];
+    });
+    return ink => {
+      const alpha = ink[3] ?? 1;
+      if (alpha !== 1) return backgrounds.map((background, i) => {
+        const text = ink.slice(0, 3).map((v, channel) => v * alpha + background[channel] * (1 - alpha));
+        const [value, dark, light] = prepared[i];
+        return perceptualScore(perceptualLuminance(text), value, undefined, undefined, dark, light);
+      });
+      const value = perceptualLuminance(ink), dark = value ** .57, light = value ** .62;
+      return prepared.map(([background, bgDark, bgLight]) =>
+        perceptualScore(value, background, dark, light, bgDark, bgLight));
+    };
   };
 })();

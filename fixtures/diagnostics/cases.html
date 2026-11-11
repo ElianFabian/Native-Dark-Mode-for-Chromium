@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Canonical rendering specimen</title>
+<style>
+body { background: white; color: #222; font: 18px/1.5 Arial, sans-serif; margin: 24px; }
+main { max-width: 800px; }
+.frame { background: #f7f7f8; border: 1px solid #f7f7f8; padding: 20px; margin: 16px 0; }
+.reserved { border: 1px solid transparent; }
+.blue { border: 1px solid #0645ce; }
+.glyph { border: 0; padding: 16px; background: transparent; color: #333; }
+svg { width: 24px; height: 24px; vertical-align: middle; }
+li { position: relative; list-style: none; margin: 8px; padding: 12px; }
+li::before { content: ''; position: absolute; inset: 0; border: 1px solid #d8d8d8; pointer-events: none; }
+.contact { padding: 12px 12px 12px 40px; background: #eee no-repeat left center;
+ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25' fill='none'%3E%3Cpath d='M4 3h5l1 6-3 2 7 7 2-3 6 1v5C12 24 1 13 4 3Z' fill='%23555555'/%3E%3C/svg%3E"); }
+p { margin: 8px 0; }
+html[data-preview] body { margin: 8px; font-size: 15px; }
+html[data-preview] h1 { font-size: 18px; line-height: 1.2; }
+html[data-preview] .frame { margin: 8px 0; padding: 8px; }
+</style>
+<main></main>
+<script type="module">
+const name = new URL(location.href).searchParams.get('case');
+if (new URL(location.href).searchParams.has('preview')) document.documentElement.dataset.preview = 'yes';
+const cases = {
+ 'subtle-frame': '<h1>Subtle and reserved borders</h1><div data-audit-id="frame" class="frame">Originally matching pale fill and edge</div><div data-audit-id="reserved" class="frame reserved">Transparent border negative</div><div data-audit-id="blue" class="frame blue">Colored border negative</div>',
+ 'svg-glyph': '<h1>Wrapped SVG control</h1><button class="glyph" aria-label="Example control"><span><svg data-audit-id="glyph" viewBox="0 0 24 24"><defs><clipPath id="clip"><rect width="24" height="24" fill="white"/></clipPath></defs><path fill="#333333" d="M4 3h16v18H4zM8 7v2h8V7zM8 13v2h8v-2z"/></svg></span> Label</button><svg data-audit-id="multicolor" viewBox="0 0 24 24"><path fill="#0055aa" d="M2 2h8v20H2z"/><path fill="#cc3300" d="M14 2h8v20h-8z"/></svg>',
+ 'generated-frame': '<h1>Deeply nested generated frame</h1><div id="deep"><ol><li data-audit-id="generated"><a href="#entry">Original pale generated edge</a></li></ol></div>',
+ 'wrapped-contact': '<h1>Wrapped contact glyph</h1><div class="contact" data-audit-id="contact"><p data-audit-id="contact-label">Contact details</p></div><p>Background artwork is raw evidence, not a measured solid text backdrop.</p>'
+};
+document.querySelector('main').innerHTML = cases[name] ?? '<h1>Unknown case</h1>';
+const deep = document.getElementById('deep');
+if (deep) for (let i = 0; i < 22; i++) { const d = document.createElement('div'); while (deep.firstChild) d.append(deep.firstChild); deep.append(d); }
+document.documentElement.dataset.fixtureReady = cases[name] ? 'yes' : 'no';
+</script>
+</html>

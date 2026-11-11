@@ -8,7 +8,8 @@ li { list-style: none; position: relative; padding: 12px; margin-block: 8px; }
 li::before { content: ''; position: absolute; inset: 0; border: 1px solid #d8d8d8; pointer-events: none; }
 .selected::before { border-color: #0066bb; }
 .reserved::before { border-color: transparent; }
-.arrow::before { inset: auto; width: 8px; height: 8px; border-width: 1px 1px 0 0; transform: rotate(45deg); }
+.arrow { padding-left: 32px; }
+.arrow::before { inset: auto; left: 12px; top: 50%; width: 8px; height: 8px; border-width: 1px 1px 0 0; transform: translateY(-50%) rotate(45deg); }
 .strong::before { border-color: black; }
 </style>
 <h1>Subtle generated list frames</h1>

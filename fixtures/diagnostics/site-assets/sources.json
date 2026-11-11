@@ -1,0 +1,178 @@
+[
+  {
+    "file": "gradle-logo.svg",
+    "url": "https://plugins.gradle.org/assets/images/f4096eb5ec6e31f39ef31ec97e93e064-gradle-logo-horizontal.svg",
+    "bytes": 4615,
+    "sha256": "a83cf58633dc7044358b351308dbe9ae92c8194f38094024720bde29160d8375",
+    "provenance": "Public asset, original bytes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "gradle-elephant.png",
+    "url": "https://plugins.gradle.org/assets/images/e9c873fb72458b7263b520dc6e3c9a7d-elephant-corner.png",
+    "bytes": 2713,
+    "sha256": "f44a09f6acfd0db2e8ac0e30c29c7b47c33200b00dd31f71a2880038d03177ab",
+    "provenance": "Public asset, original bytes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "spain-sepe.svg",
+    "url": "https://www.sepe.es/dam/jcr:a0f14b29-31c9-4ddd-9433-0f5093549248/SEPE_web_cas.svg",
+    "bytes": 707574,
+    "sha256": "e8835c0b437ed8aaf9c7f2f9c120db905b2d9568fa4586e47f95d0f8cf2bbf42",
+    "provenance": "Public asset, original bytes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "sepe-laptop.svg",
+    "url": "https://www.sepe.es/dam/jcr:ab9b2dc4-cc8a-4e63-bc12-8de3458bc592/ordenador-portatil.svg",
+    "bytes": 1839,
+    "sha256": "7b4642d90d8f4fac1942f258f66d84145fc7331bdfa570dae3e1b4b2e23bdeb7",
+    "provenance": "Public asset, original bytes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "sepe-benefits.svg",
+    "url": "https://www.sepe.es/dam/jcr:3c7c5891-888b-4125-98f6-f9e66c1fcbd3/Prestaciones.svg",
+    "bytes": 3883,
+    "sha256": "4ad1e639845bb3c4962f4e673faf0f53f83e5a5dce3d285428ad9f2bd15d73ba",
+    "provenance": "Public asset, original bytes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "junta-logo.png",
+    "url": "https://www.juntadeandalucia.es/empleoformacionytrabajoautonomo/formacion/web/themes/custom/profeus/images/logo-ja.png",
+    "bytes": 6713,
+    "sha256": "50ff5f66ef9fb3e284a8b581bfd84415c48b303af0e0a5fa5251cb29f26d67c9",
+    "provenance": "Public asset, original bytes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "spain-kit-footer.png",
+    "url": "https://escueladeformacionprofesional.com/wp-content/uploads/2024/06/logos-kit-footer-4002x460.png",
+    "bytes": 266319,
+    "sha256": "c65cccec071b0ad97bb63f1077d8ba2b3694c2f25086d8ec9e4d086916dfcd42",
+    "provenance": "Public asset, original bytes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "efp-logo.png",
+    "url": "https://escueladeformacionprofesional.com/wp-content/uploads/2022/12/logoColor-EFP.png",
+    "bytes": 5076,
+    "sha256": "1c2fa1d4856026cbc6f7922be873f1efd3e4a77f74ab98d8aa9435e66d1ae300",
+    "provenance": "Public asset, original bytes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "infojobs-logo.svg",
+    "url": "https://components.infojobs.com/statics/images/infojobs-fill.svg",
+    "bytes": 4043,
+    "sha256": "19489987dc5b18412eba53c95e08effcdeb034206ccb0434dc173aa4ac27d364",
+    "provenance": "Public asset, original bytes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "formacion-static.gif",
+    "url": "https://www.formacion.cc/temas/Tema2019/img/tools/logoGenerico.gif",
+    "bytes": 1674,
+    "sha256": "f4a7f4d7c77ab2778169d9788be03cbbee3fda3cf586796feeb0add26c3807f0",
+    "provenance": "Public asset, original bytes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "indeed-logo.svg",
+    "url": "https://es.indeed.com/",
+    "bytes": 5028,
+    "sha256": "0c75086e0a0faf1f07fb9e07b509241a4992c68b385e60eb7b916df7f636b2cf",
+    "provenance": "Inline SVG from user-provided navigation HTML; extension paint markers removed",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "indeed-bookmark.svg",
+    "url": "https://es.indeed.com/",
+    "bytes": 459,
+    "sha256": "83d3aba43e28428782bde58956d351bb04029afa40639300dc48cb58d1c98a8c",
+    "provenance": "Inline SVG from user-provided navigation HTML; extension paint markers removed",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "indeed-messages.svg",
+    "url": "https://es.indeed.com/",
+    "bytes": 1292,
+    "sha256": "3634c032df8bd413cf6bd4191315021492a43a310dd9da0d54352646b49c8696",
+    "provenance": "Inline SVG from user-provided navigation HTML; extension paint markers removed",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "indeed-bell.svg",
+    "url": "https://es.indeed.com/",
+    "bytes": 758,
+    "sha256": "e8976ee3730b6a1103f63cbab462f1716e659d6f8af94f5d30dbb1d51e13ec6a",
+    "provenance": "Inline SVG from user-provided navigation HTML; extension paint markers removed",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "junta-level.svg",
+    "url": "https://www.juntadeandalucia.es/empleoformacionytrabajoautonomo/formacion/web/buscador-de-cursos/2648",
+    "bytes": 242,
+    "sha256": "c855c5657c8629bb366018ea551cab649a26ce58900595e7b6461dc1a30f04d6",
+    "provenance": "Original SVG decoded from authored computed background-image; no path/color changes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "junta-person.svg",
+    "url": "https://www.juntadeandalucia.es/empleoformacionytrabajoautonomo/formacion/web/buscador-de-cursos/2648",
+    "bytes": 487,
+    "sha256": "5ff36bb6f019c6c73934eb93ee4481cb4e11b30b0289aaed8869e3a73301a49d",
+    "provenance": "Original SVG decoded from authored computed background-image; no path/color changes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "junta-award.svg",
+    "url": "https://www.juntadeandalucia.es/empleoformacionytrabajoautonomo/formacion/web/buscador-de-cursos/2648",
+    "bytes": 695,
+    "sha256": "e867ab57efa52e3c0e32ac3d2f988b2f681ab645c2a093082a3436ef69194273",
+    "provenance": "Original SVG decoded from authored computed background-image; no path/color changes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "junta-prl.svg",
+    "url": "https://www.juntadeandalucia.es/empleoformacionytrabajoautonomo/formacion/web/buscador-de-cursos/2648",
+    "bytes": 602,
+    "sha256": "4b5789c5733bcb14f44b9adf1a7163b329cea116f778e011b4853534c275a1f4",
+    "provenance": "Original SVG decoded from authored computed background-image; no path/color changes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "junta-back.svg",
+    "url": "https://www.juntadeandalucia.es/empleoformacionytrabajoautonomo/formacion/web/buscador-de-cursos/2648",
+    "bytes": 320,
+    "sha256": "cb9dda4c36ca8e343cfa270f6f16fd95814da40c1b81cadb331528042f237dc2",
+    "provenance": "Original SVG decoded from authored computed background-image; no path/color changes",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "indeed-gradient.svg",
+    "url": "https://es.indeed.com/",
+    "bytes": 505,
+    "sha256": "e3023df4966d12020a3ca364728ff4f3c619c74adf1b282ea9469c1e6c8888c6",
+    "provenance": "Original background-image SVG supplied by reporter; equivalent decoded markup",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "indeed-pay.svg",
+    "url": "https://es.indeed.com/",
+    "bytes": 1113,
+    "sha256": "bef54b2cae2db1608338e1f997bda127a5800dc27569ec03c28a8093478667d5",
+    "provenance": "Original preference-button SVG paths from reporter HTML; extension markers/classes omitted",
+    "retrieved": "2026-11-11"
+  },
+  {
+    "file": "indeed-commute.svg",
+    "url": "https://es.indeed.com/",
+    "bytes": 1171,
+    "sha256": "8312fef2720e639e903cf4a00c35a1ceed50f616df0934a113e66ab7f18f3e60",
+    "provenance": "Original preference-button SVG paths from reporter HTML; extension markers/classes omitted",
+    "retrieved": "2026-11-11"
+  }
+]

@@ -2,5 +2,12 @@
   "name": "native-dark-mode-prototype",
   "private": true,
   "type": "module",
-  "scripts": { "audit:website": "node --experimental-websocket scripts/dev/audit-website.mjs", "test": "node --test", "check": "node --check extension/background.js && node --check extension/controller.js && node --check extension/popup.js && node --check extension/rules.js && node --check extension/request.js && node --check extension/backup.js && node --check extension/i18n.js && node --check extension/appearance.js && node --check extension/chromium-colors.js && node --check extension/website-theme.js && node --check scripts/dev/audit-website.mjs" }
+  "scripts": {
+    "verify": "node scripts/dev/verify.mjs",
+    "audit:website": "node --experimental-websocket scripts/dev/audit-website.mjs",
+    "test": "node --test",
+    "check": "node --check extension/background.js && node --check extension/controller.js && node --check extension/popup.js && node --check extension/rules.js && node --check extension/request.js && node --check extension/backup.js && node --check extension/i18n.js && node --check extension/appearance.js && node --check extension/chromium-colors.js && node --check extension/image-contrast.js && node --check extension/website-theme.js && node --check scripts/dev/audit-website.mjs && node --check scripts/dev/verify.mjs && node --check scripts/dev/diagnose.mjs && node --check scripts/dev/lab.mjs && node --check scripts/dev/diagnostics/runner.mjs && node --check scripts/dev/diagnostics/server.mjs && node --check scripts/dev/diagnostics/browser.mjs && node --check tools/diagnostics/analysis.mjs && node --check tools/diagnostics/collect.mjs && node --check tools/diagnostics/ui.mjs && node --check tools/diagnostics/triage.mjs && node --check fixtures/diagnostics/specimens.mjs && node --check scripts/dev/diagnostics/make-assets.mjs && node --check scripts/dev/diagnostics/check-ui.mjs && node --check fixtures/diagnostics/site-elements.mjs && node --check scripts/dev/diagnostics/check-rendering-cases.mjs",
+    "lab": "node --experimental-websocket scripts/dev/lab.mjs",
+    "diagnose": "node --experimental-websocket scripts/dev/diagnose.mjs"
+  }
 }

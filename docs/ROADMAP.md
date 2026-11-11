@@ -8,11 +8,13 @@ The extension has not been published. Compatibility with backups from earlier de
 
 ## A local rendering regression gallery
 
-The next intended task is a local website that reproduces the unusual rendering cases found during the custom-theme work. Keep it available in the repository so future contributors can rerun the checks without authenticated accounts or personalized live pages.
+See the [diagnostics and regression implementation plan](DIAGNOSTICS-AND-REGRESSION-PLAN.md) for the proposed capture/analyze/compare workflow, local gallery inventory, implementation phases, and acceptance gates. The [first rendering lab delivery](RENDERING-LAB.md) is implemented; the complete inventory and temporal/performance coverage remain incremental work.
+
+The initial local lab reproduces selected unusual rendering cases found during the custom-theme work. The next step is to extend its coverage and interaction scenarios. Keep it available in the repository so future contributors can rerun the checks without authenticated accounts or personalized live pages.
 
 Cover solid and translucent surfaces; nested and generated backings; text over pictures; gradients and masks; transparent logos; static and animated image eligibility; sprites, external background SVGs, clipped and layered SVG glyphs; placeholders and selects; pagination; cards and optional borders; hidden accessible labels; hover, focus, sticky headers, scrolling, carousels, theme handoff, and frame/Shadow DOM cleanup. Include negative controls, source paint, expected behavior, and theme/level selectors. Preserve the drawing and dimensions in assertions where relevant. Add stress cases for menus, long documents, and moving carousels.
 
-The checked-in baseline and focused control/artwork fixtures cover selected regressions, not the complete gallery. Much of the investigation currently uses an ignored harness under `research-artifacts/`; it is not a portable regression suite. Do not claim the gallery exists until it is checked in and reproducible. Keep private account details out of fixtures.
+The checked-in baseline and focused control/artwork fixtures cover selected regressions, not the complete gallery. Portable diagnostics and selected assertions now live under `scripts/dev/diagnostics/`, `tools/diagnostics/` and `fixtures/diagnostics/`. Ignored `research-artifacts/` holds generated reports and additional investigation; it is not the portable regression suite. Do not describe the partial gallery as a complete regression suite. Keep private account details out of fixtures.
 
 An initial reusable [browser audit command](BROWSER-TESTING.md) now covers a theme/level/scale matrix and common computed-paint checks in an isolated profile. It supplies candidate reports, not the complete gallery, state-transition tests, or confirmed accessibility results.
 
@@ -20,7 +22,7 @@ An initial reusable [browser audit command](BROWSER-TESTING.md) now covers a the
 
 The current direction is to investigate whether Simulated Native can eventually replace the debugger-based Native mode. Its goal is readable, stable dark rendering inspired by Chromium, including improvements over Native's contrast and controls. Exact visual parity is not an acceptance criterion.
 
-Removal is not decided or scheduled. Version 0.10.0 retains Native as the default and preserves existing rules, exclusions, backups, debugger cancellation, and launchers. A future change must assess behavior and performance across browsers and pages, explain any lost capabilities, and decide how rules without a preset should behave. Legacy development-backup migrations are optional under the policy above. Removing Native would also require reviewing debugger permissions, controller behavior, the debugging-banner launcher workflow, and documentation.
+Removal is not decided or scheduled. Version 0.11.0 retains Native as the default and preserves existing rules, exclusions, backups, debugger cancellation, and launchers. A future change must assess behavior and performance across browsers and pages, explain any lost capabilities, and decide how rules without a preset should behave. Legacy development-backup migrations are optional under the policy above. Removing Native would also require reviewing debugger permissions, controller behavior, the debugging-banner launcher workflow, and documentation.
 
 If the native renderer is removed, reconsider the extension's name and the Simulated Native label together. No replacement name has been selected. Keep the current product name and internal `chromium` preset identifier until a separate naming and compatibility decision is made.
 

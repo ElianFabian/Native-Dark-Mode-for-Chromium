@@ -6,7 +6,7 @@
 
 Usa el modo oscuro integrado en Chromium en las webs y secciones que elijas. Guarda una regla una vez y la extensión la aplicará cuando vuelvas.
 
-La **versión 0.10.0** añade copias de seguridad completas con importación selectiva, mejora el contraste compartido de iconos e imágenes y corrige los niveles de borde y la representación durante el desplazamiento. [Notas de la versión en inglés](docs/RELEASE-0.10.0.md)
+La **versión 0.11.0** añade un laboratorio local de renderizado, diagnósticos deterministas y un comando unificado de verificación. Mejora el texto sobre imágenes, los iconos, las imágenes transparentes, las tarjetas y los bordes, incluida su estabilidad al hacer scroll y el énfasis relativo al borde original. [Notas de la versión en inglés](docs/RELEASE-0.11.0.md)
 
 Este proyecto se desarrolló con la ayuda de IA mediante OpenAI Codex.
 
@@ -153,6 +153,30 @@ El acceso y la supresión del aviso se probaron en **Brave con Windows 11**. Lin
 
 Si una página falla, prueba otro tema, reduce el énfasis de bordes o guarda una exclusión. Para informar de un problema, incluye la URL, el tema, el nivel de borde, el navegador y su versión, la acción que lo provoca, una captura y el HTML/los estilos calculados relevantes, eliminando los datos personales.
 
-La posible sustitución futura de Nativo, la revisión del nombre del producto y una web local de casos de regresión son planes, no cambios de esta versión. [Hoja de ruta, en inglés](docs/ROADMAP.md)
+La posible sustitución futura de Nativo y la revisión del nombre del producto siguen pendientes de decidir. El laboratorio local de renderizado ya está implementado, con cobertura parcial de regresiones. [Hoja de ruta, en inglés](docs/ROADMAP.md)
 
 Las instrucciones de desarrollo, pruebas y versiones están en [AGENTS.md](AGENTS.md) y en el [README en inglés](README.md#development-and-screenshots). La extensión se carga directamente desde `extension/`, sin compilación.
+
+
+## Ejecutar las comprobaciones de desarrollo
+
+Instala Node.js con npm y Python 3, abre una terminal en la carpeta raíz del repositorio y ejecuta:
+
+```sh
+npm run verify
+```
+
+El comando ejecuta las comprobaciones de sintaxis, los tests de Node y las pruebas de archivos de los launchers. Muestra el tiempo de cada etapa y termina con error si alguna falla. No hace falta ejecutar `npm install` ni compilar. En PowerShell, usa `npm.cmd` si la política de ejecución bloquea `npm`.
+
+Las pruebas de los launchers usan archivos temporales y un navegador simulado cuando corresponde. Las de Windows necesitan Windows Script Host; las de archivos de shell necesitan Bash (Git Bash sirve en Windows). Las pruebas que no corresponden a la plataforma aparecen como omitidas.
+
+Para una comprobación más rápida que solo necesita Node.js, usa `npm run verify -- --quick`. También siguen disponibles `npm test` y `npm run check` por separado. Estos comandos no comprueban la representación real de las webs, la integración con navegadores ni la accesibilidad visual. Consulta las [comprobaciones de navegador](docs/BROWSER-TESTING.md) y el [historial de validación](PLAN.md), ambos en inglés. Estas herramientas son solo para desarrollo; no son necesarias para instalar o usar la extensión.
+
+
+### Laboratorio local de renderizado
+
+Ejecuta `npm run lab` y abre **http://127.0.0.1:8787**. Pulsa **Run local smoke suite** para capturar los primeros casos locales con la extensión real en un perfil aislado de Brave/Chromium, inspeccionar estilos y contraste, filtrar resultados y comparar ejecuciones guardadas. La galería distingue los casos automatizados, de solo captura, manuales y pendientes. Necesita Node.js y un navegador compatible instalado; configura `CHROMIUM_PATH` si no se detecta.
+
+**Capture extended gallery** añade seis grupos genéricos y cinco grupos con elementos originales de webs y recursos públicos (incluidos Indeed, Gradle y organismos del gobierno): iconos, imágenes PNG/SVG transparentes, GIF reales estáticos y animados, selectores, bordes, superficies y ejemplos de interacción. Los informes agrupan y priorizan automáticamente los posibles problemas comparando las mediciones originales y las del tema; puedes marcar una apariencia como aceptable sin alterar las pruebas recogidas. Las comprobaciones de píxeles y movimiento mantienen sus límites explícitos.
+
+Para incluir esa prueba de navegador en una sola verificación, usa `npm run verify -- --quick --browser` (omite `--quick` si también quieres comprobar los launchers). La primera entrega comprueba estados estáticos; todavía no cubre todas las regresiones históricas ni las animaciones. Consulta la [guía del laboratorio, en inglés](docs/RENDERING-LAB.md) para conocer las mediciones admitidas, los comandos y lo que sigue pendiente.

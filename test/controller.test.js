@@ -105,7 +105,7 @@ test('loads the custom theme script when the tab was already open', async () => 
   await controller.reconcile(7, () => ({ enabled: true, preset: 'chromium' }), false);
   assert.deepEqual(calls.map(([type]) => type), ['message', 'inject', 'message', 'message']);
   assert.deepEqual(calls[1][1], { target: { tabId: 7, allFrames: true },
-    files: ['chromium-colors.js', 'website-theme.js'] });
+    files: ['chromium-colors.js', 'image-contrast.js', 'website-theme.js'] });
 });
 
 test('replaces an older script that cannot acknowledge the current theme message', async () => {

@@ -1,0 +1,373 @@
+[
+  {
+    "id": "77e6d4c1b6de",
+    "symptom": "Scrolling a CSS-animated notice stalls while ancestor class changes invalidate theme paint",
+    "status": "partial",
+    "cases": [
+      "scroll-banner.html"
+    ]
+  },
+  {
+    "id": "c10afa92cff0",
+    "symptom": "A subtle outline drawn by a list item's pseudoelement stays bright on a dark canvas",
+    "status": "partial",
+    "cases": [
+      "generated-frame"
+    ]
+  },
+  {
+    "id": "4c2d178cd55c",
+    "symptom": "A compact background SVG beside wrapped text stays dark",
+    "status": "partial",
+    "cases": [
+      "wrapped-contact",
+      "contact-glyphs.html",
+      "extended-icons"
+    ]
+  },
+  {
+    "id": "00e0a50817f7",
+    "symptom": "A neutral dark border disappears after its light backing darkens",
+    "status": "partial",
+    "cases": [
+      "extended-borders"
+    ]
+  },
+  {
+    "id": "711ee1db812e",
+    "symptom": "Small SVGs inside non-semantic pointer handlers or beside definition/heading labels keep their source fill",
+    "status": "partial",
+    "cases": [
+      "svg-glyph",
+      "extended-icons"
+    ]
+  },
+  {
+    "id": "519c6ec07130",
+    "symptom": "A same-color external logo remains unchanged despite previous silhouette fixes",
+    "status": "partial",
+    "cases": [
+      "extended-images",
+      "site-gradle",
+      "site-junta"
+    ]
+  },
+  {
+    "id": "4757809dc11d",
+    "symptom": "A colored outline action keeps an unreadable original border",
+    "status": "partial",
+    "cases": [
+      "extended-controls"
+    ]
+  },
+  {
+    "id": "f818b2f874d2",
+    "symptom": "A native select popup paints light inherited text on a light menu",
+    "status": "partial",
+    "cases": [
+      "extended-controls",
+      "site-sepe"
+    ]
+  },
+  {
+    "id": "119920f87dee",
+    "symptom": "An icon-font control flashes dark when scrolling changes an ancestor state",
+    "status": "partial",
+    "cases": [
+      "extended-states"
+    ]
+  },
+  {
+    "id": "89b6f5de91b3",
+    "symptom": "A compact generated arrow, two-ink back glyph or its circular edge stays dark",
+    "status": "partial",
+    "cases": [
+      "extended-icons",
+      "site-junta"
+    ]
+  },
+  {
+    "id": "47dbd384f722",
+    "symptom": "An accent link in a colored notice turns into the generic link blue",
+    "status": "partial",
+    "cases": [
+      "contrast-controls.html"
+    ]
+  },
+  {
+    "id": "71be83b07b19",
+    "symptom": "A transparent single-color linked logo remains unreadable",
+    "status": "partial",
+    "cases": [
+      "extended-images",
+      "site-gradle",
+      "site-artwork"
+    ]
+  },
+  {
+    "id": "cadedc69478d",
+    "symptom": "A pale authored frame looks much thicker after its background darkens with emphasis Off",
+    "status": "partial",
+    "cases": [
+      "subtle-frame",
+      "site-gradle"
+    ]
+  },
+  {
+    "id": "966ea638642e",
+    "symptom": "Compact social or utility icon controls ignore border emphasis",
+    "status": "partial",
+    "cases": [
+      "extended-borders"
+    ]
+  },
+  {
+    "id": "52ae1f4fc8d8",
+    "symptom": "A control SVG keeps a pale CSS backing, or a share glyph loaded as a background stays dark",
+    "status": "partial",
+    "cases": [
+      "extended-icons"
+    ]
+  },
+  {
+    "id": "bf1e2151c663",
+    "symptom": "A clipped edit icon stays dark on its button",
+    "status": "partial",
+    "cases": [
+      "extended-icons"
+    ]
+  },
+  {
+    "id": "732002ccf2e7",
+    "symptom": "A light frame appears when changing themes, scrolling, or fixing a sticky header",
+    "status": "partial",
+    "cases": [
+      "extended-states"
+    ]
+  },
+  {
+    "id": "59b97be8935e",
+    "symptom": "A navigation hover background appears late",
+    "status": "partial",
+    "cases": [
+      "extended-states",
+      "site-indeed"
+    ]
+  },
+  {
+    "id": "08d95f7ebda2",
+    "symptom": "A carousel shows a pale backing between cards on hover",
+    "status": "partial",
+    "cases": [
+      "extended-states"
+    ]
+  },
+  {
+    "id": "255b09bbd485",
+    "symptom": "A carousel drops animation frames under a custom theme",
+    "status": "partial",
+    "cases": [
+      "extended-states"
+    ]
+  },
+  {
+    "id": "bb69c9a96350",
+    "symptom": "A bright decorative backdrop survives darkening",
+    "status": "partial",
+    "cases": [
+      "extended-surfaces",
+      "site-indeed"
+    ]
+  },
+  {
+    "id": "511b5f9fa491",
+    "symptom": "A white gradient crosses a title or section break",
+    "status": "partial",
+    "cases": [
+      "extended-surfaces"
+    ]
+  },
+  {
+    "id": "2734702eb84c",
+    "symptom": "A photo gets dimmed or a logo, flag, avatar, or thumbnail turns white",
+    "status": "partial",
+    "cases": [
+      "extended-images"
+    ]
+  },
+  {
+    "id": "31b832c73bb5",
+    "symptom": "Dark lettering in transparent artwork becomes hard to read",
+    "status": "partial",
+    "cases": [
+      "extended-images",
+      "site-artwork"
+    ]
+  },
+  {
+    "id": "bf3766b6b223",
+    "symptom": "A light backing is visually intrusive behind a neutral silhouette",
+    "status": "partial",
+    "cases": [
+      "extended-images",
+      "site-artwork"
+    ]
+  },
+  {
+    "id": "962cdc23233f",
+    "symptom": "A linked raster or SVG icon stays dark, or a select's label and arrow are hard to read",
+    "status": "partial",
+    "cases": [
+      "extended-controls"
+    ]
+  },
+  {
+    "id": "6c428c74eb37",
+    "symptom": "A labeled button has a dark generated SVG arrow, or a pale decorative shape survives behind cards",
+    "status": "partial",
+    "cases": [
+      "extended-icons",
+      "site-sepe"
+    ]
+  },
+  {
+    "id": "c2009585ac43",
+    "symptom": "A linked card is missing an emphasized edge, flashes a light surface, or its decorative icon is too dark",
+    "status": "partial",
+    "cases": [
+      "extended-borders",
+      "site-sepe"
+    ]
+  },
+  {
+    "id": "f1ca76e9aa97",
+    "symptom": "Text-entry fields have bright borders in Simulated Native with emphasis Off",
+    "status": "partial",
+    "cases": [
+      "extended-controls"
+    ]
+  },
+  {
+    "id": "cab5c4734d56",
+    "symptom": "A control glyph has poor contrast",
+    "status": "partial",
+    "cases": [
+      "extended-icons",
+      "site-indeed",
+      "contact-glyphs.html"
+    ]
+  },
+  {
+    "id": "6faf0a8fbf77",
+    "symptom": "A nested edit glyph changes contrast against its own circular badge",
+    "status": "partial",
+    "cases": [
+      "extended-icons"
+    ]
+  },
+  {
+    "id": "e9a87da10c0b",
+    "symptom": "Text becomes dark after a local refresh over an adapted SVG background",
+    "status": "partial",
+    "cases": [
+      "extended-surfaces",
+      "site-indeed"
+    ]
+  },
+  {
+    "id": "09c66505a774",
+    "symptom": "Text stays dark beside a small CSS background icon, or a bright notice loses its original ink color",
+    "status": "partial",
+    "cases": [
+      "contrast-controls.html",
+      "site-junta"
+    ]
+  },
+  {
+    "id": "bbf7bc4f7713",
+    "symptom": "A compact colored link tile loses its white label, or a labeled custom control has a dark icon",
+    "status": "partial",
+    "cases": [
+      "extended-surfaces"
+    ]
+  },
+  {
+    "id": "078368208923",
+    "symptom": "Search hints, purchase controls, prices, or deal labels are hard to read",
+    "status": "partial",
+    "cases": [
+      "extended-controls"
+    ]
+  },
+  {
+    "id": "b5e3876a3b0f",
+    "symptom": "A carousel arrow or pagination dot disappears",
+    "status": "partial",
+    "cases": [
+      "extended-states"
+    ]
+  },
+  {
+    "id": "79c78c9e6e17",
+    "symptom": "A title or subtitle loses contrast over a picture",
+    "status": "partial",
+    "evidence": "Weighted word-region perceptual selection: all three custom themes, bright/dark picture preservation controls, independent underline adaptation/preservation, unchanged source shadows/decoration geometry and 24 resampling frames. Complex spatial masking and live-page readability remain unverified.",
+    "cases": [
+      "extended-surfaces"
+    ]
+  },
+  {
+    "id": "d6b0546ccf80",
+    "symptom": "A menu is slow while a theme is active",
+    "status": "pending",
+    "cases": []
+  },
+  {
+    "id": "63acbc55ed8f",
+    "symptom": "A sprite in an expandable control turns dark",
+    "status": "partial",
+    "cases": [
+      "extended-icons"
+    ]
+  },
+  {
+    "id": "7c2aea7ee940",
+    "symptom": "Cards blend into the page, or borders and lines look too strong",
+    "evidence": "Includes already-dark source frames: original Off color/opacity, unchanged widths/dimensions and nondecreasing source-relative emphasis over six levels; generic light-frame, transparency and strong dark-frame controls retained.",
+    "status": "partial",
+    "cases": [
+      "extended-borders",
+      "extended-states"
+    ]
+  },
+  {
+    "id": "3b4ffa0ce1cc",
+    "symptom": "A thin divider looks thicker after its surrounding text is lightened",
+    "status": "partial",
+    "cases": [
+      "extended-borders"
+    ]
+  },
+  {
+    "id": "52b41228bcac",
+    "symptom": "A tab group acquires a heavy horizontal edge",
+    "status": "partial",
+    "cases": [
+      "extended-borders"
+    ]
+  },
+  {
+    "id": "a5714676bc20",
+    "symptom": "A transparent border becomes visible or an outline doubles an existing edge",
+    "status": "partial",
+    "cases": [
+      "extended-borders"
+    ]
+  },
+  {
+    "id": "549c65fb864c",
+    "symptom": "A component inside Shadow DOM stays light or retains the old theme",
+    "status": "pending",
+    "cases": []
+  }
+]

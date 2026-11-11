@@ -41,8 +41,10 @@
   let sampledElements = new WeakSet();
   const artworkContrast = new WeakMap();
   const staticArtwork = new Map();
+  const labeledSvgArtwork = new Map();
   let artworkReadQueue = Promise.resolve();
   const overlayImages = new Map();
+  const cssOverlayImages = new Map();
   const overlayRequests = new WeakMap();
   const overlayLabels = new WeakMap();
   const overlayAuthoredInk = new WeakMap();
@@ -263,8 +265,8 @@
     const backgroundColor = original.backgroundColor ?? style.backgroundColor;
     const foreground = element.closest('a[href]') ? 'link' : 'text';
     const roles = [foreground];
-    const imageLabel = Array.prototype.some.call(element.childNodes, textNode) &&
-      imageLabelPaint(element, style, preset === 'contrast' ? 7 : 4.5);
+    const imageLabel = (Array.prototype.some.call(element.childNodes, textNode) &&
+      imageLabelPaint(element, style, preset === 'contrast' ? 7 : 4.5)) || flowImageLinkPaint(element, style);
     if (imageLabel) roles.push('image-label');
     if (style.webkitTextFillColor !== 'rgba(0, 0, 0, 0)' &&
         (style.webkitTextFillColor !== style.color || element.style.getPropertyPriority('color') === 'important')) {
@@ -327,7 +329,14 @@
     const surface = roles.includes('surface') ? colors.surface : roles.includes('raised') ? colors.raised : null;
     const ink = surface?.slice(1).match(/../g).map(channel => parseInt(channel, 16));
     const darkened = ink && [...ink, 1];
-    const boxBorder = authoredFrameBorder(element, style, darkened);
+    const cardPaint = separatedCardPaint(element, style, solid, darkened);
+    if (cardPaint) artworkPaint += `background-color: ${rgba(cardPaint.surface)} !important;` +
+      (cardPaint.shadow ? `box-shadow: ${cardPaint.shadow} !important;` : '');
+    const sourceBackdrop = !darkened && authoredSolidBackdrop(element);
+    const frameBackdrop = cardPaint?.surface ?? darkened ?? (sourceBackdrop && luminance(sourceBackdrop) > .6 &&
+      Math.max(...sourceBackdrop.slice(0, 3)) - Math.min(...sourceBackdrop.slice(0, 3)) <= 16 ?
+      colors.surface.slice(1).match(/../g).map(channel => parseInt(channel, 16)).concat(1) : null);
+    const boxBorder = authoredFrameBorder(element, style, frameBackdrop);
     if (boxBorder) pseudoPaint.push([':not(:focus-visible)', boxBorder]);
     if (darkened && element.matches('span,small,label,[role="status"]')) {
       pseudoPaint.push(...labelPseudoSurfaces(element, chromiumSrgb(backgroundColor), darkened));
@@ -395,7 +404,19 @@
         backgroundColor: style.backgroundColor, backgroundImage: style.backgroundImage,
         backgroundBlendMode: style.backgroundBlendMode, backgroundRepeat: style.backgroundRepeat,
         backgroundSize: style.backgroundSize, cursor: style.cursor,
-        ...(labeledPointerControl(element, style) &&
+        // Backdrop projection must classify a cached parent exactly as when it
+        // was inspected directly, including raised/compact surface policy.
+        display: style.display, boxShadow: style.boxShadow, borderTopLeftRadius: style.borderTopLeftRadius,
+        borderStyle: style.borderStyle, borderImageSource: style.borderImageSource,
+        outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth, outlineColor: style.outlineColor,
+        textDecorationLine: style.textDecorationLine, textDecorationColor: style.textDecorationColor,
+        textDecorationStyle: style.textDecorationStyle, textDecorationThickness: style.textDecorationThickness,
+        textUnderlineOffset: style.textUnderlineOffset,
+        ...(style.backgroundImage !== 'none' ? Object.fromEntries([
+          'backgroundPositionX', 'backgroundPositionY', 'backgroundOrigin', 'backgroundClip',
+          'filter', 'transform', 'opacity', 'mixBlendMode'
+        ].map(property => [property, style[property]])) : {}),
+        ...(chromiumSrgb(style.backgroundColor)?.[3] || labeledPointerControl(element, style) &&
           (style.backgroundImage !== 'none' || borderEdges.some(side => parseFloat(style[`border${side}Width`]) > 0)) ?
           Object.fromEntries(borderEdges.flatMap(side => ['Color', 'Style', 'Width'].map(property =>
             [`border${side}${property}`, style[`border${side}${property}`]]))) : {})
@@ -503,7 +524,7 @@
     try { svg = decodeURIComponent(match[1]); } catch { return null; }
     const width = Number(/^<svg\b[^>]*\bwidth=['"](\d+)['"]/i.exec(svg)?.[1]);
     const height = Number(/^<svg\b[^>]*\bheight=['"](\d+)['"]/i.exec(svg)?.[1]);
-    if (!(width >= 360 && height >= 160) || /<(?!\/?(?:svg|path|defs|linearGradient|radialGradient|stop)\b)/i.test(svg)) return null;
+    if (!(width >= 360 && height >= 32) || /<(?!\/?(?:svg|path|defs|linearGradient|radialGradient|stop)\b)/i.test(svg)) return null;
     let backdrop;
     let valid = true;
     const transformed = svg.replace(/\bstop-color=(['"])#([\da-f]{6})\1/gi, (whole, quote, hex) => {
@@ -530,11 +551,15 @@
 
   const svgGlyphs = new Map();
   const externalSvgGlyphs = new Map();
+  const compactBackgrounds = new Map();
+  let compactBackgroundQueue = Promise.resolve();
+  let compactBackgroundPending = 0;
   const svgPaint = /\b(fill|stroke)\s*=\s*(['"])([^'"]+)\2/gi;
 
-  function backgroundSvgGlyph(style, boundedBox = false, twoTone = false) {
+  function backgroundSvgGlyph(style, boundedBox = false, twoTone = false, allowRepeat = false) {
     const image = style.backgroundImage;
-    if (style.backgroundRepeat !== 'no-repeat' ||
+    if ((style.backgroundRepeat !== 'no-repeat' &&
+          !(allowRepeat && ['repeat', 'repeat-x', 'repeat-y'].includes(style.backgroundRepeat))) ||
         (!(boundedBox && ['contain', 'cover'].includes(style.backgroundSize)) &&
           (!/^(?:auto|\d+(?:\.\d+)?px)(?: (?:auto|\d+(?:\.\d+)?px))?$/.test(style.backgroundSize) ||
             style.backgroundSize.split(' ').some(size => parseFloat(size) > 48)))) return null;
@@ -580,7 +605,15 @@
   function elementBackgroundGlyph(element, style) {
     if (!style.backgroundImage.startsWith('url("data:image/svg+xml,')) return null;
     const glyph = backgroundSvgGlyph(style);
-    if (glyph || !labeledPointerControl(element, style)) return glyph;
+    if (glyph) return glyph;
+    // A short label can accompany a small two-ink drawing or a repeated glyph
+    // tile. Recolor each verified SVG ink; never filter the whole container.
+    if (element.textContent.trim().length <= 160 &&
+        (Array.prototype.some.call(element.childNodes, textNode) || wrappedBackgroundGlyphLabel(element, style))) {
+      const labeled = backgroundSvgGlyph(style, false, true, true);
+      if (labeled) return { ...labeled, paletteGlyph: true, repeated: style.backgroundRepeat !== 'no-repeat' };
+    }
+    if (!labeledPointerControl(element, style)) return null;
     const box = element.getBoundingClientRect();
     return box.width > 0 && box.height > 0 && Math.max(box.width, box.height) <= 48 ?
       backgroundSvgGlyph(style, true, true) : null;
@@ -588,6 +621,11 @@
 
   function wrappedBackgroundGlyphLabel(element, style) {
     if (!style.backgroundImage.startsWith('url("data:image/svg+xml,')) return false;
+    if (element.childElementCount > 1 && element.childElementCount <= 3 && backgroundSvgGlyph(style)) {
+      const labels = Array.from(element.children).filter(child => child.matches('p,span,label,div') &&
+        child.textContent.trim().length <= 160 && Array.prototype.some.call(child.childNodes, textNode));
+      if (labels.length === 1) return true;
+    }
     // A compact background glyph can label a paragraph inside a plain wrapper,
     // rather than a direct text node or an interactive control.
     for (let label = element, depth = 0; depth < 3; depth++) {
@@ -601,6 +639,9 @@
 
   function contrastingGlyphInk(original, backdrop, minimum, preferNative = false) {
     if (!original || !backdrop) return null;
+    if (minimum > 7 && contrastRatio(luminance(compositeColor(original, backdrop)), luminance(backdrop)) >= 7) return null;
+    if (luminance(backdrop) < .18 && Math.max(...original.slice(0, 3)) - Math.min(...original.slice(0, 3)) <= 24 &&
+        contrastRatio(luminance(compositeColor(original, backdrop)), luminance(backdrop)) < 7) return [255, 255, 255, 1];
     const ink = readableColor(original, backdrop, minimum);
     if (!ink) return null;
     if (luminance(backdrop) < .18 &&
@@ -650,13 +691,123 @@
       if (paint === 'none') return whole;
       const original = glyph.multi ? (/^#[\da-f]{6}$/i.test(paint) ?
         [1, 3, 5].map(index => parseInt(paint.slice(index, index + 2), 16)).concat(1) : gradientColor(paint, true)) : glyph.ink;
-      const ink = contrastingGlyphInk(original, backdrop, minimum, preferNative);
+      // Adapt each palette ink independently, retaining readable source paint.
+      const ink = glyph.paletteGlyph ? paletteGlyphInk(original, backdrop) :
+        contrastingGlyphInk(original, backdrop, minimum, preferNative);
       if (!ink) return whole;
       changed = true;
       return `${property}=${quote}rgb(${ink.slice(0, 3).join(',')})${quote}`;
     });
     if (!changed) return null;
     return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  }
+
+  function paletteGlyphInk(original, backdrop) {
+    const colored = Math.max(...original.slice(0, 3)) - Math.min(...original.slice(0, 3)) > 24;
+    const minimum = colored ? 4.5 : 7;
+    if (!readableColor(original, backdrop, minimum)) return null;
+    const transformed = luminance(backdrop) < .18 && chromiumColor(original, 'foreground');
+    return readableColor(transformed || original, backdrop, minimum) ?? transformed;
+  }
+
+  async function compactBackgroundInk(source, width, height, size, position, repeat) {
+    const resource = await readImageResource(source, new URL(source).origin === location.origin ? 'same-origin' : 'cors');
+    if (!resource) return null;
+    let decoder, objectUrl;
+    try {
+      const data = resource.data, view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+      let sourceWidth, sourceHeight;
+      if (resource.type === 'image/svg+xml') {
+        if (resource.data.length > 32768 || !isStaticSvgArtwork(resource.data)) return null;
+        const svg = new DOMParser().parseFromString(new TextDecoder().decode(data), 'image/svg+xml').documentElement;
+        const dimension = (value, fallback) => !value || /%$/.test(value) ? fallback :
+          /^\d+(?:\.\d+)?(?:px)?$/.test(value) ? parseFloat(value) : NaN;
+        sourceWidth = dimension(svg.getAttribute('width'), 300); sourceHeight = dimension(svg.getAttribute('height'), 150);
+      } else {
+        // Inspect cheap dimensions before decoding. Other raster formats remain
+        // unknown instead of allocating an unbounded decoded bitmap.
+        if (resource.type === 'image/png' && data.length >= 24 && data[0] === 137 && data[1] === 80) {
+          sourceWidth = view.getUint32(16); sourceHeight = view.getUint32(20);
+        } else if (resource.type === 'image/gif' && data.length >= 10 && new TextDecoder().decode(data.subarray(0, 3)) === 'GIF') {
+          sourceWidth = view.getUint16(6, true); sourceHeight = view.getUint16(8, true);
+        } else return null;
+      }
+      if (!(sourceWidth > 0 && sourceHeight > 0) || sourceWidth > 4096 || sourceHeight > 4096 || sourceWidth * sourceHeight > 1048576) return null;
+      if (resource.type !== 'image/svg+xml') {
+        if (!await globalThis.ImageDecoder?.isTypeSupported(resource.type)) return null;
+        decoder = new ImageDecoder({ data: resource.data, type: resource.type, preferAnimation: true });
+        await decoder.tracks.ready; await decoder.completed;
+        if (decoder.tracks.selectedTrack?.frameCount !== 1) return null;
+      }
+      const image = new Image();
+      objectUrl = URL.createObjectURL(new Blob([resource.data], { type: resource.type }));
+      image.src = objectUrl;
+      let timer;
+      try { await Promise.race([image.decode(), new Promise((_, reject) => { timer = setTimeout(reject, 2000); })]); }
+      finally { clearTimeout(timer); }
+      const iw = image.naturalWidth, ih = image.naturalHeight;
+      if (!iw || !ih || iw * ih > 1048576) return null;
+      const length = (value, basis) => /^-?[\d.]+px$/.test(value) ? parseFloat(value) :
+        /^-?[\d.]+%$/.test(value) ? parseFloat(value) * basis / 100 : null;
+      let dw = iw, dh = ih;
+      if (['contain', 'cover'].includes(size)) {
+        const factor = Math[size === 'contain' ? 'min' : 'max'](width / iw, height / ih); dw *= factor; dh *= factor;
+      } else {
+        const [sx, sy = 'auto'] = size.split(' ');
+        if (sx !== 'auto') dw = length(sx, width);
+        if (sy !== 'auto') dh = length(sy, height);
+        if (sx === 'auto' && sy !== 'auto') dw = dh * iw / ih;
+        if (sy === 'auto' && sx !== 'auto') dh = dw * ih / iw;
+      }
+      if (!(dw > 0 && dh > 0)) return null;
+      const [px, py] = position;
+      const x = length(px, width - dw), y = length(py, height - dh);
+      if (x === null || y === null) return null;
+      // A default repeat declaration is harmless if no repeated tile enters this crop.
+      if (repeat !== 'no-repeat' && (x > 0 || y > 0 || x + dw < width || y + dh < height)) return null;
+      const canvas = document.createElement('canvas'); canvas.width = Math.ceil(width); canvas.height = Math.ceil(height);
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      context.drawImage(image, x, y, dw, dh);
+      return solidSilhouetteInk(context.getImageData(0, 0, canvas.width, canvas.height).data);
+    } catch { return null; }
+    finally { decoder?.close(); if (objectUrl) URL.revokeObjectURL(objectUrl); }
+  }
+
+  function compactBackgroundFilter(element, style, backdrop, pseudo = '') {
+    if (!backdrop || luminance(backdrop) >= .18 || style.filter !== 'none' || style.opacity !== '1' ||
+        style.mixBlendMode !== 'normal' || chromiumSrgb(style.backgroundColor)?.[3] !== 0 ||
+        style.maskImage !== 'none' || !element.closest(interactive) || element.closest(':disabled,[aria-disabled="true"]') ||
+        element.matches('[role="img"]') || element.closest('[id*="logo" i],[class*="logo" i],[id*="avatar" i],[class*="avatar" i]')) return '';
+    if (!pseudo && (element.childElementCount || element.textContent.trim())) return '';
+    const width = pseudo ? parseFloat(style.width) : element.clientWidth;
+    const height = pseudo ? parseFloat(style.height) : element.clientHeight;
+    if (!(width > 0 && height > 0 && width <= 48 && height <= 48) || style.backgroundOrigin !== 'padding-box') return '';
+    const match = /^url\("([^"\\]+)"\)$/.exec(style.backgroundImage);
+    if (!match) return '';
+    const source = new URL(match[1], location.href).href;
+    if (!/^(?:https?:|data:image\/)/i.test(source)) return '';
+    const position = [style.backgroundPositionX, style.backgroundPositionY];
+    const key = JSON.stringify([source, width, height, style.backgroundSize, position, style.backgroundRepeat]);
+    let entry = compactBackgrounds.get(key);
+    if (!entry) {
+      if (compactBackgroundPending >= 8 || compactBackgrounds.size >= 128) return '';
+      entry = { done: false, ink: null, users: new Set() }; compactBackgrounds.set(key, entry); compactBackgroundPending++;
+      compactBackgroundQueue = compactBackgroundQueue.then(() => compactBackgroundInk(source, width, height,
+        style.backgroundSize, position, style.backgroundRepeat)).then(ink => {
+        entry.ink = ink; entry.done = true;
+        for (const user of entry.users) if (preset && user.isConnected && ink) scheduleDirtySurface(user);
+        entry.users.clear();
+      }).catch(() => { entry.done = true; entry.users.clear(); }).finally(() => { compactBackgroundPending--; });
+    }
+    if (!entry.done) { entry.users.add(element); return ''; }
+    const ink = entry.ink;
+    if (!ink || !readableColor(ink, backdrop, 7)) return '';
+    if (Math.max(...ink.slice(0, 3)) - Math.min(...ink.slice(0, 3)) <= 24) {
+      return 'brightness(0) invert(1)';
+    }
+    const target = contrastingGlyphInk(ink, backdrop, 7, true);
+    const lift = Math.max(0, ...ink.slice(0, 3).map((channel, i) => (target[i] - channel) / (255 - channel || 1)));
+    return `invert(1) brightness(${1 - Math.min(1, lift)}) invert(1)`;
   }
 
   function isDecorativeBackground(element, style) {
@@ -710,9 +861,12 @@
     };
     for (const side of ['Top', 'Bottom']) {
       const width = parseFloat(style[`border${side}Width`]);
-      if (!width || style[`border${side}Style`] !== 'solid') continue;
+      if (!width || !['solid', 'inset', 'outset'].includes(style[`border${side}Style`])) continue;
       const property = `border-${side.toLowerCase()}`;
-      const color = soften(style[`border${side}Color`]);
+      const source = chromiumSrgb(style[`border${side}Color`]);
+      const neutral = source && Math.max(...source.slice(0, 3)) - Math.min(...source.slice(0, 3)) <= 24;
+      const color = soften(style[`border${side}Color`]) ??
+        (neutral && rgba(readableColor(source, backdrop, 1.65) ?? source));
       if (color) declarations.push(`${property}-color: ${color} !important;`);
       if (width > 1) declarations.push(`${property}-width: 1px !important;`);
     }
@@ -784,7 +938,7 @@
 
   function hasImageBackdrop(element, style, backdrops) {
     if (backdrops.has(element)) return backdrops.get(element);
-    let hasImage = style.backgroundImage !== 'none' && !backgroundSvgGlyph(style) && !paleSvgBackground(style.backgroundImage) &&
+    let hasImage = style.backgroundImage !== 'none' && !elementBackgroundGlyph(element, style) && !paleSvgBackground(style.backgroundImage) &&
       !chromiumGradient(style, isHeadingBackground(element));
     if (!hasImage && chromiumSrgb(style.backgroundColor)?.[3] !== 1) {
       const parent = element.assignedSlot ?? element.parentElement ?? element.getRootNode().host;
@@ -838,8 +992,8 @@
     }
   }
 
-  function overlayColors(element, image) {
-    const rect = image.getBoundingClientRect();
+  function overlayColors(element, image, placement) {
+    const rect = placement?.rect ?? image.getBoundingClientRect();
     const source = image.currentSrc;
     if (!image.complete || !image.naturalWidth || !image.naturalHeight || !source) return null;
     if (!overlayImages.has(source)) {
@@ -863,7 +1017,7 @@
       });
     }
     if (!sample.pixels) return null;
-    const imageStyle = getComputedStyle(image);
+    const imageStyle = placement?.style ?? getComputedStyle(image);
     const position = /^(\d+(?:\.\d+)?)% (\d+(?:\.\d+)?)%$/.exec(imageStyle.objectPosition);
     if (!position || imageStyle.transform !== 'none' || imageStyle.filter !== 'none' ||
         imageStyle.mixBlendMode !== 'normal' || imageStyle.opacity !== '1') return null;
@@ -884,45 +1038,60 @@
     const top = rect.top + topInset + (boxHeight - height) * Number(position[2]) / 100;
     const range = document.createRange();
     const colors = new Map();
-    for (const node of element.childNodes) {
+    let words = 0, visits = 0;
+    for (const node of placement?.labels?.flatMap(label => [...label.childNodes]) ?? element.childNodes) {
       if (!textNode(node)) continue;
-      range.selectNodeContents(node);
-      for (const line of range.getClientRects()) {
-        if (line.left < Math.max(left, rect.left + leftInset) - 1 ||
-            line.right > Math.min(left + width, rect.right - rightInset) + 1 ||
-            line.top < Math.max(top, rect.top + topInset) - 1 ||
-            line.bottom > Math.min(top + height, rect.bottom - bottomInset) + 1) return null;
-        const x0 = Math.max(0, Math.floor((line.left - left) * sample.width / width));
-        const x1 = Math.min(sample.width, Math.ceil((line.right - left) * sample.width / width));
-        const y0 = Math.max(0, Math.floor((line.top - top) * sample.height / height));
-        const y1 = Math.min(sample.height, Math.ceil((line.bottom - top) * sample.height / height));
-        for (let y = y0; y < y1; y++) {
-          for (let x = x0; x < x1; x++) {
-            const index = (y * sample.width + x) * 4;
-            if (sample.pixels[index + 3] !== 255) return null;
-            const [r, g, b] = sample.pixels.subarray(index, index + 3);
-            const key = (r << 16) + (g << 8) + b;
-            if (!colors.has(key)) colors.set(key, [r, g, b, 1]);
+      // Word rectangles exclude inter-word gaps and unused line area. They are
+      // an approximation of glyph coverage, not an exact font raster mask.
+      for (const word of node.textContent.matchAll(/\S+/gu)) {
+        if (++words > 48) return null;
+        range.setStart(node, word.index);
+        range.setEnd(node, word.index + word[0].length);
+        for (const line of range.getClientRects()) {
+          if (line.left < Math.max(left, rect.left + leftInset) - 1 ||
+              line.right > Math.min(left + width, rect.right - rightInset) + 1 ||
+              line.top < Math.max(top, rect.top + topInset) - 1 ||
+              line.bottom > Math.min(top + height, rect.bottom - bottomInset) + 1) return null;
+          const x0 = Math.max(0, Math.floor((line.left - left) * sample.width / width));
+          const x1 = Math.min(sample.width, Math.ceil((line.right - left) * sample.width / width));
+          const y0 = Math.max(0, Math.floor((line.top - top) * sample.height / height));
+          const y1 = Math.min(sample.height, Math.ceil((line.bottom - top) * sample.height / height));
+          for (let y = y0; y < y1; y++) {
+            for (let x = x0; x < x1; x++) {
+              if (++visits > 16384) return null;
+              const index = (y * sample.width + x) * 4;
+              if (sample.pixels[index + 3] !== 255) return null;
+              const [r, g, b] = sample.pixels.subarray(index, index + 3);
+              const key = (r << 16) + (g << 8) + b;
+              const entry = colors.get(key);
+              if (entry) entry.weight++;
+              else colors.set(key, { color: [r, g, b, 1], weight: 1 });
+            }
           }
         }
       }
     }
-    return colors.size ? [...colors.values()] : null;
+    return colors.size ? { colors: [...colors.values()].map(v => v.color),
+      weights: [...colors.values()].map(v => v.weight), method: 'weighted-word-bounds' } : null;
   }
 
   function imageLabelPaint(element, style, minimum) {
     const image = overlayImage(element, style);
-    if (!image) return '';
+    if (!image) return flowImageLabelPaint(element, style, minimum);
+    if (!overlayLabels.has(image)) overlayLabels.set(image, new Set());
+    overlayLabels.get(image).add(element);
+    return sampledImageLabelPaint(element, style, overlayColors(element, image), minimum, true);
+  }
+
+  function sampledImageLabelPaint(element, style, sampled, minimum, allowBacking) {
     const fill = style.webkitTextFillColor;
     const inherited = !sheet.disabled && element.parentElement?.hasAttribute(marker) &&
       getComputedStyle(element.parentElement).webkitTextFillColor === fill;
     const authored = inherited && overlayAuthoredInk.get(element) || chromiumSrgb(fill);
     if (!authored?.[3] || style.backgroundClip === 'text') return '';
     overlayAuthoredInk.set(element, authored);
-    if (!overlayLabels.has(image)) overlayLabels.set(image, new Set());
-    overlayLabels.get(image).add(element);
     const dark = [18, 18, 18, 1], light = [255, 255, 255, 1];
-    const colors = overlayColors(element, image) ?? [dark, light];
+    const colors = sampled?.colors ?? [dark, light];
     const contrast = (ink, backing, alpha) => {
       let worst = Infinity;
       for (const pixel of colors) {
@@ -931,13 +1100,124 @@
       }
       return worst;
     };
-    const darkContrast = contrast(dark), lightContrast = contrast(light);
-    const ink = contrast(authored) >= minimum ? authored : darkContrast > lightContrast ? dark : light;
-    const backing = ink === dark ? light : dark;
+    const decision = globalThis.nativeDarkModeImageTextContrast?.(sampled, {
+      authored, fontSize: parseFloat(style.fontSize), fontWeight: parseFloat(style.fontWeight)
+    });
+    const ink = decision?.ink ?? (contrast(authored) >= minimum ? authored : contrast(dark) > contrast(light) ? dark : light);
+    const backing = luminance(ink) < .5 ? light : dark;
+    const declarations = `color: ${rgba(ink)} !important; -webkit-text-fill-color: ${rgba(ink)} !important;`;
+    // Foreground selection must not manufacture a stroke around letters or
+    // underlines. Preserve authored shadow/decoration when no backing is used.
+    if (!allowBacking) return declarations;
     let alpha = 0;
     while (contrast(ink, backing, alpha) < minimum && alpha < 1) alpha = Math.min(1, alpha + .1);
-    return `color: ${rgba(ink)} !important; -webkit-text-fill-color: ${rgba(ink)} !important;` +
+    return declarations +
       (alpha ? `background-color: ${rgba([...backing.slice(0, 3), Math.round(alpha * 10) / 10])} !important;` : '');
+  }
+
+  function flowImageLabelPaint(element, style, minimum) {
+    const card = element.closest('a[href]');
+    if (!card || element === card || element.textContent.trim().length > 180 ||
+        !Array.prototype.some.call(element.childNodes, textNode) || style.backgroundImage !== 'none') return '';
+    for (let node = element, depth = 0; node && depth < 7; node = node.parentElement, depth++) {
+      const layer = authoredBackdropStyle(node);
+      if (layer.backgroundImage !== 'none') {
+        if (!/^url\(/.test(layer.backgroundImage) || paleSvgBackground(layer.backgroundImage) ||
+            elementBackgroundGlyph(node, layer)) return '';
+        const decoration = flowImageLinkDecoration(card);
+        const independentLine = decoration && decoration.textDecorationColor !== decoration.color;
+        let decorationPaint = decoration ?
+          `text-decoration-line: underline !important; text-decoration-color: ${independentLine ? decoration.textDecorationColor : 'currentColor'} !important;` +
+          `text-decoration-style: ${decoration.textDecorationStyle} !important;` +
+          `text-decoration-thickness: ${decoration.textDecorationThickness} !important;` +
+          `text-underline-offset: ${decoration.textUnderlineOffset} !important;` : '';
+        const image = cssBackgroundImage(element, node, layer);
+        if (!image) return decorationPaint;
+        const box = node.getBoundingClientRect(), sx = box.width / node.offsetWidth, sy = box.height / node.offsetHeight;
+        const left = box.left + parseFloat(layer.borderLeftWidth) * sx, top = box.top + parseFloat(layer.borderTopWidth) * sy;
+        const width = node.clientWidth * sx, height = node.clientHeight * sy;
+        const imageStyle = { objectFit: layer.backgroundSize === 'contain' ? 'contain' : 'cover',
+          objectPosition: `${layer.backgroundPositionX} ${layer.backgroundPositionY}`, transform: 'none', filter: 'none',
+          mixBlendMode: 'normal', opacity: '1' };
+        for (const side of borderEdges) imageStyle[`padding${side}`] = imageStyle[`border${side}Width`] = '0px';
+        const placement = { rect: { left, top, right: left + width, bottom: top + height, width, height }, style: imageStyle };
+        const colors = overlayColors(element, image, placement);
+        if (independentLine && node === card) {
+          // A propagated colored underline is one authored decoration. Compare
+          // its original and chroma-retaining light adaptation over all labels,
+          // keeping one color across the link instead of alternating by line.
+          const authored = chromiumSrgb(decoration.textDecorationColor);
+          const adapted = authored?.[3] && chromiumColor(authored, 'foreground');
+          const sampled = adapted && overlayColors(element, image, { ...placement, labels: [...card.children] });
+          const decision = sampled && globalThis.nativeDarkModeImageTextContrast?.(sampled, { decoration: true, authored, adapted });
+          if (decision) decorationPaint += `text-decoration-color: ${rgba(decision.ink)} !important;`;
+        }
+        return (colors ? sampledImageLabelPaint(element, style, colors, minimum, false) : '') + decorationPaint;
+      }
+      if (chromiumSrgb(layer.backgroundColor)?.[3] > .2 || node === card) break;
+    }
+    return '';
+  }
+
+  function flowImageLinkLabels(link, style = authoredBackdropStyle(link)) {
+    return link instanceof HTMLAnchorElement && link.hasAttribute('href') && /^url\(/.test(style.backgroundImage) &&
+      !paleSvgBackground(style.backgroundImage) && !elementBackgroundGlyph(link, style) &&
+      !Array.prototype.some.call(link.childNodes, textNode) && link.childElementCount > 0 && link.childElementCount <= 4 &&
+      Array.from(link.children).every(child => child instanceof HTMLElement && !child.childElementCount &&
+        child.textContent.trim() && child.textContent.trim().length <= 180);
+  }
+
+  function flowImageLinkDecoration(link, style = authoredBackdropStyle(link)) {
+    if (!flowImageLinkLabels(link, style) || style.textDecorationLine !== 'underline' ||
+        Array.from(link.children).some(child => authoredBackdropStyle(child).textDecorationLine !== 'none')) return null;
+    return style;
+  }
+
+  function flowImageLinkPaint(element, style) {
+    // Move propagated decoration onto the flat labels, where background
+    // samples and default versus independent decoration colors are known.
+    return flowImageLinkDecoration(element, style) ? 'text-decoration-color: transparent !important;' : '';
+  }
+
+  function cssBackgroundImage(label, host, style) {
+    if (!['cover', 'contain'].includes(style.backgroundSize) ||
+        (style.backgroundRepeat !== 'no-repeat' && !(style.backgroundSize === 'cover' && style.backgroundRepeat === 'repeat')) ||
+        style.backgroundOrigin !== 'padding-box' || style.filter !== 'none' || style.transform !== 'none' ||
+        style.opacity !== '1' || style.backgroundBlendMode !== 'normal' ||
+        !/^\d+(?:\.\d+)?%$/.test(style.backgroundPositionX) || !/^\d+(?:\.\d+)?%$/.test(style.backgroundPositionY)) return null;
+    const match = /^url\("([^"\\]+)"\)$/.exec(style.backgroundImage);
+    if (!match) return null;
+    const source = new URL(match[1], location.href).href;
+    let entry = cssOverlayImages.get(source);
+    if (!entry) {
+      const rect = host.getBoundingClientRect();
+      if (cssOverlayImages.size >= 16 || rect.bottom < -128 || rect.top > innerHeight + 128) return null;
+      entry = { image: null, done: false, users: new Set() }; cssOverlayImages.set(source, entry);
+      const task = artworkReadQueue.then(async () => {
+        const resource = await readImageResource(source, new URL(source).origin === location.origin ? 'same-origin' : 'cors');
+        if (resource?.type !== 'image/png' || resource.data.length < 24) return;
+        const view = new DataView(resource.data.buffer, resource.data.byteOffset, resource.data.byteLength);
+        const width = view.getUint32(16), height = view.getUint32(20);
+        if (!width || !height || width > 4096 || height > 4096 || width * height > 1048576 ||
+            !await globalThis.ImageDecoder?.isTypeSupported(resource.type)) return;
+        let decoder, url, timer;
+        try {
+          decoder = new ImageDecoder({ data: resource.data, type: resource.type, preferAnimation: true });
+          await decoder.tracks.ready; await decoder.completed;
+          if (decoder.tracks.selectedTrack?.frameCount !== 1) return;
+          const image = new Image(); url = URL.createObjectURL(new Blob([resource.data], { type: resource.type })); image.src = url;
+          await Promise.race([image.decode(), new Promise((_, reject) => { timer = setTimeout(reject, 2000); })]);
+          entry.image = image;
+        } finally { clearTimeout(timer); decoder?.close(); if (url) URL.revokeObjectURL(url); }
+      }).catch(() => {}).finally(() => {
+        entry.done = true;
+        for (const user of entry.users) if (preset && user.isConnected) scheduleDirtySurface(user);
+        entry.users.clear();
+      });
+      artworkReadQueue = task;
+    }
+    if (!entry.done) entry.users.add(label);
+    return entry.image;
   }
 
   function authoredBackdropStyle(element) {
@@ -977,7 +1257,7 @@
     const layers = [];
     for (let node = element, depth = 0; node && depth < 32; depth++) {
       const style = authoredBackdropStyle(node);
-      if (style.backgroundImage !== 'none' && !backgroundSvgGlyph(style)) return null;
+      if (style.backgroundImage !== 'none' && !elementBackgroundGlyph(node, style)) return null;
       const color = chromiumSrgb(style.backgroundColor);
       if (!color) return null;
       layers.push(color);
@@ -1004,6 +1284,8 @@
   function chromiumSurfaceColor(element, style, color) {
     if (!color?.[3] || element.style.getPropertyPriority('background-color') === 'important') return null;
     const surface = chromiumColor(color, 'background');
+    const separated = separatedCardPaint(element, style, color, surface);
+    if (separated) return separated.surface;
     if (!surface || color[3] !== 1 || style.backgroundImage !== 'none' ||
         !element.matches('div,span,small,strong,b,label,[role="status"]') ||
         element.textContent.length > 80 || !element.textContent.trim() ||
@@ -1241,27 +1523,38 @@
       // Serialize resource verification/decoding rather than starting one read
       // per visible logo at once. Cache failed CORS/format checks as well.
       const result = artworkReadQueue.then(() => checkStaticArtwork(source));
+      result.then(value => { result.verified = value; });
       staticArtwork.set(source, result);
       artworkReadQueue = result.catch(() => null);
     }
-    staticArtwork.get(source).then(resource => {
+    const cached = staticArtwork.get(source);
+    if (Object.hasOwn(cached, 'verified')) {
+      applyArtworkTint(image, sample, cached.verified);
+      return;
+    }
+    cached.then(resource => {
       if (!resource || !preset || !image.isConnected || image.currentSrc !== source ||
           artworkContrast.get(image) !== sample) return;
+      applyArtworkTint(image, sample, resource);
+      if (sample.tint) schedule(image);
+    });
+  }
+
+  function applyArtworkTint(image, sample, resource) {
+      if (!resource) return;
+      const { naturalWidth: width, naturalHeight: height } = image;
       if (sample.crossOriginSolid) {
         const ink = resource.ink;
-        const brighter = ink && readableColor(ink, sample.backdrop, 4.5);
+        const brighter = ink && readableColor(ink, sample.backdrop, 7);
         if (!brighter) return;
         const channel = ink.indexOf(Math.min(...ink.slice(0, 3)));
         sample.colorLift = (brighter[channel] - ink[channel]) / (255 - ink[channel]);
         sample.tint = true;
-        schedule(image);
         return;
       }
       if (sample.solid ? !solidSilhouetteInk(artworkPixels(image, width, height)) :
           sample.colorLift ? resource.kind !== 'svg' : !neutralSilhouetteInk(artworkPixels(image, width, height))) return;
       sample.tint = true;
-      schedule(image);
-    });
   }
 
   function surroundingArtworkColors(element, boundary) {
@@ -1307,8 +1600,18 @@
         return { backing: wrappedArtworkBacking(parent, linkStyle, chromiumSrgb(linkStyle.backgroundColor), null) };
       }
     }
-    if (!parent?.matches(heading) || parent.firstElementChild !== element || parent.textContent.trim().length > 120) return {};
-    const [light, dark] = surroundingArtworkColors(element);
+    let light, dark;
+    if (parent?.matches(heading) && parent.firstElementChild === element && parent.textContent.trim().length <= 120) {
+      [light, dark] = surroundingArtworkColors(element);
+    } else {
+      const figure = parent?.closest('figure');
+      if (!figure?.querySelector('figcaption') || figure.querySelectorAll('img').length !== 1 ||
+          element.clientWidth > 400 || element.clientHeight > 240 || element.naturalWidth * element.naturalHeight > 262144) return {};
+      light = authoredSolidBackdrop(figure);
+      const palette = palettes[preset];
+      dark = palette ? palette.surface.slice(1).match(/../g).map(channel => parseInt(channel, 16)).concat(1) :
+        light && (chromiumColor(light, 'background') ?? light);
+    }
     const backing = artworkBackingForImage(element, light, dark, Boolean(parent.textContent.trim()));
     if (backing && artworkContrast.get(element)?.tint) {
       return { filter: `brightness(0) invert(1) brightness(${artworkTintLevel(dark)})` };
@@ -1385,7 +1688,7 @@
       const pixels = artworkPixels(image, image.naturalWidth, image.naturalHeight);
       const solid = imageOnly && solidSilhouetteInk(pixels);
       const ink = solid ? null : neutralSilhouetteInk(pixels);
-      const brighter = solid && readableColor(solid, backdrop, 4.5);
+      const brighter = solid && readableColor(solid, backdrop, 7);
       const channel = solid && solid.indexOf(Math.min(...solid.slice(0, 3)));
       const colorLift = solid ? (brighter ? (brighter[channel] - solid[channel]) / (255 - solid[channel]) : 0) :
         imageOnly ? 0 : ink ? 0 : relatedColorLift(pixels, backdrop);
@@ -1396,6 +1699,50 @@
     }
     if (sample.tint) return sample.colorLift ? `invert(1) brightness(${1 - sample.colorLift}) invert(1)` :
       'brightness(0) invert(1)';
+  }
+
+  function smallLabeledSvgPaint(image, style, getBackdrop) {
+    if (!(image instanceof HTMLImageElement) || !image.complete || !image.naturalWidth ||
+        image.clientWidth > 80 || image.clientHeight > 80 || image.naturalWidth > 320 || image.naturalHeight > 320 ||
+        style.filter !== 'none' || style.opacity !== '1' || style.mixBlendMode !== 'normal') return '';
+    const parent = image.parentElement;
+    if (!parent || !parent.textContent.trim() || parent.textContent.trim().length > 160 ||
+        parent.querySelectorAll('img').length !== 1 || !Array.prototype.some.call(parent.children, child =>
+          child !== image && Array.prototype.some.call(child.childNodes, textNode))) return '';
+    const backdrop = getBackdrop(image), original = authoredSolidBackdrop(parent);
+    if (!backdrop || luminance(backdrop) >= .18 || original?.[3] !== 1 || luminance(original) < .6) return '';
+    const source = image.currentSrc;
+    let entry = labeledSvgArtwork.get(source);
+    if (!entry) {
+      if (labeledSvgArtwork.size >= 32 || !sampleArtwork(image, original, backdrop)) return '';
+      entry = { svg: null, done: false, users: new Set() }; labeledSvgArtwork.set(source, entry);
+      const task = artworkReadQueue.then(async () => {
+        const resource = await readImageResource(source, new URL(source).origin === location.origin ? 'same-origin' : 'cors');
+        if (resource?.type !== 'image/svg+xml' || resource.data.length > 4096) return;
+        const svg = new TextDecoder().decode(resource.data).trim();
+        if (!isStaticSvgArtwork(resource.data) || /<(?!\/?(?:svg|g|path|circle|ellipse|line|polygon|polyline|rect|title|desc)\b)|\b(?:style|class|href|opacity|fill-opacity|stroke-opacity)\s*=/i.test(svg)) return;
+        const inks = [...svg.matchAll(svgPaint)].map(match => match[3]).filter(value => value !== 'none');
+        if (new Set(inks).size < 2 || new Set(inks).size > 4 || inks.some(value =>
+          !/^#[\da-f]{6}$/i.test(value) && !gradientColor(value, true))) return;
+        entry.svg = svg;
+      }).catch(() => {}).finally(() => {
+        entry.done = true;
+        for (const user of entry.users) if (preset && user.isConnected) scheduleDirtySurface(user);
+        entry.users.clear();
+      });
+      artworkReadQueue = task;
+    }
+    if (!entry.done) { entry.users.add(image); return ''; }
+    if (!entry.svg) return '';
+    let changed = false;
+    const svg = entry.svg.replace(svgPaint, (whole, property, quote, value) => {
+      if (value === 'none') return whole;
+      const original = /^#[\da-f]{6}$/i.test(value) ? [1, 3, 5].map(i => parseInt(value.slice(i, i + 2), 16)).concat(1) : gradientColor(value, true);
+      const ink = paletteGlyphInk(original, backdrop);
+      if (!ink) return whole;
+      changed = true; return `${property}=${quote}rgb(${ink.slice(0, 3).join(',')})${quote}`;
+    });
+    return changed ? `content: url("data:image/svg+xml,${encodeURIComponent(svg)}") !important;` : '';
   }
 
   function solidSilhouetteInk(pixels) {
@@ -1472,6 +1819,12 @@
       (panel ? chromiumTextBackdrop(document.documentElement, backdrops.solid) : null);
     if (!backdrop || luminance(backdrop) > .18) return [];
     let sourceBackdrop;
+    const authoredDarkEdge = value => {
+      sourceBackdrop ??= authoredSolidBackdrop(element);
+      // A border designed for an already-dark surface is not a light-mode
+      // frame to attenuate. Preserve its authored weight, including chroma.
+      return sourceBackdrop && luminance(sourceBackdrop) < .18 ? chromiumSrgb(value) : null;
+    };
     const darkEdgeInk = value => {
       const original = chromiumSrgb(value);
       if (!original?.[3] || luminance(original) >= .18 ||
@@ -1494,7 +1847,7 @@
       };
       const declarations = sides.flatMap(side => {
         const original = style[`border${side}Color`];
-        const color = strengthen(original, darkEdgeInk(original));
+        const color = strengthen(original, darkEdgeInk(original) ?? authoredDarkEdge(original));
         return color ? [`border-${side.toLowerCase()}-color: ${rgba(color)} !important;`] : [];
       });
       const shadow = boxShadow.replace(/(rgba?\([^)]*\)) (-?[012]px) (-?[012]px) 0px(?: 0px)? inset/g,
@@ -1513,6 +1866,7 @@
     const soften = value => {
       const color = chromiumSrgb(value);
       if (!color || luminance(compositeColor(color, backdrop)) < luminance(backdrop) + .12) return value;
+      if (authoredDarkEdge(value)) return value;
       const neutral = Math.max(...color.slice(0, 3)) - Math.min(...color.slice(0, 3)) <= 24;
       if (panel && !neutral) return value;
       return rgba([...color.slice(0, 3), color[3] * (panel ? .12 : .2)]);
@@ -1562,9 +1916,11 @@
     const box = element.getBoundingClientRect();
     if (Math.min(box.width, box.height) < 20 || Math.max(box.width, box.height) > 80) return [];
     // Hidden accessible labels do not make an icon control a text button.
+    const accessibleGlyph = element.hasAttribute('aria-label') && element.getAttribute('aria-label').trim().length > 1 &&
+      Array.from(element.textContent.trim()).length === 1;
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      if (!node.textContent.trim() || node.parentElement.closest('svg')) continue;
+      if (accessibleGlyph || !node.textContent.trim() || node.parentElement.closest('svg')) continue;
       const textStyle = getComputedStyle(node.parentElement);
       if (textStyle.visibility !== 'visible' || Number(textStyle.opacity) === 0 ||
           chromiumSrgb(authoredBackdropStyle(node.parentElement).webkitTextFillColor)?.[3] === 0) continue;
@@ -1599,7 +1955,7 @@
   function raisedSurfaceEdge(style, backdrop, outside, shadow) {
     if (!backdrop || luminance(backdrop) > .18 || style.borderStyle !== 'none' ||
         style.borderImageSource !== 'none' || hasPaintedOutline(style)) return '';
-    if (!outside || Math.abs(luminance(outside) - luminance(backdrop)) >= .03) return '';
+    if (!outside) return '';
     const { minimum, edgeWidth } = separatorLevels[emphasizeSeparators];
     const edge = readableColor(backdrop, backdrop, minimum);
     return `box-shadow: inset 0 0 0 ${edgeWidth}px ${rgba(edge)}, ${shadow} !important;`;
@@ -1609,7 +1965,37 @@
     return element.matches('a[href]:not([aria-disabled="true"])') &&
       ['block', 'flex', 'grid'].includes(style.display) && parseFloat(style.borderTopLeftRadius) >= 4 &&
       style.boxShadow !== 'none' && !style.boxShadow.includes('inset') && chromiumSrgb(style.backgroundColor)?.[3] === 1 &&
-      element.clientWidth >= 120 && element.clientHeight >= 64;
+      element.clientWidth >= 120 && element.clientHeight >= 44;
+  }
+
+  function separatedCardPaint(element, style, source, surface) {
+    if (!source || source[3] !== 1 || !surface || luminance(surface) > .18 || luminance(source) < .75 ||
+        Math.max(...source.slice(0, 3)) - Math.min(...source.slice(0, 3)) > 20 || style.backgroundImage !== 'none' ||
+        element.style.getPropertyPriority('background-color') === 'important') return null;
+    const compact = !raisedLink(element, style) && element.matches('a,button,label,span,[role="button"]') &&
+      (element.textContent.trim() || element.hasAttribute('aria-label')) &&
+      element.clientWidth <= 360 && element.clientHeight >= 20 && element.clientHeight <= 80;
+    const structural = element.matches('article,aside') && element.querySelector(heading) &&
+      (paintedBorderSides(style).length || style.boxShadow !== 'none');
+    if (!compact && (!(structural || raisedLink(element, style)) || element.clientWidth < 120 || element.clientHeight < 44)) return null;
+    const originalParent = authoredSolidBackdrop(element.parentElement);
+    if (!originalParent) return null;
+    const palette = palettes[preset];
+    const paletteColor = value => value.slice(1).match(/../g).map(channel => parseInt(channel, 16)).concat(1);
+    const parent = palette ? paletteColor(palette.surface) : chromiumColor(originalParent, 'background') ?? originalParent;
+    let separated = surface;
+    const minimum = compact ? 1.12 : 1.2, target = compact ? 1.15 : 1.25;
+    const sameSourceLevel = contrastRatio(luminance(source), luminance(originalParent)) <= 1.12;
+    if (sameSourceLevel || contrastRatio(luminance(surface), luminance(parent)) < minimum) {
+      separated = palette ? paletteColor(palette.raised) : readableColor(parent, parent, target);
+      if (contrastRatio(luminance(separated), luminance(parent)) < minimum) separated = readableColor(parent, parent, target);
+    }
+    const shadow = style.boxShadow.includes('inset') ? style.boxShadow : style.boxShadow.replace(/rgba?\([^)]+\)/g, value => {
+      const ink = chromiumSrgb(value);
+      return ink?.[3] > 0 && luminance(ink) < .05 && Math.max(...ink.slice(0, 3)) - Math.min(...ink.slice(0, 3)) < 16 ?
+        rgba([255, 255, 255, Math.min(.14, ink[3] * .45)]) : value;
+    });
+    return { surface: separated ?? surface, shadow: shadow !== style.boxShadow ? shadow : null };
   }
 
   function trackRaisedLink(element, style) {
@@ -1638,7 +2024,7 @@
     if (!element.matches('a[href],button') || element.matches(':disabled,[aria-disabled="true"],[aria-pressed],[aria-selected],[aria-current]') ||
         !element.textContent.trim() || element.textContent.trim().length > 100) return false;
     const box = element.getBoundingClientRect();
-    return box.width > 0 && box.width <= 320 && box.height > 0 && box.height <= 48;
+    return box.width > 0 && box.width <= 320 && box.height > 0 && box.height <= 80;
   }
 
   function coloredControlBorder(element, style, getBackdrop) {
@@ -1664,7 +2050,7 @@
     if (!backdrop || luminance(backdrop) > .18 ||
         (!compact && element.closest(interactive)) || element.closest('[role="tablist"]') || element.matches('input,select,textarea') ||
         style.borderImageSource !== 'none' || hasPaintedOutline(style)) return '';
-    const background = sourceBackground ?? chromiumSrgb(style.backgroundColor);
+    const background = sourceBackground ?? authoredSolidBackdrop(element);
     const color = chromiumSrgb(style.borderTopColor);
     const width = parseFloat(style.borderTopWidth);
     // Pixel snapping at fractional scale can report an authored 1px border as 0.8px.
@@ -1673,16 +2059,16 @@
         !['Top', 'Right', 'Bottom', 'Left'].every(side => style[`border${side}Style`] === 'solid' &&
           style[`border${side}Color`] === style.borderTopColor && parseFloat(style[`border${side}Width`]) === width)) return '';
     const originalContrast = contrastRatio(luminance(color), luminance(background));
-    if (originalContrast > 1.8) return '';
+    if (originalContrast > 3) return '';
     // Off follows the authored visual weight; the preference supplies a graduated target.
-    const target = emphasizeSeparators ? separatorLevels[emphasizeSeparators].minimum :
-      Math.max(1.05, originalContrast * 1.08);
+    const baseline = Math.max(1.05, originalContrast * 1.08);
+    const target = emphasizeSeparators ? baseline + separatorLevels[emphasizeSeparators].minimum - 1 : baseline;
     const edge = readableColor(backdrop, backdrop, target);
     return `border-color: ${rgba(edge)} !important;`;
   }
 
   function listItemFramePaint(element, getBackdrop) {
-    if (!element.matches('li,[role="listitem"]') || element.matches(':focus-within')) return [];
+    if (element.matches(':focus-within')) return [];
     const backdrop = getBackdrop(element);
     if (!backdrop || luminance(backdrop) > .18) return [];
     const paints = [];
@@ -1690,6 +2076,12 @@
       const style = getComputedStyle(element, pseudo);
       if (style.content !== '""' || style.backgroundImage !== 'none' || style.transform !== 'none' ||
           style.filter !== 'none' || style.maskImage !== 'none' || !(parseFloat(style.borderTopWidth) > 0)) continue;
+      const extent = (dimension, sides) => parseFloat(style[dimension]) + (style.boxSizing === 'border-box' ? 0 :
+        sides.reduce((sum, side) => sum + parseFloat(style[`border${side}Width`]) + parseFloat(style[`padding${side}`]), 0));
+      if (!element.matches('li,[role="listitem"]') &&
+          (style.position !== 'absolute' || Math.abs(parseFloat(style.top)) > 1 || Math.abs(parseFloat(style.left)) > 1 ||
+            Math.abs(extent('width', ['Left', 'Right']) - element.clientWidth) > 1 ||
+            Math.abs(extent('height', ['Top', 'Bottom']) - element.clientHeight) > 1)) continue;
       const backing = chromiumSrgb(style.backgroundColor);
       const source = backing && authoredSolidBackdrop(element);
       if (!source) continue;
@@ -1782,9 +2174,9 @@
       (!element.textContent.trim() && element.querySelector('img')));
     const hasText = Array.prototype.some.call(element.childNodes, textNode) ||
       (element instanceof HTMLInputElement && element.matches(actionButton) && element.value.trim());
-    const imageLabel = hasText && imageLabelPaint(element, style, 4.5);
+    const imageLabel = (hasText && imageLabelPaint(element, style, 4.5)) || flowImageLinkPaint(element, style);
     let color = foreground?.[3] ? chromiumColor(foreground, 'foreground') : null;
-    const horizontalSeparator = element.matches('[role="separator"][aria-orientation="horizontal"]') &&
+    const horizontalSeparator = element.matches('hr,[role="separator"]:not([aria-orientation="vertical"])') &&
       !element.textContent.replace(/&nbsp;/gi, '').trim();
     if (horizontalSeparator) {
       // Generated separator lines can use currentColor even when the element has no visible text.
@@ -1803,16 +2195,20 @@
       elementBackgroundGlyph(element, style)) || externalSvgGlyph(element, style);
     const glyphBackdrop = glyph && chromiumTextBackdrop(glyph.external ? element.parentElement : element, backdrops.solid);
     // The compact arrow in a select needs extra contrast at small sizes.
-    const gradient = contrastingSvgBackground(glyph, glyphBackdrop, glyph?.external ? 10 : 7,
+    const gradient = contrastingSvgBackground(glyph, glyphBackdrop, 10,
       glyph?.external || select || Boolean(carousel)) ??
       svgBackground?.image ?? chromiumGradient(style, headingBackground);
-    const shadow = chromiumBackdropShadow(original.boxShadow ?? style.boxShadow);
+    let shadow = chromiumBackdropShadow(original.boxShadow ?? style.boxShadow);
     let surface = blendsBackgroundImage && !gradient ? null : chromiumSurfaceColor(element, style, background);
+    const cardPaint = separatedCardPaint(element, style, background, surface);
+    if (cardPaint) { surface = cardPaint.surface; shadow = cardPaint.shadow ?? shadow; }
     const backdropFor = node => chromiumTextBackdrop(node, backdrops.solid);
     const artwork = artworkRepair(element, style, background, surface);
     surface = artwork.backing ?? surface;
     const artworkFilter = artwork.filter ??
-      (element instanceof HTMLImageElement ? linkedGlyphFilter(element, style, backdropFor) : undefined);
+      (element instanceof HTMLImageElement ? linkedGlyphFilter(element, style, backdropFor) :
+        compactBackgroundFilter(element, style, backdropFor(element.parentElement ?? element.getRootNode().host)));
+    const artworkContent = smallLabeledSvgPaint(element, style, backdropFor);
     if (element === document.documentElement && background?.[3] === 0 && style.backgroundImage === 'none') {
       const body = document.body && getComputedStyle(document.body);
       if (!body || (chromiumSrgb(body.backgroundColor)?.[3] === 0 && body.backgroundImage === 'none')) {
@@ -1925,7 +2321,7 @@
     pseudoStyles.push(...placeholderPaint(element, backdropFor));
     pseudoStyles.push(...selectPopupPaint(element, style, backdropFor));
     const fallbackControlIcon = pseudoStyles.some(([, declarations]) => declarations.includes('translate(-50%'));
-    if (!color && !surface && !artworkFilter && !preservePhoto && !gradient && !shadow && !textFill && !isolateLabel &&
+    if (!color && !surface && !artworkFilter && !artworkContent && !preservePhoto && !gradient && !shadow && !textFill && !isolateLabel &&
         !undimLabel && !lightIcon && !expander && !separators.length && !pseudoStyles.length &&
         !stickyTransition && !imageLabel) return null;
     const declarations = [
@@ -1933,10 +2329,11 @@
       textFill ? `-webkit-text-fill-color: ${rgba(textFill)} !important;` : '',
       surface ? `background-color: ${rgba(surface)} !important;` : '',
       artworkFilter ? `filter: ${artworkFilter} !important;` : '',
+      artworkContent,
       gradient ? `background-image: ${gradient} !important;` : '',
       shadow ? `box-shadow: ${shadow} !important;` : '',
       preservePhoto || isolateLabel ? 'mix-blend-mode: normal !important;' : '',
-      lightIcon === 'sprite' ? 'filter: brightness(0) invert(1) !important;' : undimLabel ? 'filter: none !important;' : '',
+      undimLabel ? 'filter: none !important;' : '',
       expander || '',
       lightIcon === 'mask' ? 'background-color: white !important;' : '',
       fallbackControlIcon && style.position === 'static' ? 'position: relative !important;' : '',
@@ -1972,7 +2369,7 @@
             control = node;
             break;
           }
-          if (node.matches(`${heading},dt,label`) &&
+          if (node.matches(`${heading},dt,label,span,p`) && node.textContent.trim().length <= 160 &&
               Array.prototype.some.call(node.childNodes, textNode)) {
             labeledIcon = true;
             break;
@@ -2019,6 +2416,9 @@
     const ink = monochromeIconColor(element, paints);
     if (!ink) {
       const backdrop = localBackdrop ?? (control && getBackdrop(parent ?? host));
+      const labelBackdrop = backdrop ?? getBackdrop(parent ?? host);
+      const palette = labelBackdrop && svgPaletteGlyphPaint(element, labelBackdrop);
+      if (palette) return palette;
       if (!backdrop || luminance(backdrop) >= .18 || !isTwoToneIcon(element)) return null;
       return { declarations: 'filter: invert(1) !important;', transition: null, pseudoStyles: [] };
     }
@@ -2037,20 +2437,53 @@
         return { declarations: `filter: brightness(0)${base < .18 ? ' invert(1)' : ''} !important;`,
           transition: null, pseudoStyles: [] };
       }
-      const transformed = simulated && luminance(backdrop) < .18 && chromiumColor(ink, 'foreground');
+      const transformed = (simulated || wideLinkedMark(element)) && luminance(backdrop) < .18 && chromiumColor(ink, 'foreground');
       const color = readableColor(transformed || ink, backdrop, minimum) ?? transformed;
       if (!color || color.every((channel, index) => channel === ink[index])) return null;
       paint = rgba(color);
     }
-    const pseudoStyles = paints.map(([shape, properties]) => {
+    const pseudoStyles = svgPaintRules(element, paints, () => paint);
+    return { declarations: matchesLabel ? 'color: inherit !important;' : '', transition: null, pseudoStyles };
+  }
+
+  function svgPaintRules(element, paints, resolve) {
+    return paints.map(([shape, properties]) => {
       const path = [];
       for (let node = shape; node !== element; node = node.parentElement) {
         const index = Array.prototype.indexOf.call(node.parentElement.children, node) + 1;
         path.unshift(` > :nth-child(${index})`);
       }
-      return [path.join(''), properties.map(property => `${property}: ${paint} !important;`).join('')];
+      return [path.join(''), properties.map(property => `${property}: ${resolve(shape, property)} !important;`).join('')];
     });
-    return { declarations: matchesLabel ? 'color: inherit !important;' : '', transition: null, pseudoStyles };
+  }
+
+  function svgPaletteGlyphPaint(element, backdrop) {
+    const box = element.getBoundingClientRect();
+    if (box.width > 48 || box.height > 48 || luminance(backdrop) >= .18 ||
+        element.querySelector('image,use,foreignObject,text,animate,animateTransform,set') ||
+        getComputedStyle(element).filter !== 'none') return null;
+    const paints = [], colors = new Set();
+    for (const shape of element.querySelectorAll('path,circle,ellipse,line,polygon,polyline,rect')) {
+      if (shape.closest('defs,clipPath,mask')) continue;
+      const style = getComputedStyle(shape), properties = [];
+      if (style.opacity !== '1' || style.fillOpacity !== '1' || style.strokeOpacity !== '1') return null;
+      for (const property of ['fill', 'stroke']) {
+        if (style[property] === 'none') continue;
+        const ink = chromiumSrgb(style[property]);
+        if (ink?.[3] !== 1) return null;
+        colors.add(ink.join(',')); properties.push(property);
+      }
+      if (properties.length) paints.push([shape, properties]);
+      if (colors.size > 2 || paints.length > 32) return null;
+    }
+    if (colors.size !== 2) return null;
+    let changed = false;
+    const pseudoStyles = svgPaintRules(element, paints, (shape, property) => {
+      const source = getComputedStyle(shape)[property], ink = paletteGlyphInk(chromiumSrgb(source), backdrop);
+      if (ink) changed = true;
+      return ink ? rgba(ink) : source;
+    });
+    return changed ? { declarations: '', transition: null, pseudoStyles } : null;
   }
 
   function svgLayerBackdrop(element) {
@@ -2113,7 +2546,11 @@
       const mask = style.maskImage || style.webkitMaskImage;
       if (mask && mask !== 'none') lighten('background-color', style.backgroundColor);
       if (style.backgroundImage !== 'none' && style.filter === 'none') {
-        declarations.push('filter: brightness(0) invert(1) !important;');
+        const glyph = backgroundSvgGlyph(style, true);
+        const image = contrastingSvgBackground(glyph, backdrop, 10);
+        const filter = !glyph && compactBackgroundFilter(element, style, backdrop, pseudo);
+        if (image) declarations.push(`background-image: ${image} !important;`);
+        else if (filter) declarations.push(`filter: ${filter} !important;`);
       }
       for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
         if (parseFloat(style[`border${side}Width`]) > 0) {
@@ -2206,8 +2643,12 @@
       }
       const glyph = backgroundSvgGlyph(style, true);
       const backdrop = glyph && getBackdrop(element);
-      const image = contrastingSvgBackground(glyph, backdrop, 7);
+      const image = contrastingSvgBackground(glyph, backdrop, 10);
       if (image) paint.push([pseudo, `background-image: ${image} !important;`]);
+      else {
+        const filter = compactBackgroundFilter(element, style, getBackdrop(element), pseudo);
+        if (filter) paint.push([pseudo, `filter: ${filter} !important;`]);
+      }
     }
     const source = authoredBackdropStyle(element);
     const glyph = elementBackgroundGlyph(element, source);
@@ -2419,7 +2860,7 @@
     const crossed = element => !(event.relatedTarget instanceof Node && element.contains(event.relatedTarget));
     const control = path.find(node => node instanceof HTMLElement && node.matches(interactive));
     if (control && crossed(control) && (raisedLinks.has(control) || control.closest('nav,[role="navigation"]') ||
-        control.querySelector('svg') || compactTextControl(control))) {
+        control.querySelector('svg') || compactTextControl(control) || flowImageLinkLabels(control))) {
       hoverTargets.add(control);
     }
     for (const node of path) {
@@ -2436,7 +2877,7 @@
       hoverTargets.clear();
       // A button's state can change its glyph ink and its backing independently.
       for (const control of [...targets]) {
-        if (!control.matches(interactive) || !control.querySelector('svg')) continue;
+        if (!control.matches(interactive) || !(control.querySelector('svg') || flowImageLinkLabels(control))) continue;
         const descendants = control.querySelectorAll('*');
         if (descendants.length <= 64) targets.push(...descendants);
       }
@@ -2585,13 +3026,24 @@
     if ((!control && style.cursor !== 'pointer') || element.closest(':disabled,[aria-disabled="true"]')) return null;
     const { width, height } = element.getBoundingClientRect();
     if (!width || !height || width > 48 || height > 48) return null;
-    return masked ? 'mask' : 'sprite';
+    // Background sprites need evidence from the displayed crop; a stylesheet or
+    // position alone cannot distinguish a glyph from a multicolor flag.
+    return masked ? 'mask' : 'background';
+  }
+
+  function wideLinkedMark(element) {
+    const link = element.closest('a[href]');
+    if (!link || link.textContent.trim() || !(link.hasAttribute('aria-label') || link.relList.contains('home')) ||
+        element.querySelector('text,animate,animateTransform,animateMotion,set,script')) return false;
+    const { width, height } = element.getBoundingClientRect();
+    return width > 48 && width <= 240 && height > 0 && height <= 64 && width >= height * 2 &&
+      element.querySelectorAll('path,circle,ellipse,line,polygon,polyline,rect').length <= 64;
   }
 
   function monochromeIconColor(element, paints) {
     if (getComputedStyle(element).filter !== 'none' || element.querySelector('use,foreignObject')) return null;
     const { width, height } = element.getBoundingClientRect();
-    if (!width || !height || width > 48 || height > 48) return null;
+    if (!width || !height || ((width > 48 || height > 48) && !wideLinkedMark(element))) return null;
     for (const image of element.querySelectorAll('image')) {
       // SVG images load from href (including legacy xlink:href), not src.
       if (image instanceof SVGImageElement && !image.href.animVal.trim()) continue;
@@ -2688,15 +3140,15 @@
           (element.matches('i') || (!element.childElementCount && !element.textContent.trim()))) {
         icon = controlSprite(element, style);
         const background = icon && backdrop(element.parentElement);
-        if (background && luminance(background) < .18) {
-          repaired += icon === 'mask' ? ' icon-mask-light' : ' icon-light';
+        if (background && luminance(background) < .18 && icon === 'mask') {
+          repaired += ' icon-mask-light';
         }
       }
       const glyph = ((direction || select || hasText || wrappedBackgroundGlyphLabel(element, style)) &&
         elementBackgroundGlyph(element, style)) || externalSvgGlyph(element, style);
       if (glyph) {
         const image = contrastingSvgBackground(glyph, backdrop(glyph.external ? element.parentElement : element),
-          glyph.external ? 10 : 7, Boolean(glyph.external || direction || select));
+          10, Boolean(glyph.external || direction || select));
         if (image) repaired += ` ${palettePaintRole(`background-image: ${image} !important;`, [], rules)}`;
       } else if (direction) {
         const backdropColor = backdrop(element) ?? backdrop(element.parentElement);
@@ -2723,10 +3175,12 @@
         const edge = raisedSurfaceEdge(style, backdrop(element), backdrop(parent), style.boxShadow);
         if (edge) pseudoStyles.push([':not(:focus-visible)', edge]);
       }
-      const filter = element instanceof HTMLImageElement ? linkedGlyphFilter(element, style, backdrop) : '';
+      const filter = element instanceof HTMLImageElement ? linkedGlyphFilter(element, style, backdrop) :
+        compactBackgroundFilter(element, style, backdrop(element.parentElement ?? element.getRootNode().host));
+      const artworkContent = smallLabeledSvgPaint(element, style, backdrop);
       const expander = !icon && expanderPaint(element, style, backdrop);
-      if (filter || expander || pseudoStyles.length) {
-        repaired += ` ${palettePaintRole((filter ? `filter: ${filter} !important;` : '') + (expander || ''), pseudoStyles, rules)}`;
+      if (filter || artworkContent || expander || pseudoStyles.length) {
+        repaired += ` ${palettePaintRole((filter ? `filter: ${filter} !important;` : '') + artworkContent + (expander || ''), pseudoStyles, rules)}`;
       }
       if (roles.includes(' breadcrumb') && !backdrop(element)) {
         repaired += ' breadcrumb-backdrop';

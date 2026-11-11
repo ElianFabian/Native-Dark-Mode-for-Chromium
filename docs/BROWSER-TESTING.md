@@ -1,5 +1,11 @@
 # Autonomous browser diagnostics
 
+The first [rendering lab](RENDERING-LAB.md) delivery implements capture, analysis, comparison and a partial gallery. The [plan](DIAGNOSTICS-AND-REGRESSION-PLAN.md) separates this working slice from remaining state, image and performance coverage.
+
+The current lab also has source-aware automatic triage, report-scoped accept/reopen annotations and six extended visual groups. `npm run verify -- --quick --browser` runs the canonical renderer assertions plus portable lab UI/asset checks (including actual changing GIF frames). The extended gallery's authored/custom snapshots remain capture evidence, not automated pixel-contrast or timing assertions. See [specimen provenance](../fixtures/diagnostics/README.md) for the historical structures reconstructed locally.
+
+Five original-site groups now supplement those six generic groups, with 22 pinned resources. The lab browser check includes narrow Indeed gradient/path/heading assertions and Junta logo-container/light-backing assertions. The Junta reproduction was checked against the public page: an inline-only reduction shrank its logo anchor to 17px versus about 56px for the source, preventing the original white backing from being preserved. Restoring source geometry corrected the fixture. Preserve data-URI delivery, inline SVG context and dimensions before treating a local discrepancy as a renderer regression.
+
 ## Wrapped contact glyph follow-up
 
 The additional [scroll-banner fixture](../fixtures/scroll-banner.html) reproduces a fixed notice that changes position over 0.5s after a body class change, above 240 static cards. Isolated Brave checks confirm the authored duration and both endpoints with no theme and all three custom themes. The shared idle scan now checks its time budget between small style-sampling groups. Public-page paired traces observed script durations of approximately 437/368/402ms before versus 382/306/309ms after for Simulated Native/Soft dark/High contrast over the same 140-frame probe, while style-recalculation time increased. Delayed-frame counts changed from 2/1/2 to 1/0/1. These single-run, instrumented headless observations are diagnostic evidence, not benchmarks or proof that all scroll overhead is resolved.
@@ -16,36 +22,11 @@ Computed styles can be inspected directly through CDP `Runtime.evaluate`. Screen
 
 Prefer autonomous probes before asking a reporter to paste console code. Record browser build, device pixel ratio, viewport, CSS zoom, theme, border level, state, and original versus themed paint. Inspect `::before` and `::after` explicitly; their existence in DevTools does not mean they draw visible content. Include hover/focus and repeated resampling. For an authenticated or environment-specific discrepancy, a reporter's computed styles may still be necessary if that browser session is not connected.
 
-## Reusable audit command
+## Current toolchain
 
-The dependency-free developer tool [audit-website.mjs](../scripts/dev/audit-website.mjs) launches an installed Brave/Chromium with a fresh temporary profile, loads `extension/`, drives rule settings through the extension API, and writes `audit.json` and `audit.md`. It never attaches to an existing browser. It deletes only the temporary profile it created; reports remain in the requested output directory. This tool is not part of end-user installation.
+Use the [rendering lab guide](RENDERING-LAB.md) for the current interface and command profiles. `npm run lab` starts the local gallery/report viewer; its button runs the smoke suite in an isolated browser. `npm run verify -- --quick --browser` combines syntax, Node tests and that browser suite in one command. `npm run diagnose` captures the same local matrix without the UI, and supports targeted public URLs and offline analysis/comparison. The existing `audit:website` command is now an alias of this shared pipeline rather than a second collector.
 
-```powershell
-node --experimental-websocket scripts/dev/audit-website.mjs --url https://plugins.gradle.org/plugin/io.github.elianfabian.kproxyable --output-directory research-artifacts/audit-gradle
-```
-
-Node versions with global WebSocket enabled by default can omit `--experimental-websocket`. Use `--browser "ABSOLUTE_PATH"` or `CHROMIUM_PATH` for another installed browser. The default discovery includes Brave on Windows/macOS and Chromium on Linux; only Brave on Windows has been verified. Some vendor builds ignore unpacked-extension launch flags; a missing extension worker is reported as an error.
-
-Default matrix: custom themes `chromium,soft,contrast`, levels `off,low,maximum`, scales `1,1.25,1.5`. For a quicker check:
-
-```powershell
-node --experimental-websocket scripts/dev/audit-website.mjs --url https://plugins.gradle.org/plugin/io.github.elianfabian.kproxyable --scales 1.25 --themes chromium --levels off,maximum --output-directory research-artifacts/audit-quick
-```
-
-The scale matrix sets device emulation and CSS zoom to exercise fractional layout. It is not identical to every OS scaling/browser zoom combination; the report records the resulting computed widths and dimensions. Each scale gets a fresh page baseline with the saved rule disabled, then the theme/level matrix. Source comparison is approximate on dynamic pages where DOM structure or selectors change.
-
-The tool brings its own headless tab to the foreground and checks the active theme's paint before sampling. Without that step, background-tab throttling can leave a source-colored page in a nominally themed case and produce misleading measurements. This does not activate or control the user's desktop browser.
-
-Checks currently include:
-
-- Direct visible text contrast against known solid/composited CSS backdrops, with large-text thresholds.
-- Simple monochrome inline control SVG contrast and input placeholder contrast.
-- Border width changes and amplification of originally subtle borders in Off, including fractional widths.
-- Generated-layer evidence: content presence, border, background, and shadow for both pseudoelements.
-- Whole-document horizontal overflow.
-- Transparent, approximately single-color image candidates with poor local contrast, using bounded canvas samples when pixels can be read. Static/animation eligibility is not established by that check; it must not automatically authorize tinting.
-
-Results are **review candidates, not confirmed defects or an accessibility certification**. Unknown image/gradient/generated backdrops are skipped rather than assigned a guessed solid background. The current tool scans visible main-document elements only (up to 1,500), not scroll states, child frames, Shadow DOM, pointer/focus transitions, animation stability, or performance traces. The report contains selectors and computed paint, not visible page text, form values, cookies, or image pixels; the output URL omits query and fragment. Use public/local test pages when sharing reports. Running a URL still makes normal website requests.
+The first slice has four canonical specimens and links five earlier manual fixtures. Its 28 smoke captures produce 19 required assertions, including an intentionally corrupted border. Capture-only/manual cases and the inventory's pending mechanisms are not covered by those passing assertions. Refer to the guide for supported solid-paint/SVG measurements, limits and reproduction steps. The historical evidence below predates this toolchain and remains useful; ignored research probes are not required to run the checked-in smoke suite.
 
 ## The fractional tag-border regression
 

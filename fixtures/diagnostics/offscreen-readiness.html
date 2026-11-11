@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Offscreen lazy image readiness</title>
+<style>body { background: white; color: #222; font: 18px sans-serif; } .space { height: 4000px; }</style>
+<h1>Visible capture must not await offscreen images</h1>
+<p>The lazy image below is outside the measured viewport. Capture readiness should consider visible resources and use a bounded wait.</p>
+<div class="space"></div>
+<img loading="lazy" width="160" height="56" src="../solid-artwork.svg" alt="Offscreen lazy artwork">
+</html>

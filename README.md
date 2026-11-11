@@ -6,7 +6,7 @@
 
 Use Chromium's built-in dark mode on the websites and sections you choose. Save a rule once and the extension applies it when you return.
 
-**Version 0.10.0** adds complete backups with selective import, improves shared icon and artwork contrast, and fixes border emphasis and scroll-state rendering. [Release notes](docs/RELEASE-0.10.0.md)
+**Version 0.11.0** adds a local rendering lab, deterministic diagnostics and a unified verification command. It improves shared image-text, icon, artwork, card and border rendering, including scroll stability and source-aware border emphasis. [Release notes](docs/RELEASE-0.11.0.md)
 
 This project was built with AI assistance using OpenAI Codex.
 
@@ -158,7 +158,7 @@ The installer was tested on Windows 11, where banner suppression was confirmed i
 
 If a page breaks, try a different theme, reduce border emphasis, or save an exclusion. A useful report includes the URL, theme, border level, browser/version, triggering action, screenshot, and relevant HTML/computed styles with personal information removed.
 
-The possible future replacement of Native, a product-name review, and a portable local regression gallery are planning items, not changes in this release. [Roadmap](docs/ROADMAP.md)
+The possible replacement of Native and a product-name review remain undecided. The portable local rendering lab is implemented, with partial regression coverage. [Roadmap](docs/ROADMAP.md)
 
 ## Development and screenshots
 
@@ -166,7 +166,15 @@ See [AGENTS.md](AGENTS.md) for the repository map, behavior to preserve, and rel
 
 Maintenance tools for the public suffix list and image research live in `scripts/dev/`.
 
-Run `npm run check` and `npm test` with Node.js. The extension runs directly from `extension/` with no build step. For launcher tests, run `python -m unittest discover -s test -p 'test_*.py' -v`. The launcher tests use temporary files and a mock browser where appropriate. See [PLAN.md](PLAN.md) for validation notes.
+For development checks, install Node.js with npm and Python 3, open a terminal in the repository root, and run:
+
+```sh
+npm run verify
+```
+
+This runs syntax checks, the Node test suite, and launcher artifact tests in order, reports stage timings, and exits with an error if a stage fails. No `npm install` or build step is required. On Windows PowerShell, use `npm.cmd` instead of `npm` if execution policy blocks the wrapper. Launcher tests use temporary files and a mock browser where appropriate; Windows checks require Windows Script Host and shell-artifact checks require Bash (Git Bash works on Windows). Platform-inapplicable tests are reported as skipped.
+
+For a quicker check requiring only Node.js, use `npm run verify -- --quick`. Existing `npm test` and `npm run check` remain available individually. These commands do not verify real website rendering, browser integration, or visual accessibility. See [browser testing](docs/BROWSER-TESTING.md) for current browser checks and [PLAN.md](PLAN.md) for validation history. The extension itself runs directly from `extension/`; end users do not need these development tools.
 
 For a repeatable screenshot or visual check, serve the local fixture and open it in the Chromium-based browser you are testing. Enable a rule for that page, then capture the popup or the rule manager. Suggested screenshot files are `docs/screenshots/popup.png` and `docs/screenshots/rule-manager.png`. Use sample rules and a public or local test page so screenshots can be shared without exposing personal tabs or browsing history.
 
@@ -175,3 +183,12 @@ python -m http.server 8765 --bind 127.0.0.1 --directory fixtures
 ```
 
 Open `http://127.0.0.1:8765/test.html` to use the fixture.
+
+
+### Local rendering lab
+
+Run `npm run lab` and open **http://127.0.0.1:8787**. Click **Run local smoke suite** to capture the initial local cases with the real extension in an isolated Brave/Chromium profile, inspect raw styles and contrast, filter results, and compare saved runs. The gallery distinguishes automated, capture-only, manual and pending coverage. Node.js and an installed compatible browser are required; set `CHROMIUM_PATH` if discovery does not find it.
+
+**Capture extended gallery** adds six generic visual groups plus five groups with original website elements and public artwork (including Indeed, Gradle and government resources): icons, transparent PNG/SVG artwork, real static/animated GIFs, selectors, borders, surfaces and interaction examples. Reports automatically group and prioritize potential issues using original/themed measurements; acceptable appearances can be marked separately without changing the raw evidence. Pixel and motion checks remain explicitly limited.
+
+For a single verification command including that browser smoke suite, use `npm run verify -- --quick --browser` (or omit `--quick` to include launcher artifacts). The initial suite tests steady states, not every historical regression or animation. See [Rendering lab](docs/RENDERING-LAB.md) for supported measurements, CLI/offline operations and remaining coverage.

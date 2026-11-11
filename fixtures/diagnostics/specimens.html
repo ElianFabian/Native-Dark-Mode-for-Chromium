@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Extended rendering specimens</title><link rel="stylesheet" href="specimens.css">
+<header><h1>Extended rendering specimens</h1><p>Generic reconstructions of reported mechanisms. Local assets; no website scripts, accounts or external requests. Original paint is shown until a website theme is enabled.</p><nav id="groups" aria-label="Specimen groups"></nav></header>
+<main>
+<section data-group="icons"><h2>Icons and generated glyphs</h2><p>Preserve drawing geometry and useful color. Pale, multicolor and noninteractive artwork are contrasting controls.</p><div class="samples">
+ <a href="#icons" class="control" data-audit-id="wrapped-svg"><span><svg viewBox="0 0 24 24"><path fill="#087021" d="M3 3h18v18H3zm3 3v12h12V6z" fill-rule="evenodd"/></svg></span>Wrapped green SVG</a>
+ <button class="control" data-audit-id="clipped-edit"><svg viewBox="0 0 24 24" fill="none"><g clip-path="url(#clip)"><path fill="#333" d="m4 16 12-12 4 4L8 20H4z"/></g><defs><clipPath id="clip"><rect width="24" height="24" fill="white"/></clipPath></defs></svg>Clipped edit</button>
+ <button class="badge-control" aria-label="Nested edit badge" data-audit-id="nested-badge"><svg viewBox="0 0 24 24" fill="none"><foreignObject width="24" height="24"><div xmlns="http://www.w3.org/1999/xhtml" style="border-radius:50%;width:100%;height:100%"></div></foreignObject><circle cx="12" cy="12" r="11" fill="#f1f3f4"/><g transform="translate(4 4)"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#333" d="m4 16 12-12 4 4L8 20H4z"/></svg></g></svg></button>
+ <a class="control" href="#icons" data-audit-id="background-icon"><span class="background-icon"></span>Background SVG</a>
+ <a class="sprite-button" href="#icons" aria-label="Menu sprite" data-audit-id="sprite-menu"><i class="sprite menu"></i></a>
+ <a class="sprite-button" href="#icons" aria-label="Multicolor flag negative" data-audit-id="sprite-flag"><i class="sprite flag"></i></a>
+ <a class="pseudo-arrow" href="#icons" data-audit-id="css-arrow">Generated arrow</a>
+ <a class="contact" href="#icons" data-audit-id="contact-after"><span>Nested contact label</span></a>
+ <a class="control" href="#icons" data-audit-id="pale-ink"><svg viewBox="0 0 24 24"><path fill="#aeb7c2" d="M4 4h16v16H4z"/></svg>Pale ink</a>
+ <span class="control" data-audit-id="multicolor-label"><svg viewBox="0 0 24 24"><path fill="#087021" d="M2 2h8v20H2z"/><path fill="#d32c5e" d="M14 2h8v20h-8z"/></svg>Two-color labeled drawing</span>
+ <svg width="24" height="24" viewBox="0 0 24 24" data-audit-id="multicolor-negative" aria-label="Unlabeled artwork negative"><path fill="#087021" d="M2 2h8v20H2z"/><path fill="#d32c5e" d="M14 2h8v20h-8z"/></svg>
+</div></section>
+<section data-group="images"><h2>Transparent and opaque artwork</h2><p>Real PNG, SVG and GIF files. Static silhouettes may adapt; multicolor art must retain its palette. Animation must not be classified from a single frame.</p><div class="image-grid">
+ <figure><a href="#images"><img data-audit-id="solid-svg" src="assets/single-ink.svg" alt="Single-ink transparent SVG"></a><figcaption>Single-ink SVG</figcaption></figure>
+ <figure><a href="#images"><img data-audit-id="solid-png" src="assets/single-ink.png" alt="Single-ink transparent PNG"></a><figcaption>Single-ink PNG</figcaption></figure>
+ <figure class="brand-source"><div class="logo-unit"><a href="/" rel="home"><img data-audit-id="wordmark" src="assets/wordmark.svg" alt="Synthetic mixed wordmark"></a></div><figcaption>Synthetic mixed wordmark · original light brand context</figcaption></figure>
+ <figure><img data-audit-id="multicolor-png" src="assets/multicolor.png" alt="Multicolor transparent PNG"><figcaption>Multicolor PNG negative</figcaption></figure>
+ <figure><div class="gif-source"><h3><img data-audit-id="static-gif" src="assets/static-transparent.gif" alt="Static transparent GIF"><span>Static silhouette</span></h3></div><figcaption>Static transparent GIF · heading/light-background context</figcaption></figure>
+ <figure><div class="gif-source"><h3><img data-audit-id="animated-gif" src="assets/animated-transparent.gif" alt="Animated transparent GIF"><span>Animated silhouette</span></h3></div><figcaption>Animated GIF · preserve frames; retain light backing when needed</figcaption></figure>
+ <figure><img data-audit-id="multicolor-gif" src="assets/static-multicolor.gif" alt="Multicolor transparent GIF"><figcaption>Multicolor GIF negative</figcaption></figure>
+ <figure><img data-audit-id="opaque-gif" src="assets/opaque.gif" alt="Opaque GIF"><figcaption>Opaque GIF negative</figcaption></figure>
+ <figure><img data-audit-id="opaque-image" src="assets/opaque-artwork.png" alt="Synthetic opaque artwork"><figcaption>Opaque artwork negative</figcaption></figure>
+ <figure><div class="image-backing" data-audit-id="wordmark-backing"><img src="assets/wordmark.svg" alt="Lettering on an explicit padded light backing"></div><figcaption>Preserve a necessary image-only padded backing as a whole</figcaption></figure>
+ <figure><img data-audit-id="bare-wordmark" src="assets/wordmark.svg" alt="Mixed wordmark without a brand wrapper"><figcaption>Captioned mixed wordmark · retain a necessary light backing</figcaption></figure>
+ <figure><img data-audit-id="bare-static-gif" src="assets/static-transparent.gif" alt="Static silhouette without a heading wrapper"><figcaption>Captioned static GIF · verified single ink may adapt</figcaption></figure>
+ <figure><img data-audit-id="bare-animated-gif" src="assets/animated-transparent.gif" alt="Animated silhouette without a heading wrapper"><figcaption>Captioned animated GIF · preserve frames on the original light backing</figcaption></figure>
+</div></section>
+<section data-group="controls"><h2>Selectors and controls</h2><p>Check label, placeholder, custom background arrow, native popup, disabled states, focus and button text independently.</p><div class="samples forms">
+ <label>Native select<select data-audit-id="native-select"><option>First language</option><option>Second language</option><option disabled>Unavailable</option></select></label>
+ <label>Background arrow<select class="custom-select" data-audit-id="background-select"><option>Jump to activity…</option><option>Another activity</option></select></label>
+ <label>Listbox<select size="2" data-audit-id="listbox"><option>First row</option><option>Second row</option></select></label>
+ <label>Disabled select<select disabled data-audit-id="disabled-select"><option>Unavailable</option></select></label>
+ <label>Search hint<input type="search" placeholder="Describe your issue" data-audit-id="search-placeholder"></label>
+ <label>Subtle input edge<input type="text" placeholder="User name" class="subtle-input" data-audit-id="input-edge"></label>
+ <button class="purchase" data-audit-id="yellow-button"><span>Continue</span></button><button class="outline-control" data-audit-id="outline-button">Colored outline action</button>
+ <div class="deal" data-audit-id="deal-card"><span class="discount">−20%</span><span class="deal-message" data-audit-id="deal-message">Offer message on matching fill</span></div>
+</div></section>
+<section data-group="borders"><h2>Border geometry and emphasis</h2><p>Off preserves visual weight and dimensions. Stronger levels must increase emphasis monotonically, preserve transparent reservation and retain focus feedback.</p><div class="border-grid">
+ <a href="#borders" class="chip" data-audit-id="matching-chip">Matching pale fill + border</a>
+ <a href="#borders" class="fractional" data-audit-id="fractional-edge">Fractional 0.8px edge</a>
+ <button class="transparent-edge" data-audit-id="transparent-edge">Transparent reserved border</button>
+ <a href="#borders" class="outline-control" data-audit-id="colored-edge">Blue selected outline</a>
+ <a href="#borders" class="shadow-card" data-audit-id="shadow-card"><strong>Linked shadow card</strong><span>No authored border</span></a>
+ <a href="#borders" class="shadow-card" style="background:#fafafa" data-audit-id="near-white-card"><strong>Same light surface level</strong><span>Near-white source control</span></a>
+ <a href="#borders" class="social" data-audit-id="compact-social" aria-label="Compact utility link">f</a>
+ <div class="generated-frame" data-audit-id="generated-edge">Frame drawn by ::after</div>
+ <article class="authored-dark-frame" data-audit-id="authored-dark-frame"><h3>Already dark source card</h3><span>Keep its muted blue 1px frame</span></article>
+ <article class="authored-dark-frame authored-strong-frame" data-audit-id="authored-strong-frame"><h3>Strong authored dark-frame control</h3><span>Preserve deliberate source separation</span></article>
+ <div role="separator" class="separator" data-audit-id="separator"><span>&nbsp;</span></div>
+ <div role="tablist" class="tablist" data-audit-id="tabs"><button role="tab" aria-selected="true">First tab</button><button role="tab" aria-selected="false">Second tab</button></div>
+ <div class="empty-space" data-audit-id="empty-spacer"><span></span></div>
+</div></section>
+<section data-group="surfaces"><h2>Surfaces, gradients and text</h2><p>Do not manufacture a gradient behind plain text. Image-backed text requires pixel evidence. Numeric tile contrast remains advisory when appearance is accepted.</p><div class="surfaces">
+ <div class="heading-stack" data-audit-id="heading-stack"><h3 data-audit-id="plain-title">A plain title beside a generated gradient divider</h3><div class="divider" data-audit-id="gradient-divider"></div><hr data-audit-id="rule-divider"></div>
+ <div class="decorative-panel" data-audit-id="decorative-background"><h3 data-audit-id="decorative-heading">Heading over a decorative SVG gradient</h3></div>
+ <a href="#surfaces" class="photo-card" data-audit-id="image-text"><strong>Text over opaque artwork</strong><span>Check the actual region behind the letters</span></a>
+ <a href="#surfaces" class="photo-card decoration-toggle" data-audit-id="image-text-shadow" style="text-shadow:0 1px 2px rgba(0,0,0,.5)"><strong>Authored soft shadow</strong><span>Preserve shadow; hover hides the underline</span></a>
+ <a href="#surfaces" class="photo-card decoration-toggle" data-audit-id="image-text-colored-line" style="text-decoration-color:#006699"><strong>Authored colored underline</strong><span>Preserve its independent source color</span></a>
+ <a href="#surfaces" class="photo-card" data-audit-id="bright-image-text" style="background-image:url('assets/bright-picture.png');text-decoration-color:#006699"><strong>Bright picture control</strong><span>Keep dark ink and its dark blue line</span></a>
+ <a href="#surfaces" class="photo-card" data-audit-id="dark-image-text" style="background-image:url('assets/dark-picture.png');text-decoration-color:#b1d1f4"><strong>Dark picture control</strong><span>Keep the readable pale blue line</span></a>
+ <div class="tiles"><a href="#surfaces" style="background:#53b300" data-audit-id="green-tile">Green tile</a><a href="#surfaces" style="background:#b88c10" data-audit-id="gold-tile">Gold tile</a><a href="#surfaces" style="background:#1197b5" data-audit-id="cyan-tile">Cyan tile</a><a href="#surfaces" style="background:#10b89e" data-audit-id="teal-tile">Teal tile</a></div>
+</div></section>
+<section data-group="states"><h2>Hover, sticky paint and carousel motion</h2><p>Hover both indicators, scroll inside this panel and move the carousel. These are interactive visual cases, not timing assertions.</p>
+ <div class="icon-state-probes"><a href="#states" class="icon-state-card" data-audit-id="icon-state-white"><img src="site-assets/sepe-benefits.svg" alt=""><span>Original SVG on a white source card</span></a><a href="#states" class="icon-state-card" style="background:#fafafa" data-audit-id="icon-state-near-white"><img src="site-assets/sepe-benefits.svg" alt=""><span>Same source surface level, near-white sample</span></a></div>
+ <nav class="hover-nav" aria-label="Two hover indicators" data-audit-id="hover-nav"><a href="#states" data-audit-id="hover-item">Hover background and blue underline</a><a href="#states">Other item</a></nav>
+ <div class="scroll-panel" data-audit-id="scroll-panel"><div class="sticky" data-audit-id="sticky-heading">Sticky heading and search <button aria-label="Search">⌕</button></div><div class="scroll-content">Scroll to exercise sticky paint.<p>Surface color must remain stable.</p></div></div>
+ <div class="carousel" data-audit-id="carousel"><button id="previous" aria-label="Previous slide">‹</button><div class="viewport"><div class="track"><a href="#states" class="shadow-card">First slide</a><a href="#states" class="shadow-card">Second slide</a><a href="#states" class="shadow-card">Third slide</a></div></div><button id="next" aria-label="Next slide">›</button></div>
+ <ul class="dots" aria-label="Carousel pagination" data-audit-id="pagination"><li><button aria-label="Slide 1" aria-current="true">1</button></li><li><button aria-label="Slide 2">2</button></li><li><button aria-label="Slide 3">3</button></li></ul>
+</section>
+</main><script type="module" src="specimens.mjs"></script></html>

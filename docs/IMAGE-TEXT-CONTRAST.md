@@ -1,0 +1,37 @@
+# Text over images: foreground selection
+
+## Evidence and intent
+
+A source page is a regression baseline, not a guarantee of readable text. The synthetic colorful-picture specimen is already difficult in its original light rendering. Copying its black captions or copying Native's white captions unconditionally would both be inadequate policies.
+
+[W3C technique G18](https://www.w3.org/WAI/WCAG22/Techniques/general/G18) evaluates the immediate background at letters and explains why a sufficiently varied background can defeat any single text color. [The APCA author's overview](https://github.com/Myndex/SAPC-APCA/blob/master/documentation/APCA_in_a_Nutshell.md) describes polarity and font-dependent readability contrast. These support measuring local paint and considering text characteristics. They do **not** validate the aggregate scoring policy below. APCA is not the normative WCAG 2 contrast formula; this implementation makes no accessibility-conformance claim.
+
+The renderer reuses its existing signed perceptual contrast primitive in `chromium-colors.js`. `image-contrast.js` contains the shared selection policy, independently of the Chromium palette conversion. Native is unchanged. Simulated Native, Soft dark and High contrast all use this policy on supported image labels.
+
+## Deterministic policy
+
+1. Reuse the decoded, cached image thumbnail, at most 96 pixels on either side. Match its displayed crop, object fit/position or supported CSS background placement.
+2. Obtain DOM Range rectangles for individual non-whitespace words. This avoids sampling unused line width and inter-word gaps. Keep each sampled color's frequency instead of deduplicating it into one equally weighted vote. Stop after 48 words or 16,384 pixel visits per label.
+3. Compare near-black, white and the authored ink. Composite translucent authored ink against each opaque sampled background. Use the magnitude of the existing signed perceptual score, whose equations distinguish foreground polarity.
+4. Use conservative reference targets: 45 for at least 36px text or 24px/700; 60 for 24px text, 18px/600 or 16px/700; 75 for 18px/400; otherwise 90. These coarse policy bands are inspired by APCA reference guidance, not a complete font lookup table. Different font families, condensed type, rasterization and vision conditions are not modeled.
+5. Let `u = min(abs(contrast) / target, 1)`. Rank candidates by `0.65 × weightedMean(u) + 0.35 × min(weighted10thPercentile(abs(contrast)) / target, 1)`. Capping prevents excellent patches from compensating without limit for weak patches. The lower tail penalizes broad weak regions without letting one isolated pixel dictate the whole label.
+6. Differences within 0.02 favor light ink, consistently across resampling. Retain the authored candidate only if at least 90% of sampled weight reaches the reference target and its aggregate loss is at most 0.02. No decision depends on scroll direction, previous candidate or a hostname.
+7. Return mean, lower decile, worst score, target coverage and all candidate measurements. Mark the decision uncertain if coverage is below 90% **or** the worst sample is below half the target. A rare bad patch can therefore remain visible as a risk without selecting the foreground for the entire label. This flag is internal decision evidence; it is not currently a new lab UI badge or an accessibility verdict.
+
+The 65/35 weights, decile, tie margin and coverage boundary are explicit engineering choices, not experimentally established human-readability thresholds. Keep them centralized, test counterexamples and revise them using evidence rather than tuning individual sites. Do not treat an average or percentile as a replacement for a worst-case accessibility evaluation.
+
+The perceptual primitive prepares each background's luminance/powers once for all candidates. Opaque foreground luminance is also prepared once per candidate; translucent ink is still composited separately per background. A scalar-equivalence test checks both polarities and translucent ink. A Node/Windows probe on 1,319 and 1,980 distinct sampled colors measured warm median selection times around 1.0ms and 1.5ms, versus 2.2ms and 3.5ms before preparation. These are local policy microbenchmarks, not end-to-end browser latency guarantees; DOM range sampling, resource loading and painting are separate work.
+
+## Appearance and limits
+
+Flow-image text receives foreground selection only. Do not add rectangular label backings, artificial text outlines or manufactured shadows. Retain source shadows. Default-color propagated link decoration follows the sampled label's ink. Independently colored underlines retain a separate color policy: compare their original ink with the existing Chromium-derived chroma-retaining foreground conversion, using the same weighted score with a reference target of 45. Sample all short labels of the flat link together so a single authored decoration keeps one color across its lines. Change it only when the adapted candidate improves the score by more than 0.02; preserve already readable source lines and darker lines favored by bright pictures. No blue value is hardcoded in renderer rules. This is a visual-selection heuristic, not a 45-point guarantee; complex pictures can remain uncertain. Hover removal, thickness, offset and focus geometry remain authored. The pre-existing positioned IMG-overlay path can still apply its separately bounded local backing against the WCAG ratio target; it is not the flow-label policy.
+
+Word bounds approximate where glyphs occur. They include counters and some empty space, and downsampling can miss fine detail. This is not exact glyph raster analysis, a spatial-frequency masking model, or an evaluation of authored shadows. Complex image layers, filters, transforms, transparency, unavailable pixels, unsupported decoding and CORS restrictions keep conservative existing fallbacks. Resource reads retain their existing size/time/concurrency limits; no new resource request type is added.
+
+Some mixed pictures cannot become reliably readable by choosing one foreground. An uncertain result must remain uncertain, even when it looks better than the source. Additional image shading or a designed backing would require a separate appearance policy and validation; this change does not silently add either.
+
+## Verification
+
+Run `npm run verify -- --quick --browser`. Unit tests cover light/dark controls, frequency weighting, rare outliers, equivalent expanded samples, difficult mixed pictures, font targets, authored color retention, invalid evidence and deterministic repeats. The surface specimen includes the reported colorful picture pattern, an authored soft shadow, an independently colored underline, and separate bright/dark pictures. Browser checks cover all three custom themes, expected foreground polarity, independently adapted blue on the colorful picture, preserved dark blue on a bright picture and preserved pale blue on a dark picture, unchanged shadow/stroke/decoration geometry, transparent flow labels, hover/focus and 24 scroll/class-resampling frames per theme. Browser PNG/JSON evidence is written under ignored `research-artifacts/diagnostics/`.
+
+These are synthetic local reproductions in owned Brave on Windows. The original colorful fixture has been inspected before and after the change. This is not renewed live-page confirmation on Amazon or every previously reported website.

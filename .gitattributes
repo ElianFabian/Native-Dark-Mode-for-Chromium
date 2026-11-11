@@ -9,3 +9,6 @@
 *.py text eol=lf
 *.sh text eol=lf
 *.command text eol=lf
+
+# Public fixture SVGs retain pinned upstream bytes, including original whitespace.
+fixtures/diagnostics/site-assets/*.svg -text -whitespace

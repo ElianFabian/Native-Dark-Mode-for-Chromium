@@ -79,10 +79,10 @@ export class DarkModeController {
         const target = { tabId };
         try {
           await this.api.scripting.executeScript({ target: { ...target, allFrames: true },
-            files: ['chromium-colors.js', 'website-theme.js'] });
+            files: ['chromium-colors.js', 'image-contrast.js', 'website-theme.js'] });
         } catch {
           // A restricted child frame can prevent injection into the entire tab.
-          await this.api.scripting.executeScript({ target, files: ['chromium-colors.js', 'website-theme.js'] });
+          await this.api.scripting.executeScript({ target, files: ['chromium-colors.js', 'image-contrast.js', 'website-theme.js'] });
         }
         applied = await this.api.tabs.sendMessage(tabId, message, { frameId: 0 });
       }
