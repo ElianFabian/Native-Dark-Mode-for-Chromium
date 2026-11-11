@@ -11,14 +11,14 @@ header { display: flex; align-items: center; justify-content: space-between; fle
 .rule-editor-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin-block-end: .75rem; }
 .rule-editor-heading h2 { margin: 0; }
 .rule-editor-heading > .has-tooltip { min-inline-size: 0; max-inline-size: 100%; }
-#open-rule-defaults, #close-rule-defaults { width: auto; margin: 0; background: var(--secondary); color: var(--text); }
-#open-rule-defaults:enabled:hover, #close-rule-defaults:enabled:hover { background: var(--secondary-hover); }
+#open-rule-defaults, .settings-dialog-close { width: auto; margin: 0; background: var(--secondary); color: var(--text); }
+#open-rule-defaults:enabled:hover, .settings-dialog-close:enabled:hover { background: var(--secondary-hover); }
 #open-rule-defaults { display: inline-flex; align-items: center; gap: .5em; max-width: 100%; text-align: start; background: transparent; color: var(--accent-text); }
 #open-rule-defaults svg { flex: none; width: 1.2em; height: 1.2em; }
-.rule-defaults-header { display: flex; align-items: start; justify-content: space-between; gap: .75rem; }
-.rule-defaults-header h2 { margin: 0; }
-#close-rule-defaults { display: grid; place-items: center; flex: none; min-inline-size: 44px; min-block-size: 44px; padding: 0; font-size: 1.5em; line-height: 1; }
-#close-rule-defaults svg { display: block; inline-size: 1em; block-size: 1em; }
+.settings-dialog-header { display: flex; align-items: start; justify-content: space-between; gap: .75rem; }
+.settings-dialog-header h2 { margin: 0; }
+.settings-dialog-close { display: grid; place-items: center; flex: none; min-inline-size: 44px; min-block-size: 44px; padding: 0; font-size: 1.5em; line-height: 1; }
+.settings-dialog-close svg { display: block; inline-size: 1em; block-size: 1em; }
 h1 { margin: 0; font-size: 2.65rem; line-height: 1.15; overflow-wrap: anywhere; }
 header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .language-control { box-sizing: border-box; padding: .5rem .65rem .65rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--panel); }

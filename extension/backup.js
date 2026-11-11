@@ -1,4 +1,4 @@
-import { CUSTOM_PRESETS, isSeparatorEmphasis, normalizeRule, palettePresets, ruleAddress } from './rules.js';
+import { CUSTOM_PRESETS, isSeparatorEmphasis, normalizeRule, normalizeRuleDefaults, palettePresets, ruleAddress } from './rules.js';
 
 export const MAX_BACKUP_BYTES = 1024 * 1024;
 const MAX_BACKUP_RULES = 1000;
@@ -33,15 +33,15 @@ function validateRule(input, index, version) {
   return input.createdAt === undefined ? rule : { ...rule, createdAt: input.createdAt };
 }
 
-export function parseBackup(text) {
+export function parseConfigurationBackup(text) {
   if (typeof text !== 'string' || new TextEncoder().encode(text).length > MAX_BACKUP_BYTES) {
     throw new Error('Choose a JSON backup smaller than 1 MiB.');
   }
   let document;
   try { document = JSON.parse(text.replace(/^\uFEFF/, '')); }
   catch { throw new Error('The selected file is not valid JSON.'); }
-  if (!document || document.format !== FORMAT || ![1, 2, 3].includes(document.version) || !Array.isArray(document.rules)) {
-    throw new Error('Unsupported backup. Expected Native Dark Mode rules, format version 1, 2 or 3.');
+  if (!document || document.format !== FORMAT || ![1, 2, 3, 4].includes(document.version) || !Array.isArray(document.rules)) {
+    throw new Error('Unsupported backup. Expected Native Dark Mode rules, format version 1, 2, 3 or 4.');
   }
   if (document.rules.length > MAX_BACKUP_RULES) throw new Error('A backup can contain at most 1,000 rules.');
   const rules = new Map();
@@ -55,26 +55,59 @@ export function parseBackup(text) {
     // Older backups could contain both exact forms. Keep the explicit base rule.
     rules.set(rule.id, { rule: existing && alias ? existing.rule : rule, alias, merged: Boolean(existing) });
   }
-  return [...rules.values()].map(entry => entry.rule);
+  const parsed = { rules: [...rules.values()].map(entry => entry.rule) };
+  if (document.version === 4 && Object.hasOwn(document, 'trash')) {
+    if (!Array.isArray(document.trash) || document.trash.length > MAX_BACKUP_RULES) throw new Error('Invalid backup Trash.');
+    const ids = new Set();
+    parsed.trash = document.trash.map((entry, index) => {
+      if (!entry || typeof entry.id !== 'string' || !/^[\w-]{1,128}$/.test(entry.id) || ids.has(entry.id)) {
+        throw new Error('Invalid backup Trash.');
+      }
+      ids.add(entry.id);
+      return { id: entry.id, rule: validateRule(entry.rule, index, 4) };
+    });
+  }
+  if (document.version === 4 && Object.hasOwn(document, 'ruleDefaults')) {
+    const value = document.ruleDefaults;
+    if (!value || !['website', 'section'].includes(value.scope) ||
+        !['native', ...CUSTOM_PRESETS].includes(value.preset) || !isSeparatorEmphasis(value.emphasizeSeparators) ||
+        !value.domains || ['website', 'section'].some(scope => {
+          const domain = value.domains[scope];
+          return !domain || ['subdomains', 'regional', 'parentDomain', ...(scope === 'section' ? ['subpaths'] : [])]
+            .some(key => typeof domain[key] !== 'boolean');
+        })) throw new Error('Invalid backup rule defaults.');
+    parsed.ruleDefaults = normalizeRuleDefaults(value);
+  }
+  return parsed;
 }
 
-export function createBackup(rules) {
+export function parseBackup(text) {
+  return parseConfigurationBackup(text).rules;
+}
+
+function backupRule({ host, path, enabled, includeSubdomains, includeRegionalDomains, includeSubpaths, createdAt, preset,
+  emphasizeSeparators }) {
+  return { host, path, enabled, includeSubdomains,
+    ...(includeSubpaths === false ? { includeSubpaths } : {}),
+    ...(preset === undefined ? {} : { preset }),
+    ...(emphasizeSeparators ? { emphasizeSeparators } : {}),
+    ...(createdAt === undefined ? {} : { createdAt }),
+    ...(includeRegionalDomains ? { includeRegionalDomains: true } : {}) };
+}
+
+export function createBackup(rules, extras) {
   const document = {
     format: FORMAT,
-    version: rules.some(rule => rule.includeSubpaths === false) ? 3 :
+    version: extras ? 4 : rules.some(rule => rule.includeSubpaths === false) ? 3 :
       rules.some(rule => rule.preset !== undefined || rule.emphasizeSeparators) ? 2 : 1,
-    rules: rules.map(({ host, path, enabled, includeSubdomains, includeRegionalDomains, includeSubpaths, createdAt, preset,
-      emphasizeSeparators }) => ({
-      host, path, enabled, includeSubdomains,
-      ...(includeSubpaths === false ? { includeSubpaths } : {}),
-      ...(preset === undefined ? {} : { preset }),
-      ...(emphasizeSeparators ? { emphasizeSeparators } : {}),
-      ...(createdAt === undefined ? {} : { createdAt }),
-      ...(includeRegionalDomains ? { includeRegionalDomains: true } : {})
-    }))
+    rules: rules.map(backupRule)
   };
-  // Export only documents this version can read back.
-  parseBackup(JSON.stringify(document, null, 2) + '\n');
+  if (extras) {
+    document.trash = (extras.trash ?? []).map(entry => ({ id: entry.id, rule: backupRule(entry.rule) }));
+    document.ruleDefaults = normalizeRuleDefaults(extras.ruleDefaults);
+  }
+  // Validate the actual formatted export, including its whitespace and limits.
+  parseConfigurationBackup(JSON.stringify(document, null, 2) + '\n');
   return document;
 }
 
@@ -113,23 +146,47 @@ export function mergeRules(existing, incoming, conflictPolicy = 'keep') {
   return { rules: [...merged.values()], summary };
 }
 
-export async function importBackup(manager, text, conflictPolicy, confirmedRemovalIds) {
-  // Validate everything before the first write. Use the manager queue so other
-  // popup changes cannot be lost between reading and saving the merged list.
-  const incoming = parseBackup(text);
-  let summary;
-  await manager.mutate(existing => {
-    const result = mergeRules(existing, incoming, conflictPolicy);
-    if (result.removedIds) {
-      const confirmed = new Set(Array.isArray(confirmedRemovalIds) ? confirmedRemovalIds : []);
-      if (result.removedIds.some(id => !confirmed.has(id))) {
-        throw new Error('Saved rules changed since the import preview.');
+export async function importBackup(manager, text, conflictPolicy, confirmedRemovalIds, selection) {
+  const incoming = parseConfigurationBackup(text);
+  if (selection !== undefined && (!selection || typeof selection !== 'object' || Array.isArray(selection) ||
+      Object.entries(selection).some(([key, value]) =>
+        !['rules', 'trash', 'ruleDefaults'].includes(key) || typeof value !== 'boolean'))) {
+    throw new Error('Invalid backup section selection.');
+  }
+  const parts = selection ?? { rules: true };
+  if (!['rules', 'trash', 'ruleDefaults'].some(key => parts[key] === true)) {
+    throw new Error('Choose at least one backup section.');
+  }
+  if ((parts.trash && !incoming.trash) || (parts.ruleDefaults && !incoming.ruleDefaults)) {
+    throw new Error('The selected backup section is unavailable.');
+  }
+  let summary = { added: 0, updated: 0, skipped: 0 };
+  await manager.mutateConfiguration(existing => {
+    const patch = {};
+    if (parts.rules === true) {
+      const result = mergeRules(existing.rules, incoming.rules, conflictPolicy);
+      if (result.removedIds) {
+        const confirmed = new Set(Array.isArray(confirmedRemovalIds) ? confirmedRemovalIds : []);
+        if (result.removedIds.some(id => !confirmed.has(id))) throw new Error('Saved rules changed since the import preview.');
       }
+      summary = result.summary;
+      const ids = new Set(existing.rules.map(rule => rule.id));
+      const now = Date.now();
+      patch.rules = result.rules.map(rule => rule.createdAt === undefined && !ids.has(rule.id) ? { ...rule, createdAt: now } : rule);
     }
-    summary = result.summary;
-    const existingIds = new Set(existing.map(rule => rule.id));
-    const now = Date.now();
-    return result.rules.map(rule => rule.createdAt === undefined && !existingIds.has(rule.id) ? { ...rule, createdAt: now } : rule);
+    if (parts.trash === true) {
+      const ids = new Set(existing.trash.map(entry => entry.id));
+      const added = incoming.trash.filter(entry => !ids.has(entry.id));
+      patch.trash = [...added, ...existing.trash];
+      if (patch.trash.length > MAX_BACKUP_RULES) throw new Error('The merged configuration would exceed 1,000 rules.');
+      summary.trashAdded = added.length;
+      summary.trashSkipped = incoming.trash.length - added.length;
+    }
+    if (parts.ruleDefaults === true) {
+      patch.ruleDefaults = incoming.ruleDefaults;
+      summary.defaultsImported = true;
+    }
+    return patch;
   });
   return summary;
 }

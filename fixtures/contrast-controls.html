@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contrast controls and static artwork regression fixture</title>
+<style>
+  body { background: white; color: #111; font: 18px/1.5 sans-serif; margin: 24px; }
+  section { padding: 16px; margin-bottom: 16px; }
+  .artwork { display: flex; flex-wrap: wrap; gap: 24px; }
+  .artwork img { display: block; width: 160px; height: 56px; }
+  #menu-edge { border-block: 1px solid black; }
+  #muted-edge { background: #f7f7f8; border: 1px solid #f7f7f8; }
+  #color-edge { border: 2px solid #0645ce; }
+  #transparent-edge { border: 2px solid transparent; }
+  #notice { background: #fc0; padding: 12px; }
+  #notice a { color: #087021; font-weight: bold; }
+  .breadcrumb { display: flex; gap: 24px; list-style: none; padding: 16px; }
+  .breadcrumb li::before { content: ''; display: inline-block; width: 8px; height: 8px;
+    border-top: 2px solid #111; border-right: 2px solid #111; transform: rotate(45deg); margin-right: 12px; }
+  #back { cursor: pointer; display: block; color: transparent; width: 32px; height: 32px;
+    border: 2px solid #087021; border-radius: 50%; font-size: 0;
+    background: no-repeat center / 20px 20px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none'%3E%3Cpath d='M15 10H5M10 5L5 10L10 15' stroke='%23087021'/%3E%3Cpath d='M4 9h2v2H4z' fill='%23111111'/%3E%3C/svg%3E"); }
+  #decorative { width: 48px; height: 48px; border: 2px solid #111; transform: rotate(45deg); }
+  #sticky-tools { position: fixed; top: 8px; right: 8px; padding: 8px; background: white; color: #323232; }
+  #font-glyph { display: inline-block; width: 32px; height: 32px; color: inherit; }
+  #font-glyph::before { content: '\e8b6'; font: 24px/32px sans-serif; color: inherit; }
+  body.scrolled #font-glyph::before { color: #323232; }
+  #decorative-glyph::before { content: '\e8b6'; color: #cf2040; }
+  #disabled-glyph::before { content: '\e8b6'; color: #323232; }
+  .small-svg { display: inline-block; width: 24px; height: 24px; vertical-align: middle; }
+  .small-svg svg { width: 100%; height: 100%; fill: inherit; }
+  #pointer-svg { cursor: pointer; fill: #0b4dd0; color: #74727e; }
+  #definition-svg { fill: #74727e; }
+  #outline-action { display: inline-block; border: 1px solid #0b4dd0; color: #0b4dd0;
+    padding: 12px 24px; border-radius: 24px; background: transparent; }
+</style>
+<h1>Contrast controls and artwork</h1>
+<p>Use all three custom themes, Off and stronger separator levels, fractional scale, hover/focus and repeated resampling.</p>
+<section class="artwork">
+  <a id="solid" href="#solid"><img src="solid-artwork.svg" alt="Static single-color mark"></a>
+  <a id="multicolor" href="#multicolor"><img src="multicolor-artwork.svg" alt="Multicolor mark: preserve colors"></a>
+  <a id="animated" href="#animated"><img src="animated-artwork.svg" alt="Animated mark: preserve original"></a>
+</section>
+<nav id="menu-edge" aria-label="Example navigation"><a href="#solid">First item</a> · <a href="#notice">Second item</a></nav>
+<section id="muted-edge">Originally subtle frame: retain visual weight in Off.</section>
+<section id="color-edge">Colored edge: preserve the selection color.</section>
+<section id="transparent-edge">Transparent edge: do not create a border.</section>
+<div id="notice"><a href="#notice">A colored link on a bright colored notice</a></div>
+<section>
+  <label>Transparent popup
+    <select id="popup-select" style="background: transparent; color: inherit">
+      <option value="first">First language</option>
+      <optgroup label="More languages"><option value="second">Second language</option><option disabled>Unavailable language</option></optgroup>
+    </select>
+  </label>
+  <label>Custom option paint
+    <select id="custom-select"><option style="background: #075923; color: white">Custom colored option</option></select>
+  </label>
+  <label>Listbox
+    <select id="listbox-select" size="2"><option>First row</option><option>Second row</option></select>
+  </label>
+  <label>Disabled popup <select id="disabled-select" disabled><option>Unavailable</option></select></label>
+</section>
+<nav aria-label="Breadcrumb"><ul class="breadcrumb"><li>First</li><li>Second</li></ul></nav>
+<a id="back" aria-label="Go back">Back</a>
+<p>Non-interactive decoration: do not classify this as an arrow.</p>
+<div id="decorative"></div>
+<section class="artwork">
+  <a href="#cors-solid"><img id="cors-solid" src="solid-artwork.svg" alt="CORS-permitted static single-color artwork"></a>
+  <a href="#cors-multicolor"><img id="cors-multicolor" src="multicolor-artwork.svg" alt="CORS multicolor negative"></a>
+  <a href="#cors-animated"><img id="cors-animated" src="animated-artwork.svg" alt="CORS animated negative"></a>
+  <a href="#cors-denied"><img id="cors-denied" src="solid-artwork.svg" alt="Denied CORS negative"></a>
+</section>
+<section>
+  <span id="pointer-svg" class="small-svg"><span><svg viewBox="0 0 24 24"><path d="M2 12Q12-2 22 12Q12 26 2 12M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0"/></svg></span></span>
+  <dl><dt><span><span id="definition-svg" class="small-svg"><span><svg viewBox="0 0 24 24"><path d="M5 2h14v20H5zM8 7h8v2H8zM8 12h8v2H8z"/></svg></span></span></span> Definition label</dt><dd>Supporting text</dd></dl>
+  <a id="outline-action" href="#notice">Outlined action</a>
+  <svg id="unrelated-svg" width="24" height="24" viewBox="0 0 24 24"><path fill="#74727e" d="M3 3h18v18H3z"/></svg>
+  <h2><svg id="multicolor-svg" width="24" height="24" viewBox="0 0 24 24"><path fill="#0b4dd0" d="M2 2h8v20H2z"/><path fill="#cf2040" d="M14 2h8v20h-8z"/></svg> Multicolor negative</h2>
+</section>
+<nav id="sticky-tools" aria-label="Icon state controls">
+  <a id="font-glyph" aria-label="Search" href="#notice"></a>
+  <span id="decorative-glyph" aria-hidden="true"></span>
+  <button id="disabled-glyph" aria-label="Disabled search" disabled></button>
+</nav>
+<div style="height: 1200px" aria-hidden="true"></div>
+<script>
+  document.addEventListener('scroll', () => document.body.classList.toggle('scrolled', scrollY > 0), { passive: true });
+  const external = new URL(location.href);
+  external.hostname = location.hostname === '127.0.0.1' ? 'localhost' : '127.0.0.1';
+  for (const [id, file] of [['cors-solid', 'solid-artwork.svg'], ['cors-multicolor', 'multicolor-artwork.svg'],
+    ['cors-animated', 'animated-artwork.svg'], ['cors-denied', 'solid-artwork.svg']]) {
+    external.pathname = (id === 'cors-denied' ? '/' : '/cors/') + file;
+    document.getElementById(id).src = external.href;
+  }
+</script>
+</html>

@@ -185,9 +185,9 @@
     </div>
   </div>
   <dialog id="rule-defaults" aria-labelledby="rule-defaults-title" aria-describedby="rule-defaults-help">
-    <div class="rule-defaults-header">
+    <div class="settings-dialog-header">
       <h2 id="rule-defaults-title" data-i18n="ruleDefaults">Rule defaults</h2>
-      <button id="close-rule-defaults" type="button" data-i18n-label="cancel" aria-label="Cancel">
+      <button id="close-rule-defaults" class="settings-dialog-close" type="button" data-i18n-label="cancel" aria-label="Cancel">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
           <path d="m4.5 4.5 15 15m0-15-15 15"/>
         </svg>
@@ -286,8 +286,23 @@
     </form>
   </dialog>
   <dialog id="import-preview" aria-labelledby="import-title">
-    <h2 id="import-title" data-i18n="confirmImport">Import rules</h2>
+    <div class="settings-dialog-header">
+      <h2 id="import-title" data-i18n="confirmImport">Import settings</h2>
+      <button id="close-import" class="settings-dialog-close" type="button" data-i18n-label="cancel" aria-label="Cancel">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <path d="m4.5 4.5 15 15m0-15-15 15"/>
+        </svg>
+      </button>
+    </div>
     <p id="import-summary"></p>
+    <fieldset id="import-parts" class="rule-field">
+      <legend data-i18n="importParts">Choose what to import</legend>
+      <label><input id="import-rules-part" type="checkbox" checked><span data-i18n="importRulesPart">Saved rules</span></label>
+      <label><input id="import-trash-part" type="checkbox"><span data-i18n="importTrashPart">Trash</span></label>
+      <label><input id="import-defaults-part" type="checkbox"><span data-i18n="ruleDefaults">Rule defaults</span></label>
+      <p id="import-parts-note" class="muted"></p>
+      <p id="import-defaults-impact" data-i18n="importDefaultsImpact" hidden>Replaces defaults for new rules. Existing rules keep their settings.</p>
+    </fieldset>
     <fieldset id="conflict-policy" class="choice-group">
       <legend data-i18n="importMode">How should the backup be imported?</legend>
       <div class="choices">

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 56">
+  <title>Multicolor negative control</title>
+  <path fill="#02303a" d="M8 8h40v40H8z"/>
+  <path fill="#cf2040" d="M60 12h90v8H60zM60 28h70v8H60z"/>
+  <path fill="#f5be20" d="M60 44h82v4H60z"/>
+</svg>

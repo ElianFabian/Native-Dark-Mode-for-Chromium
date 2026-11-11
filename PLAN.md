@@ -80,6 +80,8 @@ This table records the early prototype and is not the current 0.9.0 validation s
 
 ## 0.9.0 release validation — 2026-11-11
 
+Post-release developer tooling: `scripts/dev/audit-website.mjs` was exercised on the public Gradle plugin page in an isolated Brave profile across 18 cases (three custom themes, Off/Low/Maximum, scales 1 and 1.25). The tool verifies active paint before sampling and writes heuristic JSON/Markdown reports. It detects the reported transparent single-color logo candidates. Syntax checks, existing Node tests, CLI help, invalid-input rejection, and local documentation links were checked. These reports are not confirmed defects or a replacement for the planned regression gallery. The new tool does not recolor artwork or inspect the user's personal browser session.
+
 - Development platform: Windows; automated browser checks used Brave reporting Chromium `157.0.8103.50` with an isolated profile and the unpacked extension. This is not verification of every Chromium browser.
 - `npm.cmd run check` and `npm.cmd test`: 64 tests passed again after the version/documentation/help-text update. Tests cover rules and precedence, exclusions, backups, controller handoff, localization, and Chromium color vectors. They are not visual regression tests.
 - Local browser checks cover the shared custom-theme repairs, repeated local resampling over the supplied decorative SVG, placeholders, monochrome/multicolor glyph controls, clipped and layered SVGs, own SVG CSS backgrounds, external share SVG shape preservation, and repeated idle/hover states.
@@ -93,3 +95,37 @@ This table records the early prototype and is not the current 0.9.0 validation s
 - Broader Chrome/Edge, Linux/macOS desktop behavior, out-of-process-frame coverage, and native image controls remain pending as described in the README and roadmap.
 
 Release preparation checks: `npm.cmd run check` passed; all 64 Node tests passed; all seven launcher artifact tests passed outside the filesystem sandbox (Git Bash/Windows Script Host could not start correctly inside it). UTF-8 validation, local documentation links, manifest version, exact screenshot hashes, and `git diff --check` passed. Launcher artifact tests still do not establish Linux/macOS desktop integration.
+
+
+### 2026-11-11: authored edge and linked-artwork follow-up
+
+- Corrected strongly contrasting neutral borders that stayed black after their backing darkened in Simulated Native; live SEPE navigation retains its fractional width.
+- Shared the compact two-ink control/ring and breadcrumb glyph repairs, stronger small-glyph contrast, and authored notice-link accent policy across all custom themes. Live Junta course details were checked at 125%.
+- Implemented contrast-driven channel lifts for verified static transparent single-color artwork in image-only links; both public Gradle header assets now change in all custom themes. Multicolor and animated resources remain negative controls. A previous audit finding alone had not applied this correction.
+- Added the portable focused `fixtures/contrast-controls.html` and its generic SVG assets. The comprehensive gallery remains future work. Local checks at 125% and 150% cover all custom themes, Off/Maximum/Off, resampling, geometry preservation, and disable cleanup; Gradle's six-level/pointer/focus regression also passes.
+- Checked in Brave/Chromium 157.0.8103.50 on Windows using an isolated headless profile and CDP. No personal browser tab or authenticated Google session was accessed. Node validation: syntax checks and all 64 tests pass.
+
+- Follow-up: fixed a contrast regression from Off to Very low on repaired neutral dark edges. Emphasis now builds on the actual repaired Off contrast rather than using a lower absolute target. Live SEPE checks at 125% verified all six levels increase visibility, preserve 0.8px widths and restore Off exactly. Syntax checks and all 64 Node tests pass.
+
+- Scroll icon follow-up: keep a persistent measured private-use font-glyph repair for compact empty accessible controls. Live 200-frame scroll traces in all three themes now retain one readable color; the 160-frame local fixture also verifies decorative/disabled negative controls and disable cleanup. The change is shared and has no site-specific selector. Syntax checks, all 64 Node tests and `git diff --check` pass.
+
+- Native select popup follow-up: shared explicit dark option/optgroup backing for otherwise unstyled single-row menus. Live SEPE language menus were opened and visually checked in all custom themes; native selected-item highlighting remains visible. Local tests cover keyboard selection, grouped/disabled options, repeated resampling, custom-color/listbox/disabled-select exclusions and cleanup. Brave/Windows at 125%; syntax checks, all 64 Node tests and diff validation pass.
+
+- InfoJobs follow-up: shared compact non-semantic-pointer/definition-label SVG contexts, 7:1 independent-glyph target, actual fill/stroke adjustment and 4.5:1 thin saturated action-edge repair. Added credential-free CORS static-SVG silhouette analysis to the shared cached resource path, preserving original img URLs and rejecting denied/animated/multicolor cases. Live public login and local cross-origin fixtures pass all custom themes in Brave/Windows at 125%; no credentials entered. Added the optional standard-library fixture server for reproducible CORS allowed/denied cases.
+
+### 2026-11-11: complete backups and selective import
+
+- Full exports now use backup format v4 with rules, Trash and canonical Rule defaults. Legacy versions 1–3 remain readable. UI appearance/language/display settings stay local.
+- The manager import dialog offers independent translated checkboxes, disables unavailable legacy sections, keeps defaults replacement opt-in and scopes merge/replace controls to Rules. Trash import is additive/idempotent and does not activate rules. Cancellation and validation failures leave configuration unchanged.
+- Imports validate all supplied sections before one queued write of selected keys. Rule-default edits now share RuleManager serialization with imports/restores/deletions. File/list limits and stale-removal review are preserved.
+- Added six backup tests covering section combinations, full round trips, failures and races. Browser checks in isolated Brave/Windows cover actual file selection, selective writes, export, old files, cancellation and 100–200% UI scale with translated dark/light/high-contrast dialogs. No release version/tag change was requested for this follow-up.
+
+- Final import defaults: only Rules starts checked; Trash and Rule defaults start unchecked. All 70 Node tests pass, as do syntax/diff checks and isolated-browser file import/export checks, including 200% text and dynamic translations.
+
+### 2026-11-11: release 0.10.0
+
+- Bumped the extension manifest to 0.10.0 and aligned both README release summaries. Added the English release notes in `docs/RELEASE-0.10.0.md`, including complete/selective backups, shared rendering repairs, developer tooling, compatibility, resource-read policy, and remaining limitations.
+- Updated the current Native-default version in the contributor guide and roadmap. Native is still the default; replacement and naming remain undecided. Preserved the historical 0.9.0 release record and screenshots.
+- Release checks passed: `npm.cmd run check`, all 70 Node tests, UTF-8 and local Markdown links, nine interface catalog key sets, manifest version, and `git diff --check`.
+- Repeated isolated Brave/Chromium 157.0.8103.50 checks on Windows after the version bump: full/selective backup import/export, legacy availability, close/backdrop/Escape/interior-click/focus behavior, translated and large-text dialogs; all three custom themes' focused SVG/CORS/control fixture with conservative negative controls. These do not confirm the authenticated Google account panel or all website states. Launchers were unchanged; their artifact tests were not repeated for this release.
+- Prepared a local release commit and annotated `v0.10.0` tag. Remote publication requires a separate push request.

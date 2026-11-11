@@ -6,7 +6,7 @@
 
 Use Chromium's built-in dark mode on the websites and sections you choose. Save a rule once and the extension applies it when you return.
 
-**Version 0.9.0** adds Simulated Native, shared border emphasis, configurable rule defaults, and extensive contrast and performance improvements. [Release notes](docs/RELEASE-0.9.0.md)
+**Version 0.10.0** adds complete backups with selective import, improves shared icon and artwork contrast, and fixes border emphasis and scroll-state rendering. [Release notes](docs/RELEASE-0.10.0.md)
 
 This project was built with AI assistance using OpenAI Codex.
 
@@ -87,7 +87,9 @@ To exclude a path from an enabled site or section, enter the more specific URL, 
 
 **Remove** moves a rule to **Trash**, after the saved rules list. In a domain group, **Remove group** asks for confirmation before moving all its rules to Trash, including rules hidden by search. You can restore a rule with its settings, use **Delete permanently** on an individual entry, or choose **Empty trash**. Permanent deletion asks for confirmation. If a saved rule already occupies the same scope, the deleted copy stays in Trash when you try to restore it.
 
-The manager also offers **Export rule settings** and **Import rule settings**. The import dialog previews new and matching rules. By default it adds only new rules. You can also update matching rules or replace the entire list. The replacement option shows a scrollable list of the current rules it will delete and asks for confirmation. The JSON covers the main rule list. Trash and display preferences stay in local storage.
+The manager offers **Export settings** and **Import settings**. Exports include saved rules, Trash and Rule defaults. The import dialog lets you choose these three sections independently. Only Rules is selected initially; Trash and Rule defaults are opt-in. Rules keep the existing options: add new rules only, update matching rules, or replace the entire list. Replacement previews the current rules it will delete and asks for confirmation. Trash import adds missing entries and keeps existing history; it does not restore them as active rules. Rule defaults are imported only when you select them and affect future rules, not existing rule settings. Sections absent from older backups are disabled. Cancel, the × button, Escape or clicking outside the import dialog closes it without changes.
+
+Appearance, text size, language and list display preferences remain local and are not part of this backup. Imports validate all supplied sections before saving the selected sections together. The limit is 1 MiB per file and 1,000 entries per rule/Trash list.
 
 The interface follows the browser language by default. The **Language** selector in the manager lets you choose English, Spanish, French, European Portuguese, Italian, Simplified Chinese, Japanese, Korean, or German.
 
@@ -111,7 +113,7 @@ Custom themes share scheduling, contrast measurement, SVG and background-glyph r
 
 Simulated Native's color conversion is adapted from Chromium under its BSD-style license. Its additional contrast and rendering policies are extension behavior, not a complete port of Blink's paint pipeline. [Chromium license](extension/LICENSE.chromium) · [Rendering guide and fix inventory](docs/WEBSITE-THEME-RENDERING.md)
 
-The extension imports backup versions 1, 2, and 3. Exports use version 3 when a rule matches an exact path only, version 2 when custom themes or separator preferences are present, and version 1 otherwise. Backups containing **Simulated Native** or its separator levels require a build that supports the saved settings.
+The extension imports backup versions 1, 2, 3 and 4. Full configuration exports use version 4; versions 1–3 contain rules only. The format identifier remains `native-dark-mode-rules`. Earlier builds that do not support version 4 cannot import a full backup. Backups containing **Simulated Native** or separator levels also require a build that supports those saved settings.
 
 ## Optional launcher for the debugging banner
 

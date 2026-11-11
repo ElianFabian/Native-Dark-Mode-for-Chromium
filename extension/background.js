@@ -1,14 +1,14 @@
 import { DarkModeController } from './controller.js';
 import { RuleManager, isExtensionStore, isSeparatorEmphasis, matchingRule } from './rules.js';
-import { createBackup, importBackup, mergeRules, parseBackup } from './backup.js';
+import { createBackup, importBackup, mergeRules, parseConfigurationBackup } from './backup.js';
 
 const controller = new DarkModeController(chrome);
 const manager = new RuleManager(chrome, controller);
 const report = error => console.warn('Native Dark Mode:', error);
 
 async function snapshot(tabId) {
+  if (tabId === undefined) return { state: {}, ...await manager.configuration() };
   const rules = await manager.list();
-  if (tabId === undefined) return { state: {}, rules, trash: await manager.listTrash() };
   const tab = await chrome.tabs.get(tabId);
   return { state: await controller.read(tabId), rules,
     matching: isExtensionStore(tab.pendingUrl ?? tab.url) ? undefined : matchingRule(rules, tab.url ?? '') };
@@ -37,18 +37,28 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
       await manager.emptyTrash(message.ids);
       return snapshot(undefined);
     }
-    if (message.type === 'export') return { backup: createBackup(await manager.list()) };
+    if (fromManager && message.type === 'save-defaults') {
+      await manager.saveDefaults(message.value);
+      return snapshot(undefined);
+    }
+    if (message.type === 'export') {
+      const configuration = await manager.enqueueMutation(() => manager.configuration());
+      return { backup: createBackup(configuration.rules, configuration) };
+    }
     if (message.type === 'preview-import') {
       const existing = await manager.list();
-      const { summary, removedIds } = mergeRules(existing, parseBackup(message.text), 'replace-all');
+      const incoming = parseConfigurationBackup(message.text);
+      const { summary, removedIds } = mergeRules(existing, incoming.rules, 'replace-all');
       const removalSet = new Set(removedIds);
-      return { summary, removedRules: existing.filter(rule => removalSet.has(rule.id)) };
+      return { summary, removedRules: existing.filter(rule => removalSet.has(rule.id)),
+        available: { rules: true, trash: Object.hasOwn(incoming, 'trash'), ruleDefaults: Object.hasOwn(incoming, 'ruleDefaults') },
+        trashCount: incoming.trash?.length ?? 0, ruleDefaults: incoming.ruleDefaults };
     }
     if (message.type === 'import') {
-      const summary = await importBackup(manager, message.text, message.conflictPolicy, message.confirmedRemovalIds);
+      const summary = await importBackup(manager, message.text, message.conflictPolicy, message.confirmedRemovalIds, message.selection);
       // Imported settings respect tabs paused by the user. Do not wait for all
       // debugger operations before acknowledging the saved configuration.
-      void manager.applyAll().catch(report);
+      if (!message.selection || message.selection.rules === true) void manager.applyAll().catch(report);
       return { ...await snapshot(message.tabId), importSummary: summary };
     }
     if (message.type === 'save') await manager.save(message.rule, fromManager ? undefined : message.replacedSectionId);

@@ -8,13 +8,15 @@ The next intended task is a local website that reproduces the unusual rendering 
 
 Cover solid and translucent surfaces; nested and generated backings; text over pictures; gradients and masks; transparent logos; static and animated image eligibility; sprites, external background SVGs, clipped and layered SVG glyphs; placeholders and selects; pagination; cards and optional borders; hidden accessible labels; hover, focus, sticky headers, scrolling, carousels, theme handoff, and frame/Shadow DOM cleanup. Include negative controls, source paint, expected behavior, and theme/level selectors. Preserve the drawing and dimensions in assertions where relevant. Add stress cases for menus, long documents, and moving carousels.
 
-The existing checked-in fixture is only a baseline. Much of the investigation currently uses an ignored harness under `research-artifacts/`; it is not a portable regression suite. Do not claim the gallery exists until it is checked in and reproducible. Keep private account details out of fixtures.
+The checked-in baseline and focused control/artwork fixtures cover selected regressions, not the complete gallery. Much of the investigation currently uses an ignored harness under `research-artifacts/`; it is not a portable regression suite. Do not claim the gallery exists until it is checked in and reproducible. Keep private account details out of fixtures.
+
+An initial reusable [browser audit command](BROWSER-TESTING.md) now covers a theme/level/scale matrix and common computed-paint checks in an isolated profile. It supplies candidate reports, not the complete gallery, state-transition tests, or confirmed accessibility results.
 
 ## Possible replacement of Native
 
 The current direction is to investigate whether Simulated Native can eventually replace the debugger-based Native mode. Its goal is readable, stable dark rendering inspired by Chromium, including improvements over Native's contrast and controls. Exact visual parity is not an acceptance criterion.
 
-Removal is not decided or scheduled. Version 0.9.0 retains Native as the default and preserves existing rules, exclusions, backups, debugger cancellation, and launchers. A future change must assess compatibility and performance across browsers and pages, explain any lost capabilities, and define migrations for rules without a preset and old backups. Removing Native would also require reviewing debugger permissions, controller behavior, the debugging-banner launcher workflow, and documentation.
+Removal is not decided or scheduled. Version 0.10.0 retains Native as the default and preserves existing rules, exclusions, backups, debugger cancellation, and launchers. A future change must assess compatibility and performance across browsers and pages, explain any lost capabilities, and define migrations for rules without a preset and old backups. Removing Native would also require reviewing debugger permissions, controller behavior, the debugging-banner launcher workflow, and documentation.
 
 If the native renderer is removed, reconsider the extension's name and the Simulated Native label together. No replacement name has been selected. Keep the current product name and internal `chromium` preset identifier until a separate naming and compatibility decision is made.
 

@@ -64,6 +64,7 @@ export function errorText(error) {
   const text = String(error?.message ?? error);
   if (/not valid JSON/.test(text)) return t('errorJson');
   if (/Unsupported backup/.test(text)) return t('errorFormat');
+  if (/Invalid backup|backup section|at least one backup/.test(text)) return t('errorBackupSection');
   if (/1 MiB/.test(text)) return t('errorSize');
   if (/1,000 rules/.test(text)) return t('errorLimit');
   if (/duplicate website/.test(text)) return t('errorDuplicate');

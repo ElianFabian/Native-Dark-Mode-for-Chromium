@@ -151,6 +151,21 @@ function normalizeStoredRule(stored) {
   return rule;
 }
 
+export function normalizeRuleDefaults(input = {}) {
+  const source = input && typeof input === 'object' && !Array.isArray(input) ? input : {};
+  const domains = Object.fromEntries(['website', 'section'].map(scope => {
+    const settings = source.domains?.[scope] ?? source;
+    return [scope, {
+      subdomains: settings.subdomains === true, regional: settings.regional === true,
+      parentDomain: settings.parentDomain === true,
+      ...(scope === 'section' ? { subpaths: settings.subpaths !== false } : {})
+    }];
+  }));
+  return { scope: source.scope === 'section' ? 'section' : 'website',
+    preset: CUSTOM_PRESETS.includes(source.preset) ? source.preset : 'native',
+    emphasizeSeparators: isSeparatorEmphasis(source.emphasizeSeparators) ? source.emphasizeSeparators : false, domains };
+}
+
 export class RuleManager {
   constructor(api, controller) {
     this.api = api;
@@ -185,6 +200,23 @@ export class RuleManager {
       await this.api.storage.local.set({ rules });
       return rules;
     });
+  }
+
+  async configuration() {
+    return { rules: await this.list(), trash: await this.listTrash(),
+      ruleDefaults: normalizeRuleDefaults((await this.api.storage.local.get('ruleDefaults')).ruleDefaults) };
+  }
+
+  mutateConfiguration(operation) {
+    return this.enqueueMutation(async () => {
+      const patch = operation(await this.configuration());
+      await this.api.storage.local.set(patch);
+      return patch;
+    });
+  }
+
+  saveDefaults(value) {
+    return this.enqueueMutation(() => this.api.storage.local.set({ ruleDefaults: normalizeRuleDefaults(value) }));
   }
 
   save(input, replacedSectionId) {

@@ -1,5 +1,5 @@
 import { normalizeRule, orderRules, groupRulesByDomain, ruleAddress, ruleHostPattern, matchingRule, inheritedExclusion,
-  isExtensionStore, isSeparatorEmphasis } from './rules.js';
+  isExtensionStore, isSeparatorEmphasis, normalizeRuleDefaults } from './rules.js';
 import { regionalBaseForHost, regionalDomain } from './domains.js';
 import { requestWithTimeout } from './request.js';
 import { MAX_BACKUP_BYTES, previewRemovals } from './backup.js';
@@ -324,7 +324,8 @@ function updateButton() {
     $('#remove-editor-rule').disabled = busy;
     $('#export').disabled = busy || !snapshot;
     $('#import').disabled = busy || !snapshot;
-    $('#confirm-import').disabled = busy || !pendingImport;
+    if (pendingImport) updateImportImpact();
+    $('#confirm-import').disabled = busy || !pendingImport || !Object.values(importSelection()).some(Boolean);
     $('#empty-trash').disabled = busy || !snapshot?.trash?.length;
     updateGroupToggle();
   }
@@ -667,6 +668,7 @@ function renderStatus(state) {
 }
 
 function render(value, toggledButton, previousEditedId) {
+  if (value.ruleDefaults) ruleDefaults = normalizeRuleDefaults(value.ruleDefaults);
   const previous = snapshot;
   snapshot = value;
   renderStatus(value.state);
@@ -812,7 +814,7 @@ $('#export')?.addEventListener('click', () => withBusy(async () => {
   document.body.append(link);
   try { link.click(); }
   finally { link.remove(); setTimeout(() => URL.revokeObjectURL(url), 10000); }
-  $('#backup-status').textContent = t('exportPrepared', { count: backup.rules.length });
+  $('#backup-status').textContent = t('exportFullPrepared', { rules: backup.rules.length, trash: backup.trash?.length ?? 0 });
 }, t('exportPreparing'), $('#backup-status')));
 
 $('#import')?.addEventListener('click', () => {
@@ -841,7 +843,14 @@ $('#import-file')?.addEventListener('change', async () => {
       return entry;
     }));
     removals.scrollTop = 0;
-    pendingImport = { text, removedRules };
+    pendingImport = { text, removedRules, summary, trashCount: preview.trashCount ?? 0,
+      available: preview.available ?? { rules: true } };
+    for (const [key, id] of [['rules', 'rules'], ['trash', 'trash'], ['ruleDefaults', 'defaults']]) {
+      const input = $(`#import-${id}-part`);
+      input.disabled = pendingImport.available[key] !== true;
+      input.checked = !input.disabled && key === 'rules';
+    }
+    $('#import-parts-note').textContent = t('importPartsNote', { count: preview.trashCount ?? 0 });
     writeChoice($('#conflict-policy'), 'keep');
     $('#import-summary').textContent = t('previewSummary', { added: summary.added, matching: summary.updated });
     $('#import-status').textContent = '';
@@ -852,11 +861,32 @@ $('#import-file')?.addEventListener('change', async () => {
   if (ready) $('#import-preview').showModal();
 });
 
+function importSelection() {
+  return Object.fromEntries([['rules', 'rules'], ['trash', 'trash'], ['ruleDefaults', 'defaults']].map(([key, id]) => {
+    const input = $(`#import-${id}-part`);
+    return [key, Boolean(input?.checked && pendingImport?.available[key] === true)];
+  }));
+}
+
 function updateImportImpact() {
+  for (const [key, id] of [['rules', 'rules'], ['trash', 'trash'], ['ruleDefaults', 'defaults']]) {
+    $(`#import-${id}-part`).disabled = busy || pendingImport?.available[key] !== true;
+  }
   const policy = readChoice($('#conflict-policy'));
-  const replacing = policy === 'replace-all';
+  const selection = importSelection();
+  if (pendingImport) {
+    $('#import-summary').textContent = t('previewSummary', {
+      added: pendingImport.summary.added, matching: pendingImport.summary.updated });
+    $('#import-parts-note').textContent = t('importPartsNote', { count: pendingImport.trashCount });
+  }
+  $('#import-summary').hidden = !selection.rules;
+  const replacing = selection.rules && policy === 'replace-all';
+  $('#conflict-policy').disabled = busy || !selection.rules;
+  $('#import-defaults-impact').hidden = !selection.ruleDefaults;
+  $('#confirm-import').disabled = busy || !pendingImport || !Object.values(selection).some(Boolean);
   const removedCount = pendingImport?.removedRules.length ?? 0;
   $('#confirm-import').toggleAttribute('data-destructive', replacing);
+  $('#import-impact').hidden = !selection.rules;
   $('#import-impact').textContent = replacing
     ? t('importRemovalImpact', { count: removedCount })
     : t('importKeepImpact');
@@ -870,31 +900,53 @@ function cancelImport() {
 }
 
 $('#conflict-policy')?.addEventListener('change', updateImportImpact);
-$('#cancel-import')?.addEventListener('click', () => {
+$('#import-parts')?.addEventListener('change', updateImportImpact);
+function dismissImport() {
+  if (busy) return;
   $('#import-preview').close();
   cancelImport();
-});
+  $('#import').focus({ preventScroll: true });
+}
+
+function dismissOnBackdrop(dialog, dismiss) {
+  dialog?.addEventListener('click', event => {
+    if (event.target !== dialog || busy) return;
+    const bounds = dialog.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right ||
+        event.clientY < bounds.top || event.clientY > bounds.bottom) dismiss();
+  });
+}
+
+$('#cancel-import')?.addEventListener('click', dismissImport);
+$('#close-import')?.addEventListener('click', dismissImport);
+dismissOnBackdrop($('#import-preview'), dismissImport);
 $('#import-preview')?.addEventListener('cancel', event => {
-  if (busy) event.preventDefault();
-  else cancelImport();
+  event.preventDefault();
+  dismissImport();
 });
 
 $('#confirm-import')?.addEventListener('click', async () => {
   if (!pendingImport || busy) return;
   const conflictPolicy = readChoice($('#conflict-policy'));
-  if (conflictPolicy === 'replace-all') {
+  const selection = importSelection();
+  if (!Object.values(selection).some(Boolean)) return;
+  if (selection.rules && conflictPolicy === 'replace-all') {
     const count = pendingImport.removedRules.length;
     const warning = count ? `\n\n${t('importRemovalImpact', { count })}` : '';
     if (!window.confirm(t('confirmReplaceAll') + warning)) return;
   }
   const imported = await withBusy(async () => {
     const value = await send({ type: 'import', text: pendingImport.text,
-      confirmedRemovalIds: pendingImport.removedRules.map(rule => rule.id), conflictPolicy });
+      confirmedRemovalIds: pendingImport.removedRules.map(rule => rule.id), conflictPolicy, selection });
     render(value);
     const { added, updated, skipped } = value.importSummary;
     pendingImport = undefined;
     $('#import-preview').close();
-    $('#backup-status').textContent = t('importSaved', { added, updated, skipped });
+    $('#backup-status').textContent = [
+      selection.rules ? t('importSaved', { added, updated, skipped }) : '',
+      selection.trash ? t('importTrashSaved', { added: value.importSummary.trashAdded, skipped: value.importSummary.trashSkipped }) : '',
+      selection.ruleDefaults ? t('importDefaultsSaved') : ''
+    ].filter(Boolean).join(' ');
     return true;
   }, t('importing'), $('#import-status'));
   (imported ? $('#import') : $('#confirm-import')).focus();
@@ -1110,12 +1162,8 @@ $('#open-rule-defaults')?.addEventListener('click', () => {
 });
 $('#cancel-rule-defaults')?.addEventListener('click', () => defaultsDialog.close());
 $('#close-rule-defaults')?.addEventListener('click', () => defaultsDialog.close());
-defaultsDialog?.addEventListener('click', event => {
-  if (event.target !== defaultsDialog) return;
-  const bounds = defaultsDialog.getBoundingClientRect();
-  if (event.clientX < bounds.left || event.clientX > bounds.right ||
-      event.clientY < bounds.top || event.clientY > bounds.bottom) defaultsDialog.close();
-});
+dismissOnBackdrop(defaultsDialog, () => defaultsDialog.close());
+
 defaultsForm?.addEventListener('submit', async event => {
   event.preventDefault();
   const domains = Object.fromEntries(['website', 'section'].map(scope => [
@@ -1131,7 +1179,7 @@ defaultsForm?.addEventListener('submit', async event => {
   };
   event.submitter.disabled = true;
   try {
-    await chrome.storage.local.set({ ruleDefaults: next });
+    await send({ type: 'save-defaults', value: next });
     ruleDefaults = next;
     if (!editingId && !draftAddress()) showRule();
     defaultsDialog.close();
@@ -1147,15 +1195,7 @@ try {
   translatePage();
   refreshAppearance = await initializeAppearance();
   const settings = await chrome.storage.local.get('ruleDefaults');
-  const storedDefaults = settings.ruleDefaults;
-  if (storedDefaults && typeof storedDefaults === 'object') {
-    ruleDefaults = {
-      ...storedDefaults,
-      preset: Object.hasOwn(presetLabels, storedDefaults.preset) ? storedDefaults.preset : 'native',
-      emphasizeSeparators: isSeparatorEmphasis(storedDefaults.emphasizeSeparators)
-        ? storedDefaults.emphasizeSeparators : false
-    };
-  }
+  ruleDefaults = normalizeRuleDefaults(settings.ruleDefaults);
   if (isManager) {
     $('#language').value = language;
     updateLanguageFlag(language);

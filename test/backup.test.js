@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBackup, parseBackup, mergeRules, importBackup, previewRemovals, MAX_BACKUP_BYTES } from '../extension/backup.js';
-import { normalizeRule, RuleManager } from '../extension/rules.js';
+import { createBackup, parseBackup, mergeRules, importBackup, previewRemovals, MAX_BACKUP_BYTES, parseConfigurationBackup } from '../extension/backup.js';
+import { normalizeRule, normalizeRuleDefaults, RuleManager } from '../extension/rules.js';
 
 test('backup version 2 round-trips custom presets and rejects unknown presets', () => {
   const rule = normalizeRule({ url: 'example.com', enabled: true, preset: 'soft' });
@@ -167,4 +167,100 @@ test('replacing a backup only removes rules covered by the import preview', asyn
   const updatedPreview = mergeRules(saved, incoming, 'replace-all');
   await importBackup(manager, encode(incoming), 'replace-all', updatedPreview.removedIds);
   assert.deepEqual(saved.map(rule => [rule.host, rule.enabled]), [['example.com', true], ['new.example', true]]);
+});
+
+
+test('version 4 round-trips rules, trash history and independent scope defaults', () => {
+  const rules = [rule('example.com')];
+  const trash = [{ id: 'deleted-a', rule: rule('example.com', false) }, { id: 'deleted-b', rule: rule('example.com', true) }];
+  const ruleDefaults = normalizeRuleDefaults({ scope: 'section', preset: 'chromium', emphasizeSeparators: 'high',
+    domains: { website: { regional: true }, section: { subdomains: true, subpaths: false, parentDomain: true } } });
+  const backup = createBackup(rules, { trash, ruleDefaults });
+  assert.equal(backup.version, 4);
+  assert.deepEqual(parseConfigurationBackup(JSON.stringify(backup)), { rules, trash, ruleDefaults });
+  assert.deepEqual(parseBackup(JSON.stringify(backup)), rules);
+  assert.deepEqual(ruleDefaults.domains.website, { subdomains: false, regional: true, parentDomain: false });
+  assert.deepEqual(ruleDefaults.domains.section, { subdomains: true, regional: false, parentDomain: true, subpaths: false });
+  assert.equal(normalizeRuleDefaults({ subdomains: true }).domains.section.subdomains, true);
+});
+
+const configurationManager = initial => {
+  const state = structuredClone(initial), writes = [];
+  const manager = new RuleManager({ storage: { local: {
+    get: async () => structuredClone(state),
+    set: async patch => { writes.push(structuredClone(patch)); Object.assign(state, structuredClone(patch)); }
+  } } }, {});
+  return { manager, state, writes };
+};
+
+test('each import selection writes only chosen sections in one queued storage operation', async () => {
+  const initial = { rules: [rule('local.example')], trash: [{ id: 'local-trash', rule: rule('deleted.example') }],
+    ruleDefaults: normalizeRuleDefaults({ preset: 'soft' }) };
+  const incoming = { rules: [rule('new.example')], trash: [{ id: 'backup-trash', rule: rule('old.example') }],
+    ruleDefaults: normalizeRuleDefaults({ scope: 'section', preset: 'chromium' }) };
+  const text = JSON.stringify(createBackup(incoming.rules, incoming));
+  for (let mask = 1; mask < 8; mask++) {
+    const { manager, state, writes } = configurationManager(initial);
+    const selection = Object.fromEntries(['rules', 'trash', 'ruleDefaults'].map((key, i) => [key, Boolean(mask & (1 << i))]));
+    await importBackup(manager, text, 'replace-all', [initial.rules[0].id], selection);
+    assert.equal(writes.length, 1);
+    assert.deepEqual(Object.keys(writes[0]).sort(), Object.keys(selection).filter(key => selection[key]).sort());
+    for (const key of Object.keys(selection)) if (!selection[key]) assert.deepEqual(state[key], initial[key]);
+    if (selection.rules) assert.equal(state.rules[0].host, 'new.example');
+    if (selection.trash) assert.deepEqual(state.trash, [...incoming.trash, ...initial.trash]);
+    if (selection.ruleDefaults) assert.deepEqual(state.ruleDefaults, incoming.ruleDefaults);
+  }
+});
+
+test('trash import is additive and idempotent and never restores deleted scopes', async () => {
+  const { manager, state } = configurationManager({ rules: [], trash: [], ruleDefaults: {} });
+  const text = JSON.stringify(createBackup([], { trash: [{ id: 'history', rule: rule('example.com') }] }));
+  assert.equal((await importBackup(manager, text, 'keep', [], { trash: true })).trashAdded, 1);
+  assert.equal((await importBackup(manager, text, 'keep', [], { trash: true })).trashSkipped, 1);
+  assert.equal(state.rules.length, 0);
+  assert.equal(state.trash.length, 1);
+});
+
+test('invalid or absent backup sections and stale removals fail before every write', async () => {
+  const initial = { rules: [rule('kept.example')], trash: [], ruleDefaults: normalizeRuleDefaults() };
+  const { manager, state, writes } = configurationManager(initial);
+  const backup = createBackup([], { trash: [] });
+  for (const invalid of [
+    { ...backup, trash: [{ id: 'bad id', rule: backup.rules[0] }] },
+    { ...backup, ruleDefaults: { ...backup.ruleDefaults, scope: 'unknown' } },
+    { ...backup, ruleDefaults: { ...backup.ruleDefaults, domains: {} } }
+  ]) await assert.rejects(importBackup(manager, JSON.stringify(invalid), 'keep', [], { rules: true }));
+  await assert.rejects(importBackup(manager, JSON.stringify(backup), 'keep', [], {}), /at least one/);
+  await assert.rejects(importBackup(manager, encode([]), 'keep', [], { trash: true }), /unavailable/);
+  await assert.rejects(importBackup(manager, JSON.stringify(backup), 'replace-all', [],
+    { rules: true, trash: true, ruleDefaults: true }), /changed since/);
+  assert.equal(writes.length, 0);
+  assert.deepEqual(state, initial);
+});
+
+test('configuration imports and removal/default edits share the mutation queue', async () => {
+  const current = rule('existing.example');
+  const { manager, state } = configurationManager({ rules: [current], trash: [], ruleDefaults: {} });
+  const text = JSON.stringify(createBackup([rule('new.example')], { trash: [{ id: 'old', rule: rule('old.example') }] }));
+  await Promise.all([
+    importBackup(manager, text, 'keep', [], { rules: true, trash: true }),
+    manager.remove(current.id),
+    manager.saveDefaults({ preset: 'contrast' })
+  ]);
+  assert.deepEqual(state.rules.map(r => r.host), ['new.example']);
+  assert.deepEqual(new Set(state.trash.map(entry => entry.rule.host)), new Set(['old.example', 'existing.example']));
+  assert.equal(state.ruleDefaults.preset, 'contrast');
+});
+
+
+test('a failed combined import leaves rules, trash and defaults unchanged', async () => {
+  const initial = { rules: [rule('existing.example')], trash: [], ruleDefaults: normalizeRuleDefaults({ preset: 'soft' }) };
+  const state = structuredClone(initial);
+  const manager = new RuleManager({ storage: { local: {
+    get: async () => structuredClone(state), set: async () => { throw new Error('Storage quota exceeded'); }
+  } } }, {});
+  const text = JSON.stringify(createBackup([rule('new.example')],
+    { trash: [{ id: 'backup-trash', rule: rule('deleted.example') }], ruleDefaults: { preset: 'contrast' } }));
+  await assert.rejects(importBackup(manager, text, 'keep', [], { rules: true, trash: true, ruleDefaults: true }), /quota/);
+  assert.deepEqual(state, initial);
 });

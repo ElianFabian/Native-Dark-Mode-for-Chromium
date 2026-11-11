@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 56">
+  <title>Static single-color artwork with an internal paint class</title>
+  <defs><style>.ink { fill: #02303a; }</style></defs>
+  <path class="ink" d="M8 8h40v40H8zM60 12h90v8H60zM60 28h70v8H60zM60 44h82v4H60z"/>
+</svg>

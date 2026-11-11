@@ -6,7 +6,7 @@
 
 Usa el modo oscuro integrado en Chromium en las webs y secciones que elijas. Guarda una regla una vez y la extensión la aplicará cuando vuelvas.
 
-La **versión 0.9.0** añade Nativo simulado, niveles de borde compartidos, valores predeterminados para reglas y numerosas mejoras de contraste y rendimiento. [Notas de la versión en inglés](docs/RELEASE-0.9.0.md)
+La **versión 0.10.0** añade copias de seguridad completas con importación selectiva, mejora el contraste compartido de iconos e imágenes y corrige los niveles de borde y la representación durante el desplazamiento. [Notas de la versión en inglés](docs/RELEASE-0.10.0.md)
 
 Este proyecto se desarrolló con la ayuda de IA mediante OpenAI Codex.
 
@@ -87,7 +87,9 @@ Para excluir una ruta dentro de una web o sección activa, introduce la URL más
 
 **Eliminar** mueve la regla a la **Papelera**, después del listado de reglas guardadas. **Eliminar grupo** pide confirmación antes de mover todas las reglas de un grupo a la papelera, incluidas las ocultas por la búsqueda. Puedes recuperarlas con sus ajustes, usar **Eliminar definitivamente** en una entrada individual o elegir **Vaciar papelera**. El borrado definitivo pide confirmación. Si ya existe una regla para el mismo alcance, la copia eliminada se queda en la papelera al intentar restaurarla.
 
-Con **Exportar configuración de reglas** puedes guardar una copia de las reglas. **Importar configuración de reglas** muestra una vista previa y te permite añadir solo las reglas nuevas, añadirlas y actualizar las coincidencias, o reemplazar toda la lista. El reemplazo muestra una lista desplazable de las reglas que se eliminarán y pide confirmación. La papelera y las preferencias de apariencia se guardan aparte.
+El gestor ofrece **Exportar configuración** e **Importar configuración**. Las copias incluyen las reglas guardadas, la papelera y los valores predeterminados. Al importar puedes elegir estos tres bloques de forma independiente. Solo las reglas aparecen seleccionadas inicialmente; la papelera y los valores predeterminados son opcionales. Las reglas conservan las opciones de añadir solo las nuevas, actualizar las coincidencias o reemplazar toda la lista. El reemplazo muestra las reglas actuales que eliminará y pide confirmación. La importación de la papelera añade las entradas que falten y conserva el historial existente; no las restaura como reglas activas. Los valores predeterminados solo se importan si los seleccionas y afectan a las reglas futuras, sin cambiar los ajustes de las existentes. Los bloques ausentes en copias antiguas quedan deshabilitados. Cancelar, la X, Escape o un clic fuera del diálogo cierran la importación sin cambios.
+
+La apariencia, el tamaño del texto, el idioma y las preferencias de visualización de la lista siguen siendo locales y no se incluyen en la copia. Se validan todos los bloques del archivo antes de guardar juntos los seleccionados. El límite es de 1 MiB por archivo y de 1.000 entradas por lista de reglas o papelera.
 
 La interfaz sigue el idioma del navegador por defecto. En **Idioma** puedes elegir español, inglés, francés, portugués europeo, italiano, chino simplificado, japonés, coreano o alemán.
 
@@ -109,7 +111,7 @@ Los temas personalizados comparten la planificación del trabajo, las mediciones
 
 La conversión de color de Nativo simulado se ha adaptado de Chromium bajo su licencia de tipo BSD. Las correcciones adicionales de contraste y representación son comportamiento de la extensión, no una reproducción completa del sistema de pintado de Blink. [Licencia de Chromium](extension/LICENSE.chromium) · [Guía de renderizado e inventario de correcciones, en inglés](docs/WEBSITE-THEME-RENDERING.md)
 
-La extensión importa copias en las versiones 1, 2 y 3. Al exportar, usa la versión 3 si alguna regla se limita a una ruta exacta, la 2 si hay temas personalizados o preferencias de separadores y la 1 en los demás casos. Las copias que incluyen **Nativo simulado** o sus niveles de énfasis requieren una versión de la extensión compatible con esos ajustes.
+La extensión importa copias en las versiones 1, 2, 3 y 4. Las copias completas usan la versión 4; las versiones 1–3 contienen únicamente reglas. Se mantiene el identificador de formato `native-dark-mode-rules`. Las versiones anteriores de la extensión que no admiten el formato 4 no pueden importar una copia completa. Las copias con **Nativo simulado** o niveles de énfasis también requieren una versión de la extensión compatible con esos ajustes.
 
 ## Acceso directo opcional para ocultar el aviso de depuración
 

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 56">
+  <title>Animated single-color negative control</title>
+  <path fill="#02303a" d="M8 8h40v40H8zM60 12h90v8H60zM60 28h70v8H60z">
+    <animate attributeName="opacity" values="1;.8;1" dur="2s" repeatCount="indefinite"/>
+  </path>
+</svg>
