@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wrapped background glyph regression</title>
+<style>
+  body { margin: 24px; color: #555; background: white; font: 18px/2 sans-serif; }
+  section { background: #eee; padding: 16px; margin-block: 16px; }
+  p { margin: 0; }
+  .label { padding-inline-start: 32px; background-repeat: no-repeat; background-position: left center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25' viewBox='0 0 25 25' fill='none'%3E%3Cpath d='M4 3h5l1 6-3 2 7 7 2-3 6 1v5C12 24 1 13 4 3Z' fill='%23555555'/%3E%3C/svg%3E"); }
+  .clearfix::after { content: ''; display: table; clear: both; }
+  .dark { background: #111; color: white; }
+  #readable { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25' fill='white'%3E%3Cpath d='M4 3h5l1 6-3 2 7 7 2-3 6 1v5C12 24 1 13 4 3Z'/%3E%3C/svg%3E"); }
+  #multicolor { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25' fill='none'%3E%3Cpath d='M2 2h9v21H2z' fill='%230055aa'/%3E%3Cpath d='M14 2h9v21h-9z' fill='%23cc3300'/%3E%3C/svg%3E"); }
+  #large { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80' fill='%23555555'%3E%3Cpath d='M0 0h120v80H0z'/%3E%3C/svg%3E"); }
+  #pattern { background-repeat: repeat; }
+  #media img { width: 64px; height: 24px; }
+</style>
+<h1>Nested labels with compact background glyphs</h1>
+<p>The compact monochrome glyph should remain readable in every custom theme. Preserve source SVG geometry, layout, and the empty zero-sized clearfix. Negative cases retain their authored image.</p>
+<section><div id="paragraph" class="label clearfix" data-contact-test="positive"><p>+ 34 955 063 910</p></div></section>
+<section><div id="nested" class="label" data-contact-test="positive"><div><p><span>Contact details</span></p></div></div></section>
+<section><div id="direct" class="label" data-contact-test="positive">Direct text label</div></section>
+<section class="dark"><div id="readable" class="label" data-contact-test="negative"><p>Already readable glyph</p></div></section>
+<section><div id="multicolor" class="label" data-contact-test="negative"><p>Preserve both source inks</p></div></section>
+<section><div id="large" class="label" data-contact-test="negative"><p>Large decorative artwork</p></div></section>
+<section><div id="pattern" class="label" data-contact-test="negative"><p>Repeating pattern</p></div></section>
+<section><div id="media" class="label" data-contact-test="negative"><p>Mixed content</p><img src="multicolor-artwork.svg" alt="Multicolor artwork"></div></section>
+</html>

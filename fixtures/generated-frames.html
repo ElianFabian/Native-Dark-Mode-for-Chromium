@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Generated list frame regression</title>
+<style>
+body { background: white; color: #111; font: 18px/1.5 sans-serif; margin: 24px; }
+li { list-style: none; position: relative; padding: 12px; margin-block: 8px; }
+li::before { content: ''; position: absolute; inset: 0; border: 1px solid #d8d8d8; pointer-events: none; }
+.selected::before { border-color: #0066bb; }
+.reserved::before { border-color: transparent; }
+.arrow::before { inset: auto; width: 8px; height: 8px; border-width: 1px 1px 0 0; transform: rotate(45deg); }
+.strong::before { border-color: black; }
+</style>
+<h1>Subtle generated list frames</h1>
+<p>Off should preserve a subtle edge; emphasis should increase it. Preserve colored selection, transparent sides, geometric arrows and originally strong borders.</p>
+<div id="deep"><nav aria-label="Índice"><ol>
+<li><a href="#first">Nested light frame</a></li>
+<li class="selected"><a href="#second" aria-current="true">Selected colored frame</a></li>
+<li class="reserved"><a href="#third">Reserved transparent frame</a></li>
+<li class="arrow">Arrow geometry negative</li>
+<li class="strong">Originally strong frame negative</li>
+</ol></nav></div>
+<script>
+const host = document.getElementById('deep');
+for (let i = 0; i < 22; i++) {
+  const wrapper = document.createElement('div');
+  while (host.firstChild) wrapper.append(host.firstChild);
+  host.append(wrapper);
+}
+</script>
+</html>

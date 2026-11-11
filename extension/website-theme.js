@@ -586,6 +586,19 @@
       backgroundSvgGlyph(style, true, true) : null;
   }
 
+  function wrappedBackgroundGlyphLabel(element, style) {
+    if (!style.backgroundImage.startsWith('url("data:image/svg+xml,')) return false;
+    // A compact background glyph can label a paragraph inside a plain wrapper,
+    // rather than a direct text node or an interactive control.
+    for (let label = element, depth = 0; depth < 3; depth++) {
+      if (label.childElementCount !== 1) return false;
+      label = label.firstElementChild;
+      if (!(label instanceof HTMLElement) || label.matches('img,picture,video,canvas,input,select,textarea,button')) return false;
+      if (Array.prototype.some.call(label.childNodes, textNode)) return label.textContent.trim().length <= 160;
+    }
+    return false;
+  }
+
   function contrastingGlyphInk(original, backdrop, minimum, preferNative = false) {
     if (!original || !backdrop) return null;
     const ink = readableColor(original, backdrop, minimum);
@@ -962,7 +975,7 @@
 
   function authoredSolidBackdrop(element) {
     const layers = [];
-    for (let node = element, depth = 0; node && depth < 16; depth++) {
+    for (let node = element, depth = 0; node && depth < 32; depth++) {
       const style = authoredBackdropStyle(node);
       if (style.backgroundImage !== 'none' && !backgroundSvgGlyph(style)) return null;
       const color = chromiumSrgb(style.backgroundColor);
@@ -1646,12 +1659,12 @@
     }).join('');
   }
 
-  function authoredFrameBorder(element, style, backdrop) {
+  function authoredFrameBorder(element, style, backdrop, sourceBackground) {
     const compact = compactTextControl(element);
     if (!backdrop || luminance(backdrop) > .18 ||
         (!compact && element.closest(interactive)) || element.closest('[role="tablist"]') || element.matches('input,select,textarea') ||
         style.borderImageSource !== 'none' || hasPaintedOutline(style)) return '';
-    const background = chromiumSrgb(style.backgroundColor);
+    const background = sourceBackground ?? chromiumSrgb(style.backgroundColor);
     const color = chromiumSrgb(style.borderTopColor);
     const width = parseFloat(style.borderTopWidth);
     // Pixel snapping at fractional scale can report an authored 1px border as 0.8px.
@@ -1666,6 +1679,24 @@
       Math.max(1.05, originalContrast * 1.08);
     const edge = readableColor(backdrop, backdrop, target);
     return `border-color: ${rgba(edge)} !important;`;
+  }
+
+  function listItemFramePaint(element, getBackdrop) {
+    if (!element.matches('li,[role="listitem"]') || element.matches(':focus-within')) return [];
+    const backdrop = getBackdrop(element);
+    if (!backdrop || luminance(backdrop) > .18) return [];
+    const paints = [];
+    for (const pseudo of ['::before', '::after']) {
+      const style = getComputedStyle(element, pseudo);
+      if (style.content !== '""' || style.backgroundImage !== 'none' || style.transform !== 'none' ||
+          style.filter !== 'none' || style.maskImage !== 'none' || !(parseFloat(style.borderTopWidth) > 0)) continue;
+      const backing = chromiumSrgb(style.backgroundColor);
+      const source = backing && authoredSolidBackdrop(element);
+      if (!source) continue;
+      const paint = authoredFrameBorder(element, style, backdrop, compositeColor(backing, source));
+      if (paint) paints.push([pseudo, paint]);
+    }
+    return paints;
   }
 
   function subduedFieldBorder(element, style, original, surface) {
@@ -1768,7 +1799,8 @@
     const headingBackground = isHeadingBackground(element) || isShallowDivider(element);
     const select = element instanceof HTMLSelectElement;
     const carousel = carouselDirection(element);
-    const glyph = ((hasText || select || carousel) && elementBackgroundGlyph(element, style)) || externalSvgGlyph(element, style);
+    const glyph = ((hasText || select || carousel || wrappedBackgroundGlyphLabel(element, style)) &&
+      elementBackgroundGlyph(element, style)) || externalSvgGlyph(element, style);
     const glyphBackdrop = glyph && chromiumTextBackdrop(glyph.external ? element.parentElement : element, backdrops.solid);
     // The compact arrow in a select needs extra contrast at small sizes.
     const gradient = contrastingSvgBackground(glyph, glyphBackdrop, glyph?.external ? 10 : 7,
@@ -1855,6 +1887,7 @@
         shadow ?? style.boxShadow);
     if (linkEdge) pseudoStyles.push([':not(:focus-visible)', linkEdge]);
     pseudoStyles.push(...iconControlEdges(element, style, backdropFor(element)));
+    pseudoStyles.push(...listItemFramePaint(element, backdropFor));
     pseudoStyles.push(...decorativeSolidPaint(element, style));
     pseudoStyles.push(...tabBorderPaints(element, backdrops.solid));
     const separatorBackdrop = horizontalSeparator && !emphasizeSeparators &&
@@ -2418,24 +2451,30 @@
       schedule();
       return;
     }
-    const batch = new Set();
-    while (batch.size < 64) {
-      if (!elements) {
-        const root = pending.values().next().value;
-        if (!root) break;
-        pending.delete(root);
-        if (!root.isConnected) continue;
-        if (pending.has(root.parentElement) || pending.has(root.parentElement?.parentElement)) continue;
-        // A static list lets the rest of the subtree continue if the page removes a node.
-        elements = root.querySelectorAll('*').values();
-        if (root.nodeType === Node.ELEMENT_NODE && root !== document.documentElement && root !== document.body) batch.add(root);
-      } else {
-        const { value: element, done } = elements.next();
-        if (done) elements = undefined;
-        else if (element.isConnected && element !== document.body && !element.matches(excluded)) batch.add(element);
+    const started = performance.now();
+    // A deadline checked only before collecting 64 nodes can still monopolize
+    // an animation frame. Sample small groups and recheck between style reads.
+    do {
+      const batch = new Set();
+      while (batch.size < 4) {
+        if (!elements) {
+          const root = pending.values().next().value;
+          if (!root) break;
+          pending.delete(root);
+          if (!root.isConnected) continue;
+          if (pending.has(root.parentElement) || pending.has(root.parentElement?.parentElement)) continue;
+          // A static list lets the rest of the subtree continue if the page removes a node.
+          elements = root.querySelectorAll('*').values();
+          if (root.nodeType === Node.ELEMENT_NODE && root !== document.documentElement && root !== document.body) batch.add(root);
+        } else {
+          const { value: element, done } = elements.next();
+          if (done) elements = undefined;
+          else if (element.isConnected && element !== document.body && !element.matches(excluded)) batch.add(element);
+        }
       }
-    }
-    applyRoles(inspectLocal([...batch]));
+      applyRoles(inspectLocal([...batch]));
+    } while ((elements || pending.size) && performance.now() - started < 6 &&
+      !idleDeadline.didTimeout && idleDeadline.timeRemaining() >= 2);
     if (elements || pending.size) schedule();
   }
 
@@ -2653,7 +2692,8 @@
           repaired += icon === 'mask' ? ' icon-mask-light' : ' icon-light';
         }
       }
-      const glyph = ((direction || select || hasText) && elementBackgroundGlyph(element, style)) || externalSvgGlyph(element, style);
+      const glyph = ((direction || select || hasText || wrappedBackgroundGlyphLabel(element, style)) &&
+        elementBackgroundGlyph(element, style)) || externalSvgGlyph(element, style);
       if (glyph) {
         const image = contrastingSvgBackground(glyph, backdrop(glyph.external ? element.parentElement : element),
           glyph.external ? 10 : 7, Boolean(glyph.external || direction || select));
@@ -2675,6 +2715,7 @@
       pseudoStyles.push(...placeholderPaint(element, backdrop, minimum));
       pseudoStyles.push(...selectPopupPaint(element, style, backdrop));
       pseudoStyles.push(...iconControlEdges(element, style, backdrop(element)));
+      pseudoStyles.push(...listItemFramePaint(element, backdrop));
       const coloredEdge = coloredControlBorder(element, style, backdrop);
       if (coloredEdge) pseudoStyles.push([':not(:focus-visible)', coloredEdge]);
       if (roles.includes(' raised-link')) {
