@@ -31,6 +31,39 @@ test('backup version 3 preserves exact-only path rules', () => {
   assert.throws(() => parseBackup(JSON.stringify({ ...backup, version: 2 })), /invalid/i);
 });
 
+test('Simulated Native round-trips in the existing custom preset backup formats', () => {
+  for (const includeSubpaths of [true, false]) {
+    const saved = normalizeRule({ url: 'example.com/articles', scope: 'section', enabled: true,
+      includeSubpaths, preset: 'chromium', emphasizeSeparators: true });
+    const backup = createBackup([saved]);
+    assert.equal(backup.version, includeSubpaths ? 2 : 3);
+    assert.deepEqual(parseBackup(JSON.stringify(backup)), [saved]);
+  }
+});
+
+test('backs up separator preferences while a different theme is selected', () => {
+  const rules = [['native', true], ['soft', 'very-low'], ['contrast', 'maximum']]
+    .map(([preset, emphasizeSeparators], index) => normalizeRule({
+      url: `example.com/${index}`, preset, enabled: true, emphasizeSeparators
+    }));
+  for (const saved of rules) {
+    const backup = createBackup([saved]);
+    assert.equal(backup.version, 2);
+    assert.deepEqual(parseBackup(JSON.stringify(backup)), [saved]);
+  }
+});
+
+test('imports legacy per-theme levels as one preference using the selected theme', () => {
+  const backup = createBackup([normalizeRule({ url: 'example.com', preset: 'soft', emphasizeSeparators: true })]);
+  backup.rules[0].paletteSeparatorEmphasis = { soft: 'maximum', contrast: 'very-low' };
+  const [saved] = parseBackup(JSON.stringify(backup));
+  assert.equal(saved.emphasizeSeparators, 'maximum');
+  assert.equal(saved.paletteSeparatorEmphasis, undefined);
+  assert.equal(createBackup([saved]).rules[0].paletteSeparatorEmphasis, undefined);
+  backup.rules[0].preset = 'chromium';
+  assert.equal(parseBackup(JSON.stringify(backup))[0].emphasizeSeparators, true);
+});
+
 test('import preview resolves older removal IDs without losing the confirmation list', () => {
   const removed = rule('example.com/old');
   const kept = rule('example.com/new');

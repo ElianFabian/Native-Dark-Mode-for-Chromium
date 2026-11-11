@@ -49,16 +49,32 @@
   </div>
   <p id="appearance-status" role="status"></p>
 </div>
-<main>
+<main class="popup-main">
   <header class="popup-header">
-    <h1 data-i18n="title">Native Dark Mode</h1>
+    <div class="popup-site-heading">
+      <h1 data-i18n="title">Native Dark Mode</h1>
+      <div class="popup-site-row">
+        <div id="site" class="has-tooltip">
+          <button id="site-short" type="button" hidden></button>
+          <span id="site-full">Checking tab…</span>
+          <span id="site-tooltip" class="tooltip" role="tooltip"></span>
+          <span id="site-measure" aria-hidden="true"></span>
+        </div>
+        <span id="popup-rule-state" role="status" hidden></span>
+      </div>
+    </div>
     <button id="manage" type="button" class="opens-tab"><span data-i18n="manageRules">Manage rules</span><span class="external-link-icon" aria-hidden="true"></span></button>
   </header>
-  <div class="popup-site-row">
-    <p id="site">Checking tab…</p>
-    <span id="popup-rule-state" role="status" hidden></span>
-  </div>
   <p id="status" role="status" aria-live="polite"></p>
+  <aside id="protected-store-warning" aria-labelledby="protected-store-title" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3 2 21h20L12 3Z M12 9v5m0 3h.01"/>
+    </svg>
+    <div>
+      <strong id="protected-store-title" data-i18n="protectedExtensionStoreTitle">Themes unavailable on this page</strong>
+      <p id="protected-page-reason"></p>
+    </div>
+  </aside>
   <fieldset id="scope" class="choice-group rule-field">
     <legend data-i18n="scope">Scope</legend>
     <label for="address" data-i18n="address">Website or section URL</label>
@@ -80,18 +96,37 @@
       <label id="subpaths-option" hidden><input id="subpaths" class="toggle-switch" type="checkbox" role="switch" checked> <span data-i18n="includeSubpaths">Include subpaths</span></label>
     </div>
   </fieldset>
-  <fieldset id="website-preset" class="choice-group rule-field" aria-describedby="website-preset-help" data-loading disabled>
+  <fieldset id="website-preset" class="choice-group rule-field" data-loading disabled>
     <legend data-i18n="websitePreset">Website theme</legend>
-    <div class="choices">
-      <label><input type="radio" name="website-preset" value="native" checked><span data-i18n="websitePresetNative">Native</span></label>
-      <label><input type="radio" name="website-preset" value="soft"><span data-i18n="websitePresetSoft">Soft dark</span></label>
-      <label><input type="radio" name="website-preset" value="contrast"><span data-i18n="websitePresetContrast">High contrast</span></label>
+    <div class="choices popup-preset-choices">
+      <div class="has-tooltip">
+        <label><input type="radio" name="website-preset" value="native" aria-describedby="popup-native-help" checked><span data-i18n="websitePresetNative">Native</span></label>
+        <span id="popup-native-help" class="tooltip" role="tooltip" data-i18n="websitePresetNativeHelp">Native uses Chromium.</span>
+      </div>
+      <div class="has-tooltip">
+        <label><input type="radio" name="website-preset" value="chromium" aria-describedby="popup-chromium-help"><span data-i18n="websitePresetChromium">Simulated Native</span></label>
+        <span id="popup-chromium-help" class="tooltip" role="tooltip" data-i18n="websitePresetChromiumHelp">Inspired by Native, with added contrast repairs. No debugger needed.</span>
+      </div>
+      <div class="has-tooltip">
+        <label><input type="radio" name="website-preset" value="soft" aria-describedby="popup-soft-help"><span data-i18n="websitePresetSoft">Soft dark</span></label>
+        <span id="popup-soft-help" class="tooltip" role="tooltip" data-i18n="websitePresetSoftHelp">Soft dark uses charcoal backgrounds.</span>
+      </div>
+      <div class="has-tooltip">
+        <label><input type="radio" name="website-preset" value="contrast" aria-describedby="popup-contrast-help"><span data-i18n="websitePresetContrast">High contrast</span></label>
+        <span id="popup-contrast-help" class="tooltip" role="tooltip" data-i18n="websitePresetContrastHelp">High contrast emphasizes text and controls.</span>
+      </div>
     </div>
-    <p class="note" id="website-preset-help">
-      <span data-preset="native" data-i18n="websitePresetNativeHelp">Native uses Chromium.</span>
-      <span data-preset="soft" data-i18n="websitePresetSoftHelp">Soft dark uses charcoal backgrounds.</span>
-      <span data-preset="contrast" data-i18n="websitePresetContrastHelp">High contrast emphasizes text and controls.</span>
-    </p>
+    <fieldset id="chromium-separators" class="choice-group chromium-separators">
+      <legend data-i18n="chromiumEmphasizeSeparators">Emphasize separators</legend>
+      <div class="choices">
+        <label><input type="radio" name="separator-emphasis" value="off" checked><span data-i18n="chromiumSeparatorsOff">Off</span></label>
+        <label><input type="radio" name="separator-emphasis" value="very-low"><span data-i18n="chromiumSeparatorsVeryLow">Very low</span></label>
+        <label><input type="radio" name="separator-emphasis" value="low"><span data-i18n="chromiumSeparatorsLow">Low</span></label>
+        <label><input type="radio" name="separator-emphasis" value="medium"><span data-i18n="chromiumSeparatorsMedium">Medium</span></label>
+        <label><input type="radio" name="separator-emphasis" value="high"><span data-i18n="chromiumSeparatorsHigh">High</span></label>
+        <label><input type="radio" name="separator-emphasis" value="maximum"><span data-i18n="chromiumSeparatorsMaximum">Maximum</span></label>
+      </div>
+    </fieldset>
   </fieldset>
   <div class="popup-row">
     <div class="has-tooltip">

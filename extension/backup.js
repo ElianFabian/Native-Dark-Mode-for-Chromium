@@ -1,4 +1,4 @@
-import { CUSTOM_PRESETS, normalizeRule, ruleAddress } from './rules.js';
+import { CUSTOM_PRESETS, isSeparatorEmphasis, normalizeRule, palettePresets, ruleAddress } from './rules.js';
 
 export const MAX_BACKUP_BYTES = 1024 * 1024;
 const MAX_BACKUP_RULES = 1000;
@@ -12,6 +12,12 @@ function validateRule(input, index, version) {
       typeof input.path !== 'string' || !input.path.startsWith('/') || /[\\?#]/.test(input.path) ||
       typeof input.enabled !== 'boolean' || typeof input.includeSubdomains !== 'boolean' ||
       (input.preset !== undefined && (version < 2 || !CUSTOM_PRESETS.includes(input.preset))) ||
+      (input.emphasizeSeparators !== undefined && (version < 2 ||
+        !isSeparatorEmphasis(input.emphasizeSeparators))) ||
+      (input.paletteSeparatorEmphasis !== undefined && (version < 2 || !input.paletteSeparatorEmphasis ||
+        typeof input.paletteSeparatorEmphasis !== 'object' || Array.isArray(input.paletteSeparatorEmphasis) ||
+        Object.entries(input.paletteSeparatorEmphasis).some(([preset, level]) =>
+          !palettePresets.includes(preset) || !isSeparatorEmphasis(level)))) ||
       (input.includeSubpaths !== undefined && (version < 3 || typeof input.includeSubpaths !== 'boolean')) ||
       (input.createdAt !== undefined && (!Number.isSafeInteger(input.createdAt) || input.createdAt < 0)) ||
       (input.includeRegionalDomains !== undefined && typeof input.includeRegionalDomains !== 'boolean')) fail();
@@ -19,7 +25,8 @@ function validateRule(input, index, version) {
   try {
     rule = normalizeRule({ url: ruleAddress(input), scope: 'section',
       enabled: input.enabled, includeSubdomains: input.includeSubdomains,
-      includeRegionalDomains: input.includeRegionalDomains, preset: input.preset, includeSubpaths: input.includeSubpaths });
+      includeRegionalDomains: input.includeRegionalDomains, preset: input.preset, includeSubpaths: input.includeSubpaths,
+      emphasizeSeparators: input.emphasizeSeparators, paletteSeparatorEmphasis: input.paletteSeparatorEmphasis });
   } catch { fail(); }
   const parsed = new URL(ruleAddress(input));
   if (parsed.host !== input.host.toLowerCase() || rule.path !== (input.path.replace(/\/+$/, '') || '/')) fail();
@@ -54,11 +61,14 @@ export function parseBackup(text) {
 export function createBackup(rules) {
   const document = {
     format: FORMAT,
-    version: rules.some(rule => rule.includeSubpaths === false) ? 3 : rules.some(rule => rule.preset !== undefined) ? 2 : 1,
-    rules: rules.map(({ host, path, enabled, includeSubdomains, includeRegionalDomains, includeSubpaths, createdAt, preset }) => ({
+    version: rules.some(rule => rule.includeSubpaths === false) ? 3 :
+      rules.some(rule => rule.preset !== undefined || rule.emphasizeSeparators) ? 2 : 1,
+    rules: rules.map(({ host, path, enabled, includeSubdomains, includeRegionalDomains, includeSubpaths, createdAt, preset,
+      emphasizeSeparators }) => ({
       host, path, enabled, includeSubdomains,
       ...(includeSubpaths === false ? { includeSubpaths } : {}),
       ...(preset === undefined ? {} : { preset }),
+      ...(emphasizeSeparators ? { emphasizeSeparators } : {}),
       ...(createdAt === undefined ? {} : { createdAt }),
       ...(includeRegionalDomains ? { includeRegionalDomains: true } : {})
     }))

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRule, matchingRule, orderRules, groupRulesByDomain, inheritedExclusion, RuleManager } from '../extension/rules.js';
+import { normalizeRule, matchingRule, orderRules, groupRulesByDomain, inheritedExclusion, isExtensionStore,
+  RuleManager } from '../extension/rules.js';
 import { regionalDomain } from '../extension/domains.js';
 import { DarkModeController } from '../extension/controller.js';
 
@@ -167,6 +168,46 @@ function integration() {
   const controller = new DarkModeController(api);
   return { api, controller, manager: new RuleManager(api, controller), tab, calls };
 }
+
+test('separator emphasis follows the winning rule across custom themes', async () => {
+  const { api, manager, tab, calls } = integration();
+  api.tabs.sendMessage = async (id, message) => { calls.push(message); return true; };
+  await manager.save({ url: 'example.com', enabled: true, preset: 'chromium' });
+  const section = normalizeRule({ url: 'example.com/articles', scope: 'section' });
+  await manager.save({ url: 'example.com/articles', scope: 'section', enabled: true, preset: 'chromium' });
+  await manager.update(section.id, { emphasizeSeparators: true });
+  assert.equal((await manager.apply(tab.id)).emphasizeSeparators, true);
+  assert.equal(calls.at(-1).emphasizeSeparators, true);
+  tab.url = 'https://example.com/shop';
+  assert.equal((await manager.apply(tab.id)).emphasizeSeparators, undefined);
+  assert.equal(calls.at(-1).emphasizeSeparators, undefined);
+  await manager.update(section.id, { preset: 'soft' });
+  tab.url = 'https://example.com/articles';
+  assert.equal((await manager.apply(tab.id)).emphasizeSeparators, true);
+  assert.equal(calls.at(-1).emphasizeSeparators, true);
+  await manager.update(section.id, { preset: 'contrast', emphasizeSeparators: 'maximum' });
+  assert.equal((await manager.apply(tab.id)).emphasizeSeparators, 'maximum');
+  await manager.update(section.id, { preset: 'native' });
+  assert.equal((await manager.apply(tab.id)).emphasizeSeparators, undefined);
+  assert.equal((await manager.list()).find(rule => rule.id === section.id).emphasizeSeparators, 'maximum');
+  await manager.update(section.id, { preset: 'chromium' });
+  assert.equal((await manager.apply(tab.id)).emphasizeSeparators, 'maximum');
+});
+
+test('the extension store is protected without changing saved rules', async () => {
+  assert.equal(isExtensionStore('https://chrome.google.com/webstore/detail/example'), true);
+  assert.equal(isExtensionStore('https://chrome.google.com/other'), false);
+  assert.equal(isExtensionStore('https://chromewebstore.google.com.example.org/'), false);
+  assert.equal(isExtensionStore(undefined), false);
+  const { manager, tab, calls } = integration();
+  tab.url = 'https://chromewebstore.google.com/detail/example';
+  for (const preset of [undefined, 'chromium']) {
+    await manager.save({ url: tab.url, enabled: true, preset });
+    assert.deepEqual(await manager.apply(tab.id), { enabled: false });
+    assert.equal((await manager.list())[0].enabled, true);
+  }
+  assert.deepEqual(calls, []);
+});
 
 test('saved rules persist across managers; disable retains entry and detaches', async () => {
   const { api, controller, manager, calls } = integration();

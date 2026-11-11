@@ -1,5 +1,5 @@
 import { DarkModeController } from './controller.js';
-import { RuleManager, matchingRule } from './rules.js';
+import { RuleManager, isExtensionStore, isSeparatorEmphasis, matchingRule } from './rules.js';
 import { createBackup, importBackup, mergeRules, parseBackup } from './backup.js';
 
 const controller = new DarkModeController(chrome);
@@ -10,17 +10,23 @@ async function snapshot(tabId) {
   const rules = await manager.list();
   if (tabId === undefined) return { state: {}, rules, trash: await manager.listTrash() };
   const tab = await chrome.tabs.get(tabId);
-  return { state: await controller.read(tabId), rules, matching: matchingRule(rules, tab.url ?? '') };
+  return { state: await controller.read(tabId), rules,
+    matching: isExtensionStore(tab.pendingUrl ?? tab.url) ? undefined : matchingRule(rules, tab.url ?? '') };
 }
 
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (sender.id !== chrome.runtime.id || !message) return;
   if (message.type === 'website-preset' && Number.isInteger(sender.tab?.id)) {
     // Only return the active preset. Embedded documents do not receive stored rules.
+    if (isExtensionStore(sender.tab.url)) {
+      reply({});
+      return;
+    }
     void controller.read(sender.tab.id).then(async state => {
       if (!state.preset) return {};
       const rule = matchingRule(await manager.list(), sender.tab.url ?? '');
-      return { preset: rule?.enabled && rule.preset === state.preset ? state.preset : undefined };
+      return rule?.enabled && rule.preset === state.preset
+        ? { preset: state.preset, emphasizeSeparators: rule.emphasizeSeparators } : {};
     }).then(reply, () => reply({}));
     return true;
   }
@@ -56,13 +62,18 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
     if (message.type === 'status' && !fromManager) {
       const current = await snapshot(message.tabId);
       if (current.matching?.enabled && current.matching.preset !== undefined &&
-          current.state.preset !== current.matching.preset) {
+          (current.state.preset !== current.matching.preset ||
+            current.state.emphasizeSeparators !== current.matching.emphasizeSeparators)) {
         void manager.apply(message.tabId).catch(report);
       }
       return current;
     }
     if (message.type !== 'status') {
       if (fromManager) void manager.applyAll().catch(report);
+      else if (message.type === 'update' && isSeparatorEmphasis(message.patch?.emphasizeSeparators)) {
+        // A saved appearance preference must survive a delayed or failed renderer update.
+        void manager.applyFromPopup(message.tabId, false).catch(report);
+      }
       else await manager.applyFromPopup(message.tabId, !['replace-scope', 'remove'].includes(message.type));
     }
     return snapshot(message.tabId);

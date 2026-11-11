@@ -56,18 +56,39 @@ test('a theme the page could not apply is not reported active', async () => {
   assert.deepEqual(await controller.read(7), { enabled: false });
 });
 
-test('custom presets clear native mode and are removed before native mode resumes', async () => {
+test('keeps the outgoing theme until the incoming renderer is ready', async () => {
   const { controller, apply, calls } = fixture();
   await apply(7, true);
   const custom = preset => controller.reconcile(7, () => ({ enabled: true, preset }), false);
   assert.deepEqual(await custom('soft'), { enabled: true, preset: 'soft' });
   assert.deepEqual(await custom('contrast'), { enabled: true, preset: 'contrast' });
+  assert.deepEqual(await custom('chromium'), { enabled: true, preset: 'chromium' });
   assert.deepEqual(await apply(7, true), { enabled: true });
   assert.deepEqual(calls.map(([type]) => type), [
-    'attach', 'command', 'command', 'detach', 'message', 'message', 'message', 'message', 'message', 'attach', 'command'
+    'attach', 'command', 'message', 'message', 'command', 'detach',
+    'message', 'message', 'message', 'message', 'attach', 'command', 'message'
   ]);
+  assert.deepEqual(calls[2][2], { type: 'apply-website-preset-v4', preset: 'soft', immediate: true });
   assert.deepEqual(calls.filter(([type]) => type === 'message').map(([, , message]) => message.preset),
-    ['soft', 'soft', 'contrast', 'contrast', undefined]);
+    ['soft', 'soft', 'contrast', 'contrast', 'chromium', 'chromium', undefined]);
+  assert.ok(calls.filter(([, , message]) => message?.preset === 'chromium')
+    .every(([, , message]) => message.type === 'apply-website-preset-v4'));
+});
+
+test('a failed replacement clears the custom theme and releases the native debugger', async () => {
+  const { controller, apply, calls } = fixture({ themeApplied: false });
+  await apply(7, true);
+  const state = await controller.reconcile(7, () => ({ enabled: true, preset: 'contrast' }), false);
+  assert.equal(state.enabled, false);
+  assert.match(state.error, /could not be applied/);
+  assert.deepEqual(calls.map(([type]) => type), ['attach', 'command', 'message', 'message', 'command', 'detach']);
+});
+
+test('keeps the custom theme when Native cannot attach', async () => {
+  const { controller, apply, calls } = fixture({ attachError: 'Debugger unavailable' });
+  await controller.reconcile(7, () => ({ enabled: true, preset: 'soft' }), false);
+  assert.deepEqual(await apply(7, true), { enabled: true, preset: 'soft', error: 'Debugger unavailable' });
+  assert.ok(calls.filter(([type]) => type === 'message').every(([, , message]) => message.preset === 'soft'));
 });
 
 test('disabling a custom preset clears the frame styles without attaching a debugger', async () => {
@@ -81,9 +102,10 @@ test('disabling a custom preset clears the frame styles without attaching a debu
 
 test('loads the custom theme script when the tab was already open', async () => {
   const { controller, calls } = fixture({ scriptLoaded: false });
-  await controller.reconcile(7, () => ({ enabled: true, preset: 'soft' }), false);
+  await controller.reconcile(7, () => ({ enabled: true, preset: 'chromium' }), false);
   assert.deepEqual(calls.map(([type]) => type), ['message', 'inject', 'message', 'message']);
-  assert.deepEqual(calls[1][1], { target: { tabId: 7, allFrames: true }, files: ['website-theme.js'] });
+  assert.deepEqual(calls[1][1], { target: { tabId: 7, allFrames: true },
+    files: ['chromium-colors.js', 'website-theme.js'] });
 });
 
 test('replaces an older script that cannot acknowledge the current theme message', async () => {

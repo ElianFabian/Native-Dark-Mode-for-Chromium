@@ -1,12 +1,14 @@
-import { normalizeRule, orderRules, groupRulesByDomain, ruleAddress, ruleHostPattern, matchingRule, inheritedExclusion } from './rules.js';
-import { regionalBaseForHost } from './domains.js';
+import { normalizeRule, orderRules, groupRulesByDomain, ruleAddress, ruleHostPattern, matchingRule, inheritedExclusion,
+  isExtensionStore, isSeparatorEmphasis } from './rules.js';
+import { regionalBaseForHost, regionalDomain } from './domains.js';
 import { requestWithTimeout } from './request.js';
 import { MAX_BACKUP_BYTES, previewRemovals } from './backup.js';
 import { LANGUAGES, initializeLanguage, setLanguage, translatePage, t, errorText } from './i18n.js';
 import { initializeAppearance } from './appearance.js';
 import { readChoice, writeChoice } from './choices.js';
 
-const presetLabels = { native: 'websitePresetNative', soft: 'websitePresetSoft', contrast: 'websitePresetContrast' };
+const presetLabels = { native: 'websitePresetNative', soft: 'websitePresetSoft',
+  contrast: 'websitePresetContrast', chromium: 'websitePresetChromium' };
 const $ = selector => document.querySelector(selector);
 const isManager = document.documentElement.dataset.page === 'options';
 let tab;
@@ -21,6 +23,10 @@ const openDomains = new Set();
 const panelHighlightTimers = new WeakMap();
 let refreshAppearance;
 let ruleToastTimer;
+let ruleDefaults = {};
+let unsupportedTabReason;
+
+const domainDefaultsFor = scope => ruleDefaults.domains?.[scope] ?? ruleDefaults;
 
 const appearanceMenu = $('.appearance-menu');
 const appearanceTrigger = appearanceMenu?.querySelector('summary');
@@ -35,25 +41,104 @@ if (appearanceMenu) {
   });
 }
 
-for (const trigger of document.querySelectorAll('.has-tooltip')) {
+function initializeTooltip(trigger) {
   const reset = () => trigger.removeAttribute('data-tooltip-dismissed');
-  trigger.firstElementChild.addEventListener('pointerenter', reset);
+  (trigger.querySelector('button, label') ?? trigger.firstElementChild).addEventListener('pointerenter', reset);
   trigger.addEventListener('focusin', reset);
-  trigger.querySelector('.tooltip').addEventListener('click', () => trigger.setAttribute('data-tooltip-dismissed', ''));
+  trigger.querySelector('.tooltip').addEventListener('click', () => {
+    trigger.removeAttribute('data-tooltip-open');
+    trigger.setAttribute('data-tooltip-dismissed', '');
+  });
 }
+for (const trigger of document.querySelectorAll('.has-tooltip')) initializeTooltip(trigger);
+document.addEventListener('pointerdown', event => {
+  for (const trigger of document.querySelectorAll('.has-tooltip[data-tooltip-open]')) {
+    if (!trigger.contains(event.target)) trigger.removeAttribute('data-tooltip-open');
+  }
+});
 document.addEventListener('keydown', event => {
-  if (event.key !== 'Escape' || $('#import-preview')?.open || $('#remove-rule-dialog')?.open) return;
-  if (appearanceMenu?.open) {
+  if (event.key !== 'Escape') return;
+  const dialog = document.querySelector('dialog[open]');
+  if (!dialog && appearanceMenu?.open) {
     event.preventDefault();
     appearanceMenu.open = false;
     appearanceTrigger.focus({ preventScroll: true });
     return;
   }
-  const visible = document.querySelectorAll('.has-tooltip:not([data-tooltip-dismissed]):has(> :is(button, label, .tooltip):hover, :focus-visible)');
+  const visible = [...(dialog ?? document).querySelectorAll('.has-tooltip:not([data-tooltip-dismissed]):is([data-tooltip-open], :has(> :is(button, label, .tooltip):hover, :focus-visible))')]
+    .filter(trigger => getComputedStyle(trigger.querySelector('.tooltip')).visibility === 'visible');
   if (!visible.length) return;
   event.preventDefault();
-  visible.forEach(trigger => trigger.setAttribute('data-tooltip-dismissed', ''));
+  for (const trigger of visible) {
+    trigger.removeAttribute('data-tooltip-open');
+    trigger.setAttribute('data-tooltip-dismissed', '');
+  }
 });
+
+const site = $('#site');
+const siteLabel = $('#site-full');
+const siteButton = $('#site-short');
+const siteTooltip = $('#site-tooltip');
+
+function fitSiteLabel() {
+  if (site.hidden || !siteTooltip.textContent) return;
+  const row = site.parentElement;
+  const probe = $('#site-measure');
+  const badge = $('#popup-rule-state');
+  const remaining = badge.hidden ? row.clientWidth :
+    row.clientWidth - badge.offsetWidth - parseFloat(getComputedStyle(row).columnGap);
+  const lines = parseFloat(document.documentElement.style.fontSize) > 100 ? 2 : 1;
+  const width = lines === 1 && remaining >= row.clientWidth / 2 ? remaining : row.clientWidth;
+  const height = Math.ceil(parseFloat(getComputedStyle(site).lineHeight) * lines);
+  site.style.maxInlineSize = probe.style.inlineSize = `${width}px`;
+  const hostname = siteTooltip.textContent;
+  const fits = value => {
+    probe.textContent = value;
+    return probe.scrollHeight <= height;
+  };
+  let label = hostname;
+  if (!fits(hostname)) {
+    const domain = regionalDomain(hostname)?.domain;
+    const suffix = domain && hostname.endsWith(`.${domain}`) ? domain : '';
+    const keepSuffix = suffix && fits(`${hostname[0]}…${suffix}`);
+    const shorten = count => {
+      const end = keepSuffix ? suffix.length : Math.ceil(count / 2);
+      const start = keepSuffix ? count : count - end;
+      return `${hostname.slice(0, start)}…${end ? hostname.slice(-end) : ''}`;
+    };
+    let low = keepSuffix ? 1 : 0;
+    let high = hostname.length - (keepSuffix ? suffix.length : 0);
+    while (high - low > 1) {
+      const middle = (low + high) >> 1;
+      if (fits(shorten(middle))) low = middle;
+      else high = middle;
+    }
+    label = shorten(low);
+  }
+  probe.textContent = '';
+  siteButton.textContent = label;
+  siteButton.hidden = label === hostname;
+  siteLabel.hidden = !siteButton.hidden;
+  if (siteButton.hidden) site.removeAttribute('data-tooltip-open');
+}
+
+function showSite(hostname = '') {
+  site.hidden = !hostname;
+  siteLabel.textContent = siteTooltip.textContent = hostname;
+  siteButton.setAttribute('aria-label', hostname);
+  fitSiteLabel();
+}
+
+if (site) {
+  const observer = new ResizeObserver(fitSiteLabel);
+  observer.observe(site.parentElement);
+  observer.observe($('#popup-rule-state'));
+  siteButton.addEventListener('click', () => {
+    const open = site.toggleAttribute('data-tooltip-open');
+    site.toggleAttribute('data-tooltip-dismissed', !open);
+  });
+  siteTooltip.addEventListener('click', () => site.removeAttribute('data-tooltip-open'));
+}
 
 const languageFlags = {
   en: 'gb', es: 'es', fr: 'fr', pt_PT: 'pt', it: 'it', zh_CN: 'cn', ja: 'jp', ko: 'kr', de: 'de'
@@ -96,14 +181,36 @@ function updateLanguageFlag(choice) {
   $('#language-auto-icon').hidden = Boolean(country);
 }
 
+function separatorEmphasis() {
+  const level = readChoice($('#chromium-separators'));
+  return level === 'medium' ? true : level === 'off' ? false : level;
+}
+
+function showSeparatorEmphasis(rule) {
+  const level = rule?.emphasizeSeparators;
+  writeChoice($('#chromium-separators'), level === true ? 'medium' : level || 'off');
+}
+
+function addressHost(url) {
+  try { return normalizeRule({ url }).host; }
+  catch { return undefined; }
+}
+
+function draftAddress() {
+  return $('#address').value.replace(/[ \t]*[\r\n]+[ \t]*/g, '').trim();
+}
+
 function draft(enabled) {
+  const url = draftAddress();
+  const host = $('#regional').checked && addressHost(url);
   return {
-    url: $('#address').value.replace(/[ \t]*[\r\n]+[ \t]*/g, '').trim(), scope: readChoice($('#scope')),
+    url, scope: readChoice($('#scope')),
     includeSubdomains: $('#subdomains').checked,
     includeSubpaths: $('#subpaths').checked,
     includeParentDomain: $('#parent-domain').checked,
-    includeRegionalDomains: $('#regional').checked,
+    includeRegionalDomains: Boolean(host && regionalBaseForHost(host)),
     preset: readChoice($('#website-preset')),
+    emphasizeSeparators: separatorEmphasis(),
     enabled
   };
 }
@@ -115,20 +222,43 @@ function selected() {
   } catch { return undefined; }
 }
 
+async function tabWarning(tab) {
+  let url;
+  try { url = new URL(tab.pendingUrl ?? tab.url); }
+  catch { return 'protectedBrowserPage'; }
+  if (isExtensionStore(url.href)) return 'protectedExtensionStore';
+  if ((url.protocol === 'chrome-extension:' && url.hostname === 'mhjfbmdgcfjbbpaeojofohoefgiehjai') ||
+      (url.protocol === 'file:' && /\.pdf$/i.test(url.pathname)) ||
+      /^data:(?:application|text)\/pdf[;,]/i.test(url.href)) return 'protectedPdfViewer';
+  if (url.protocol === 'chrome-extension:' ||
+      (['chrome:', 'brave:', 'edge:', 'opera:', 'vivaldi:'].includes(url.protocol) && url.hostname === 'extensions')) {
+    return 'protectedExtensionPage';
+  }
+  if (!['http:', 'https:'].includes(url.protocol)) return 'protectedBrowserPage';
+  try {
+    const [frame] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id, frameIds: [0] },
+      func: () => /^(?:application|text)\/pdf$/i.test(document.contentType) ||
+        Boolean(document.body?.firstElementChild?.matches('embed[type="application/pdf"][internalid]'))
+    });
+    if (frame?.result) return 'protectedPdfViewer';
+  } catch {
+    // Some browsers block scripting the top-level PDF wrapper.
+    if (/\.pdf$/i.test(url.pathname)) return 'protectedPdfViewer';
+  }
+  return undefined;
+}
+
 function updateButton() {
   const isPathScope = readChoice($('#scope')) === 'section';
   $('#subpaths-option').hidden = !isPathScope;
   $('#subpaths').disabled = busy || !isPathScope;
-  let host;
-  try { host = normalizeRule({ url: draft(false).url }).host; }
-  catch { /* The address may be incomplete while being edited. */ }
+  const host = addressHost(draftAddress());
   const regionalBase = host && regionalBaseForHost(host);
   const parent = $('#parent-domain');
   const parentDomain = regionalBase?.subdomain && regionalBase.domain;
   $('#parent-domain-option').hidden = !parentDomain;
-  if (!parentDomain) parent.checked = false;
-  $('#subdomains').disabled = busy || parent.checked;
-  if (!regionalBase) $('#regional').checked = false;
+  $('#subdomains').disabled = busy || Boolean(parentDomain && parent.checked);
   $('#regional').disabled = busy || !regionalBase;
   const needsResume = snapshot?.state.suspended || snapshot?.state.error;
   displayedRule = selected();
@@ -151,20 +281,24 @@ function updateButton() {
       ? t('disableInheritedRule', { scope: ruleHostPattern(displayedRule) + displayedRule.path.replace(/^\/$/, '') })
       : t('disableSave');
   }
-  const canEdit = isManager ? Boolean(snapshot) : Boolean(tab?.id);
+  const protectedPage = !isManager && Boolean(unsupportedTabReason);
+  const canEdit = isManager ? Boolean(snapshot) : Boolean(tab?.id) && !protectedPage;
   if (!isManager) {
+    $('#scope').disabled = protectedPage;
+    $('#protected-store-warning').hidden = !protectedPage;
+    if (protectedPage) $('#protected-page-reason').textContent = t(unsupportedTabReason);
     const state = $('#popup-rule-state');
-    state.hidden = !snapshot || !host;
+    state.hidden = !snapshot || !host || protectedPage;
     state.toggleAttribute('data-enabled', displayedRule?.enabled === true);
     state.toggleAttribute('data-disabled', displayedRule?.enabled === false);
     state.textContent = t(displayedRule ? (displayedRule.enabled ? 'enabled' : 'disabled') : 'unsavedScope');
     const remove = $('#remove-popup-rule');
-    const tabHost = tab && normalizeRule({ url: tab.url }).host;
+    const tabHost = !protectedPage && tab && addressHost(tab.url);
     const ownsRule = displayedRule && (displayedRule.host === tabHost ||
       (displayedRule.includeSubdomains && `www.${displayedRule.host}` === tabHost));
     const inheritsRule = !ownsRule && Boolean(displayedRule && tab && matchingRule([displayedRule], tab.url));
     remove.hidden = !ownsRule && !inheritsRule;
-    remove.disabled = busy;
+    remove.disabled = busy || !canEdit;
     if (inheritsRule) {
       remove.setAttribute('aria-disabled', 'true');
       remove.setAttribute('aria-describedby', 'remove-popup-rule-help');
@@ -175,7 +309,7 @@ function updateButton() {
     $('#remove-popup-rule-help').textContent = t(inheritsRule ? 'removeInheritedRuleHelp' : 'moveRuleToTrash');
     const exclusion = inheritedExclusion(matching, tab?.url);
     $('#exclude-host').hidden = !exclusion;
-    $('#exclude-host').disabled = busy || !exclusion;
+    $('#exclude-host').disabled = busy || !canEdit || !exclusion;
     $('#exclude-host').textContent = matching?.includeRegionalDomains && exclusion
       ? t('excludeRegionalHost', { host: exclusion.host })
       : t('excludeSubdomain');
@@ -218,17 +352,54 @@ function matchesSearch(rule, query) {
   } catch { return false; }
 }
 
+let ruleAddressCount = 0;
+const ruleAddressObserver = new ResizeObserver(entries => {
+  for (const { target } of entries) {
+    if (!target.isConnected) {
+      ruleAddressObserver.unobserve(target);
+      continue;
+    }
+    const full = target.querySelector('.rule-address-full');
+    const button = target.querySelector('button');
+    const truncated = full.scrollWidth > target.clientWidth + 1;
+    target.toggleAttribute('data-truncated', truncated);
+    full.setAttribute('aria-hidden', String(truncated));
+    button.hidden = !truncated;
+    if (!truncated) target.removeAttribute('data-tooltip-open');
+  }
+});
+
 function ruleHeading(rule, dateFormatter) {
   const heading = document.createElement('div');
   heading.className = 'rule-heading';
   const address = document.createElement('span');
-  address.className = 'rule-address';
+  address.className = 'rule-address has-tooltip';
+  const full = document.createElement('span');
+  full.className = 'rule-address-full';
   const domain = document.createElement('strong');
   domain.textContent = `${rule.includeSubdomains ? '*.' : ''}${ruleHostPattern(rule)}`;
   const path = document.createElement('span');
   path.className = 'rule-path';
   path.textContent = rule.path;
-  address.append(domain, path);
+  full.append(domain, path);
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'rule-address-button';
+  button.hidden = true;
+  button.append(domain.cloneNode(true), path.cloneNode(true));
+  const tooltip = document.createElement('span');
+  tooltip.id = `rule-address-tooltip-${++ruleAddressCount}`;
+  tooltip.className = 'tooltip';
+  tooltip.setAttribute('role', 'tooltip');
+  tooltip.textContent = full.textContent;
+  button.setAttribute('aria-describedby', tooltip.id);
+  button.addEventListener('click', () => {
+    const open = address.toggleAttribute('data-tooltip-open');
+    address.toggleAttribute('data-tooltip-dismissed', !open);
+  });
+  address.append(full, button, tooltip);
+  initializeTooltip(address);
+  ruleAddressObserver.observe(address);
   heading.append(address);
   if (rule.includeSubpaths === false) {
     const scope = document.createElement('span');
@@ -279,7 +450,13 @@ function updateGroupToggle() {
 
 function showRule(rule) {
   sectionToReplace = undefined;
+  const scope = rule ? (rule.path !== '/' || rule.includeSubpaths === false ? 'section' : 'website') :
+    ruleDefaults.scope === 'section' ? 'section' : 'website';
   suggestedAddress = rule ? ruleAddress(rule) : '';
+  if (!rule && tab) {
+    const address = new URL(tab.url);
+    suggestedAddress = address.origin + (scope === 'section' ? address.pathname : '/');
+  }
   const tabSite = !isManager && tab && regionalBaseForHost(new URL(tab.url).host);
   const ruleSite = rule && regionalBaseForHost(rule.host);
   const inheritsParent = Boolean(tabSite?.subdomain && rule?.includeSubdomains && ruleSite &&
@@ -290,12 +467,14 @@ function showRule(rule) {
     suggestedAddress = address.href;
   }
   $('#address').value = suggestedAddress;
-  writeChoice($('#scope'), rule && (rule.path !== '/' || rule.includeSubpaths === false) ? 'section' : 'website');
-  $('#subpaths').checked = rule?.includeSubpaths !== false;
-  $('#subdomains').checked = Boolean(rule?.includeSubdomains && !inheritsParent);
-  $('#parent-domain').checked = inheritsParent;
-  $('#regional').checked = Boolean(rule?.includeRegionalDomains);
-  writeChoice($('#website-preset'), rule?.preset ?? 'native');
+  writeChoice($('#scope'), scope);
+  const domains = domainDefaultsFor(scope);
+  $('#subpaths').checked = rule ? rule.includeSubpaths !== false : domains.subpaths !== false;
+  $('#subdomains').checked = rule ? rule.includeSubdomains && !inheritsParent : domains.subdomains === true;
+  $('#parent-domain').checked = rule ? inheritsParent : domains.parentDomain === true;
+  $('#regional').checked = rule ? rule.includeRegionalDomains === true : domains.regional === true;
+  writeChoice($('#website-preset'), (rule ? rule.preset : ruleDefaults.preset) ?? 'native');
+  showSeparatorEmphasis(rule ?? ruleDefaults);
   updateButton();
 }
 
@@ -467,7 +646,18 @@ function renderTrash(entries) {
     restore.className = 'rule-edit';
     restore.textContent = t('restoreRule');
     restore.addEventListener('click', () => request({ type: 'restore', id }));
-    actions.append(restore);
+    const remove = document.createElement('button');
+    remove.className = 'rule-remove';
+    remove.textContent = t('deleteTrashRule');
+    remove.addEventListener('click', async () => {
+      const scope = `${rule.includeSubdomains ? '*.' : ''}${ruleHostPattern(rule)}${rule.path}`;
+      if (!window.confirm(t('confirmDeleteTrashRule', { scope }))) return;
+      const next = item.nextElementSibling?.querySelector('.rule-edit') ??
+        item.previousElementSibling?.querySelector('.rule-edit');
+      await request({ type: 'empty-trash', ids: [id] }, { removedRow: item });
+      (next?.isConnected ? next : $('#trash-title')).focus({ preventScroll: true });
+    });
+    actions.append(restore, remove);
     list.append(item);
   }
 }
@@ -538,12 +728,13 @@ async function request(message, { retainedButton, removedRow } = {}) {
     if (message.type === 'remove' || message.type === 'remove-group') {
       notifyRule('ruleTrashed');
       if (isManager) highlightPanel($('.trash-panel'));
-      else if (value.matching) showRule(value.matching);
+      else showRule(value.matching);
     }
     if (isManager && message.type === 'restore') {
       notifyRule('ruleRestored');
       await revealRestoredRule(restoredId);
     }
+    if (isManager && message.type === 'empty-trash') notifyRule('trashRuleDeleted');
   }, isManager ? t('saving') : undefined, $('#status'), retainedButton);
   if (hadFocus && !retainedButton.isConnected) {
     $(`[data-rule-id="${CSS.escape(message.id)}"]`)?.focus({ preventScroll: true });
@@ -820,6 +1011,7 @@ removeRuleDialog?.addEventListener('submit', event => {
 function refreshDraftScope() {
   const rule = selected();
   if (rule) writeChoice($('#website-preset'), rule.preset ?? 'native');
+  if (rule) showSeparatorEmphasis(rule);
   updateButton();
 }
 $('#address').addEventListener('input', () => {
@@ -857,7 +1049,8 @@ $('#scope').addEventListener('change', event => {
   }
   refreshDraftScope();
 });
-$('#website-preset').addEventListener('change', () => {
+$('#website-preset').addEventListener('change', event => {
+  if (event.target.name !== 'website-preset') return;
   updateButton();
   const rule = selected();
   if (!rule || busy) return;
@@ -866,9 +1059,27 @@ $('#website-preset').addEventListener('change', () => {
       const value = await send({ type: 'update', id: rule.id,
         patch: { preset: readChoice($('#website-preset')) } });
       render(value);
+      showSeparatorEmphasis(selected());
       if (isManager) notifyRule('ruleSaved');
     } catch (error) {
       writeChoice($('#website-preset'), rule.preset ?? 'native');
+      throw error;
+    }
+  }, isManager ? t('saving') : undefined);
+});
+$('#chromium-separators').addEventListener('change', event => {
+  if (event.target.name !== 'separator-emphasis') return;
+  const rule = selected();
+  if (!rule || busy) return;
+  const emphasizeSeparators = separatorEmphasis();
+  void withBusy(async () => {
+    try {
+      const value = await send({ type: 'update', id: rule.id, patch: { emphasizeSeparators } });
+      render(value);
+      showSeparatorEmphasis(value.rules.find(saved => saved.id === rule.id));
+      if (isManager) notifyRule('ruleSaved');
+    } catch (error) {
+      showSeparatorEmphasis(rule);
       throw error;
     }
   }, isManager ? t('saving') : undefined);
@@ -878,10 +1089,73 @@ $('#subpaths').addEventListener('change', saveCheckboxChange);
 $('#regional').addEventListener('change', saveCheckboxChange);
 $('#parent-domain').addEventListener('change', saveCheckboxChange);
 
+const defaultsDialog = $('#rule-defaults');
+const defaultsForm = $('#rule-defaults-form');
+const domainDefaultFields = ['subdomains', 'regional', 'parentDomain'];
+
+$('#open-rule-defaults')?.addEventListener('click', () => {
+  writeChoice($('#default-scope'), ruleDefaults.scope);
+  writeChoice($('#default-preset'), ruleDefaults.preset);
+  const level = ruleDefaults.emphasizeSeparators;
+  writeChoice($('#default-separators'), level === true ? 'medium' : level);
+  for (const scope of ['website', 'section']) {
+    const source = domainDefaultsFor(scope);
+    for (const name of domainDefaultFields) {
+      defaultsForm.elements[`${scope}-${name}`].checked = source[name] === true;
+    }
+  }
+  defaultsForm.elements['section-subpaths'].checked = domainDefaultsFor('section').subpaths !== false;
+  $('#rule-defaults-status').textContent = '';
+  defaultsDialog.showModal();
+});
+$('#cancel-rule-defaults')?.addEventListener('click', () => defaultsDialog.close());
+$('#close-rule-defaults')?.addEventListener('click', () => defaultsDialog.close());
+defaultsDialog?.addEventListener('click', event => {
+  if (event.target !== defaultsDialog) return;
+  const bounds = defaultsDialog.getBoundingClientRect();
+  if (event.clientX < bounds.left || event.clientX > bounds.right ||
+      event.clientY < bounds.top || event.clientY > bounds.bottom) defaultsDialog.close();
+});
+defaultsForm?.addEventListener('submit', async event => {
+  event.preventDefault();
+  const domains = Object.fromEntries(['website', 'section'].map(scope => [
+    scope, Object.fromEntries(domainDefaultFields.map(name => [name, defaultsForm.elements[`${scope}-${name}`].checked]))
+  ]));
+  domains.section.subpaths = defaultsForm.elements['section-subpaths'].checked;
+  const level = readChoice($('#default-separators'));
+  const next = {
+    scope: readChoice($('#default-scope')),
+    preset: readChoice($('#default-preset')),
+    emphasizeSeparators: level === 'medium' ? true : level === 'off' ? false : level,
+    domains
+  };
+  event.submitter.disabled = true;
+  try {
+    await chrome.storage.local.set({ ruleDefaults: next });
+    ruleDefaults = next;
+    if (!editingId && !draftAddress()) showRule();
+    defaultsDialog.close();
+  } catch (error) {
+    $('#rule-defaults-status').textContent = errorText(error);
+  } finally {
+    event.submitter.disabled = false;
+  }
+});
+
 try {
   const language = await initializeLanguage();
   translatePage();
   refreshAppearance = await initializeAppearance();
+  const settings = await chrome.storage.local.get('ruleDefaults');
+  const storedDefaults = settings.ruleDefaults;
+  if (storedDefaults && typeof storedDefaults === 'object') {
+    ruleDefaults = {
+      ...storedDefaults,
+      preset: Object.hasOwn(presetLabels, storedDefaults.preset) ? storedDefaults.preset : 'native',
+      emphasizeSeparators: isSeparatorEmphasis(storedDefaults.emphasizeSeparators)
+        ? storedDefaults.emphasizeSeparators : false
+    };
+  }
   if (isManager) {
     $('#language').value = language;
     updateLanguageFlag(language);
@@ -894,24 +1168,33 @@ try {
   if (!isManager) {
     [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id) throw new Error('The active tab could not be found.');
-    if (!/^https?:\/\//i.test(tab.url ?? '')) throw new Error('Open an HTTP or HTTPS page to manage rules.');
-    const tabAddress = new URL(tab.url);
-    $('#site').textContent = tabAddress.hostname;
-    suggestedAddress = `${tabAddress.origin}/`;
-    $('#address').value = suggestedAddress;
-    chrome.storage.onChanged.addListener((changes, area) => {
-      const state = changes[`tab:${tab?.id}`]?.newValue;
-      if (area !== 'session' || !state || !snapshot || busy) return;
-      snapshot.state = state;
-      renderStatus(state);
-      updateButton();
-    });
+    unsupportedTabReason = await tabWarning(tab);
+    if (unsupportedTabReason) {
+      const address = tab.pendingUrl ?? tab.url;
+      const webAddress = address && /^https?:\/\//i.test(address) ? new URL(address) : undefined;
+      showSite(webAddress?.hostname);
+    } else {
+      tab.url ??= tab.pendingUrl;
+      const tabAddress = new URL(tab.url);
+      showSite(tabAddress.hostname);
+      chrome.storage.onChanged.addListener((changes, area) => {
+        const state = changes[`tab:${tab?.id}`]?.newValue;
+        if (area !== 'session' || !state || !snapshot || busy) return;
+        snapshot.state = state;
+        renderStatus(state);
+        updateButton();
+      });
+    }
   }
-  render(await send({ type: 'status' }));
-  if (snapshot.matching) showRule(snapshot.matching);
+  if (isManager || !unsupportedTabReason) {
+    render(await send({ type: 'status' }));
+    showRule(snapshot.matching);
+    if (isManager) $('#open-rule-defaults').disabled = false;
+  }
   updateButton();
 } catch (error) {
   tab = undefined;
+  if (!isManager) $('#site').hidden = true;
   $('#status').textContent = errorText(error);
   updateButton();
 } finally {

@@ -6,7 +6,7 @@
 
 Usa el modo oscuro integrado en Chromium en las webs y secciones que elijas. Guarda una regla una vez y la extensión la aplicará cuando vuelvas.
 
-La **versión 0.8.0** añade un borde opcional al popup y permite actualizar o restaurar los accesos directos de navegador existentes en Windows. [Notas de la versión en inglés](docs/RELEASE-0.8.0.md)
+La **versión 0.9.0** añade Nativo simulado, niveles de borde compartidos, valores predeterminados para reglas y numerosas mejoras de contraste y rendimiento. [Notas de la versión en inglés](docs/RELEASE-0.9.0.md)
 
 Este proyecto se desarrolló con la ayuda de IA mediante OpenAI Codex.
 
@@ -27,13 +27,26 @@ Muchas webs carecen de un tema oscuro. En otras hay que activarlo a mano o volve
 
 Este proyecto usa el motor de oscurecimiento del propio navegador y recuerda dónde quieres aplicarlo. Puedes activarlo para una web entera y guardar excepciones para un subdominio o una sección concreta.
 
+## Elegir el tema de la web
+
+| Tema | Propósito |
+| --- | --- |
+| **Nativo** | Oscurecimiento del propio Chromium mediante una sesión de depuración. Sigue siendo el predeterminado; Chromium decide cómo se representan la página y sus imágenes. |
+| **Nativo simulado** | Motor personalizado inspirado en Chromium, con correcciones adicionales de contraste y usabilidad. No necesita depuración ni el acceso directo para ocultar su aviso. |
+| **Oscuro suave** | Paleta gris carbón con correcciones compartidas de contraste, iconos, textos sobre imágenes y bordes. |
+| **Alto contraste** | Paleta más marcada, con texto y controles más luminosos y los mismos mecanismos compartidos de corrección. |
+
+**Nativo simulado pretende mejorar el resultado, no ser una réplica exacta de Nativo.** La transformación de color de Chromium es el punto de partida. El motor también examina los fondos, la transparencia, los píxeles de las imágenes cuando puede leerlos, la estructura de los iconos y los estados de interacción para corregir problemas que Nativo puede dejar sin resolver. Busca conservar los colores útiles, las formas originales de los iconos, las imágenes y la distribución, mejorando la legibilidad. Las diferencias con Nativo son deliberadas cuando ayudan a esos objetivos; el nombre no promete una reproducción píxel a píxel ni un resultado mejor en todas las páginas.
+
+La apariencia de las webs es independiente del tema claro/oscuro, el tamaño de texto y el alto contraste de la interfaz de la extensión. Si una página no se representa bien, prueba otro tema de web o crea una exclusión.
+
 ## Capturas
 
 Haz clic en una captura para abrirla a resolución completa.
 
 ### Panel de la extensión
 
-<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="1200" style="max-width: 100%; height: auto;" alt="Panel con una regla regional de Amazon sin guardar, controles de tamaño del texto y acceso al gestor de reglas"></a>
+<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="640" style="max-width: 100%; height: auto;" alt="Panel con una regla activa para Amazon, Nativo simulado, niveles de separadores, opciones de alcance y controles de apariencia"></a>
 
 ### Gestor de reglas
 
@@ -42,15 +55,21 @@ Haz clic en una captura para abrirla a resolución completa.
 ## Usar la extensión
 
 1. Abre una web HTTP o HTTPS y pulsa el icono de la extensión.
-2. Para una regla nueva, el popup empieza en **Web completa** y muestra la dirección base del sitio. Elige **Sección por ruta** para usar la ruta de la pestaña actual sin parámetros de consulta ni fragmento. Puedes editar la URL antes de guardar.
-3. En **Tema de la web**, elige **Nativo**, **Oscuro suave** o **Alto contraste** y pulsa **Activar y guardar**. La extensión recuerda tu elección para esa web o sección.
+2. Para una regla nueva, el popup usa tus **Valores predeterminados** (inicialmente **Web completa**) y muestra la dirección base del sitio. Elige **Sección por ruta** para usar la ruta de la pestaña actual sin parámetros de consulta ni fragmento. Puedes editar la URL antes de guardar.
+3. En **Tema de la web**, elige **Nativo**, **Nativo simulado**, **Oscuro suave** o **Alto contraste** y pulsa **Activar y guardar**. La extensión recuerda tu elección para esa web o sección.
 4. Pulsa **Desactivar y guardar** para guardar una exclusión, o abre **Gestionar reglas** para editar, buscar o eliminar reglas guardadas.
 
-**Guardar ajustes** guarda el alcance y el tema elegidos, y conserva el estado de la regla si ya existe. Una regla nueva guardada así queda desactivada. En el popup, si cambias una sección guardada a **Web completa** y guardas, la regla del sitio sustituye a la de esa sección.
+En tiendas de extensiones protegidas, páginas internas del navegador o de extensiones y visores PDF detectados, el popup muestra una advertencia que explica por qué no se puede aplicar el tema y desactiva los controles de la regla. Puedes seguir abriendo **Gestionar reglas**. No es posible detectar de antemano todos los visores integrados.
+
+**Nativo simulado** suaviza los separadores decorativos claros de forma predeterminada. Usa **Resaltar separadores** para elegir Desactivado, Muy bajo, Bajo, Medio, Alto o Máximo. Los niveles superiores refuerzan los separadores, los bordes de tarjetas y los controles compactos de icono compatibles sin cambiar su tamaño. Desactivado no añade contornos opcionales, pero conserva los bordes normales del tema y sus correcciones de contraste. La regla comparte este nivel entre **Nativo simulado**, **Oscuro suave** y **Alto contraste** para la web o sección que cubre y lo incluye en las copias de seguridad.
+
+En el gestor de reglas, abre **Valores predeterminados** para elegir el tema, el nivel de separadores, el alcance y las opciones de dominio de las reglas nuevas. Web completa y Ruta guardan sus opciones de dominio por separado. En Ruta también puedes elegir si se incluyen las subrutas. Las reglas guardadas conservan sus ajustes. Las opciones de dominio base y dominios regionales se aplican cuando la dirección las admite.
+
+En un alcance existente, el tema, el nivel de separadores y los cambios de interruptores compatibles se guardan al instante. Editar la dirección o cambiar entre web y ruta sigue requiriendo guardar. **Guardar ajustes** guarda el alcance y el tema elegidos, y conserva el estado de la regla si ya existe. Una regla nueva guardada así queda desactivada. En el popup, si cambias una sección guardada a **Web completa** y guardas, la regla del sitio sustituye a la de esa sección.
 
 El icono de papelera junto a **Guardar ajustes** muestra la regla guardada seleccionada para el nombre de host actual y pide confirmación antes de moverla a la **Papelera**. En una regla regional, el icono aparece en el host donde se guardó la regla, incluido su alias `www`. En los demás hosts cubiertos, el popup ofrece una exclusión local. Para las reglas heredadas, el icono queda deshabilitado y su ayuda indica que se pueden eliminar en **Gestionar reglas**.
 
-**Nativo** es el tema predeterminado de las reglas existentes. **Oscuro suave** usa fondos gris carbón y **Alto contraste** resalta el texto, los bordes y los contornos de foco. Los temas se aplican a la web y a los marcos en los que la extensión puede ejecutarse. El cambio de tema de una regla existente se guarda al instante. Para una regla nueva, elige el tema antes de pulsar **Activar y guardar**.
+**Nativo** es el tema predeterminado. **Oscuro suave** usa fondos gris carbón y **Alto contraste** resalta el texto, los bordes y los contornos de foco. **Nativo simulado** parte de una conversión de color inspirada en Chromium y añade correcciones según el contexto sin abrir una sesión de depuración. Los temas se aplican a la web y a los marcos en los que la extensión puede ejecutarse. El cambio de tema de una regla existente se guarda al instante. Para una regla nueva, elige el tema antes de pulsar **Activar y guardar**.
 
 | Opción | Qué cubre |
 | --- | --- |
@@ -66,7 +85,7 @@ Para excluir una ruta dentro de una web o sección activa, introduce la URL más
 
 **Gestionar reglas** abre la lista completa en otra pestaña. Puedes buscar y ordenar por nombre o fecha de añadido, en orden ascendente o descendente. **Agrupar por dominio** muestra grupos plegables con el botón **Expandir todos / Contraer todos**. La fecha aparece cuando está guardada en la regla.
 
-**Eliminar** mueve la regla a la **Papelera**, después del listado de reglas guardadas. **Eliminar grupo** pide confirmación antes de mover todas las reglas de un grupo a la papelera, incluidas las ocultas por la búsqueda. Puedes recuperarlas con sus ajustes o elegir **Vaciar papelera** y confirmar el borrado definitivo. Si ya existe una regla para el mismo alcance, la copia eliminada se queda en la papelera al intentar restaurarla.
+**Eliminar** mueve la regla a la **Papelera**, después del listado de reglas guardadas. **Eliminar grupo** pide confirmación antes de mover todas las reglas de un grupo a la papelera, incluidas las ocultas por la búsqueda. Puedes recuperarlas con sus ajustes, usar **Eliminar definitivamente** en una entrada individual o elegir **Vaciar papelera**. El borrado definitivo pide confirmación. Si ya existe una regla para el mismo alcance, la copia eliminada se queda en la papelera al intentar restaurarla.
 
 Con **Exportar configuración de reglas** puedes guardar una copia de las reglas. **Importar configuración de reglas** muestra una vista previa y te permite añadir solo las reglas nuevas, añadirlas y actualizar las coincidencias, o reemplazar toda la lista. El reemplazo muestra una lista desplazable de las reglas que se eliminarán y pide confirmación. La papelera y las preferencias de apariencia se guardan aparte.
 
@@ -84,9 +103,13 @@ La [extensión Manifest V3](extension/manifest.json) tiene un panel, un gestor d
 2. Si la regla nativa está activa, el [controlador](extension/controller.js) se conecta a la pestaña con `chrome.debugger` y ejecuta `Emulation.setAutoDarkModeOverride`. Chromium se encarga del renderizado y de las imágenes. Los temas personalizados usan un [script de contenido](extension/website-theme.js) que aplica estilos reversibles en cada marco compatible y funciona sin una sesión de depuración.
 3. Si la regla deja de aplicarse o se desactiva, el controlador retira el modo oscuro y cierra la conexión. Si cancelas la depuración, la activación automática queda pausada en esa pestaña hasta que pulses **Activar y guardar**.
 
-La extensión usa permisos de depuración para el modo nativo, acceso a sitios HTTP y HTTPS para evaluar las reglas y aplicar los temas personalizados, el permiso `scripting` para aplicar esos temas en pestañas que ya estaban abiertas y almacenamiento para guardar las reglas en el dispositivo. No hace peticiones a servidores externos.
+La extensión usa permisos de depuración para el modo nativo, acceso a sitios HTTP y HTTPS para evaluar las reglas y aplicar los temas personalizados, el permiso `scripting` para aplicar esos temas en pestañas que ya estaban abiertas y almacenamiento para guardar las reglas en el dispositivo. No hay telemetría ni un servicio de analítica. Los temas personalizados pueden leer imágenes y recursos SVG referenciados por la página para analizar su contraste. Las lecturas entre orígenes usan CORS sin credenciales; las del mismo origen pueden usar la sesión existente de la página. Las peticiones tienen límites y los resultados se guardan en caché. Los servidores de esos recursos pueden observar las peticiones. Cuando no se pueden leer o analizar, se conserva un comportamiento alternativo prudente.
 
-Los temas personalizados conservan los píxeles de imágenes, vídeos y canvas, así como las imágenes de fondo. Oscurecen los degradados CSS claros sin imágenes y aplican el tema a los Shadow DOM que Chromium expone a las extensiones. El texto sobre fotografías y los marcos en los que el navegador impide la inyección pueden conservar el aspecto del sitio. La extensión importa copias en las versiones 1, 2 y 3. Al exportar, usa la versión 3 si alguna regla se limita a una ruta exacta, la 2 si hay temas personalizados y la 1 en los demás casos.
+Los temas personalizados comparten la planificación del trabajo, las mediciones de contraste, las correcciones de SVG e iconos de fondo, el análisis de textos sobre imágenes, los bordes opcionales y la limpieza de estilos. Pueden actuar sobre los Shadow DOM abiertos y los cerrados que expone la API de extensiones de Chromium; las raíces inaccesibles y los marcos protegidos quedan fuera de su control. Analizan superficies sólidas y translúcidas, degradados y SVG decorativos, sprites, máscaras, textos de ayuda y estados de interacción. Conservan las fotos, las imágenes multicolor y la geometría original de los iconos cuando pueden distinguirlos de forma fiable. Algunas imágenes estáticas transparentes o monocromas pueden recibir un fondo local o un tinte tras un análisis limitado; los recursos ambiguos o ilegibles se omiten.
+
+La conversión de color de Nativo simulado se ha adaptado de Chromium bajo su licencia de tipo BSD. Las correcciones adicionales de contraste y representación son comportamiento de la extensión, no una reproducción completa del sistema de pintado de Blink. [Licencia de Chromium](extension/LICENSE.chromium) · [Guía de renderizado e inventario de correcciones, en inglés](docs/WEBSITE-THEME-RENDERING.md)
+
+La extensión importa copias en las versiones 1, 2 y 3. Al exportar, usa la versión 3 si alguna regla se limita a una ruta exacta, la 2 si hay temas personalizados o preferencias de separadores y la 1 en los demás casos. Las copias que incluyen **Nativo simulado** o sus niveles de énfasis requieren una versión de la extensión compatible con esos ajustes.
 
 ## Acceso directo opcional para ocultar el aviso de depuración
 
@@ -117,6 +140,17 @@ El acceso y la supresión del aviso se probaron en **Brave con Windows 11**. Lin
 
 ## Límites y desarrollo
 
-- La extensión usa un comando experimental de Chromium. El resultado puede variar según la web y la versión del navegador. Chrome, Edge y otras variantes aún necesitan pruebas de extremo a extremo.
-- Las reglas se aplican a webs HTTP y HTTPS. Chromium decide cómo trata las imágenes. La opción nativa de preservarlas está aplazada y documentada en [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md).
-- Las instrucciones de desarrollo, pruebas y versiones están en [AGENTS.md](AGENTS.md) y en el [README en inglés](README.md#development-and-screenshots).
+**No es una solución perfecta.** Trabajamos para que funcione en el máximo de webs posible, pero cualquiera de los temas puede fallar en una página o estado concreto. Nativo depende de un comando experimental de Chromium; los temas personalizados deducen la intención de la página a partir de su estructura y sus estilos. Ninguno garantiza un contraste correcto en todos los casos. Una actualización de la web o del navegador puede cambiar el resultado.
+
+- Los menús dinámicos, los gráficos anidados, las transiciones, el contenido fijo al hacer scroll y los fondos con imágenes complejas todavía pueden mostrar colores incorrectos, adaptación tardía o destellos. Algunos estados del panel de cuentas autenticadas de Google siguen bajo investigación; las correcciones locales de iconos no demuestran que todo el panel esté resuelto.
+- Los objetivos de contraste son criterios de implementación, no una certificación de accesibilidad. El tamaño de los iconos, el suavizado, el grosor de las fuentes, la transparencia y la percepción influyen más allá de un único cociente.
+- Las restricciones entre orígenes, las imágenes complejas o animadas, los Shadow DOM inaccesibles, los marcos protegidos, los visores PDF y las páginas internas limitan lo que los motores personalizados pueden analizar o cambiar. No se fuerza el recoloreado de recursos que no se pueden leer.
+- La precarga y el procesamiento por lotes reducen el trabajo visible y mejoran la respuesta; las páginas muy grandes o que cambian constantemente pueden seguir siendo más lentas que Nativo.
+- Brave en Windows concentra la mayor parte de las pruebas. Chrome, Edge, otras variantes de Chromium y Linux/macOS necesitan más comprobaciones completas.
+- Chromium controla las imágenes de Nativo. Su opción de preservación por sitio sigue aplazada; consulta [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md). Es independiente de las correcciones de imágenes de los temas personalizados.
+
+Si una página falla, prueba otro tema, reduce el énfasis de bordes o guarda una exclusión. Para informar de un problema, incluye la URL, el tema, el nivel de borde, el navegador y su versión, la acción que lo provoca, una captura y el HTML/los estilos calculados relevantes, eliminando los datos personales.
+
+La posible sustitución futura de Nativo, la revisión del nombre del producto y una web local de casos de regresión son planes, no cambios de esta versión. [Hoja de ruta, en inglés](docs/ROADMAP.md)
+
+Las instrucciones de desarrollo, pruebas y versiones están en [AGENTS.md](AGENTS.md) y en el [README en inglés](README.md#development-and-screenshots). La extensión se carga directamente desde `extension/`, sin compilación.

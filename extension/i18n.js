@@ -51,7 +51,8 @@ export async function initializeLanguage() {
 
 export function translatePage() {
   document.querySelectorAll('[data-i18n]').forEach(element => {
-    element.textContent = t(element.dataset.i18n);
+    const key = element.dataset.i18n;
+    if (Object.hasOwn(messages, key) || Object.hasOwn(fallback, key)) element.textContent = t(key);
   });
   document.querySelectorAll('[data-i18n-label]').forEach(element => {
     element.setAttribute('aria-label', t(element.dataset.i18nLabel));

@@ -49,13 +49,15 @@ Technical references:
 - Loading the local prototype and testing with the debugging banner: authorized by the user's confirmation.
 - Prototype is disabled by default, with explicit per-tab activation.
 - Internal pages and protocols other than HTTP/HTTPS are excluded.
-- No production dependencies, telemetry or external network requests from the extension.
+- No production dependencies or telemetry service. Since 0.9.0, custom themes can perform bounded reads of page-referenced image/SVG resources for contrast analysis; cross-origin reads use CORS without credentials.
 - All project code, comments, UI text, tests and documentation are in English.
 - Use local Git version control, as requested. No remote publication requested.
 - Workspace was initially empty and had no Git repository.
 - Windows Computer Use stopped before installation because it could not identify the browser URL confidently enough to enforce policy. No extension was loaded and no visual test was performed.
 
-## Test record
+## Historical prototype test record
+
+This table records the early prototype and is not the current 0.9.0 validation status. See the dated release record below.
 
 | Check | Result |
 | --- | --- |
@@ -75,3 +77,19 @@ Technical references:
 | Regular Windows shortcut | Generated a local `.lnk` and installed a separate current-user Start Menu entry with the silent-debugger argument. Target and arguments verified. Browser restart and banner suppression remain unverified. No pre-existing browser shortcuts or associations changed. |
 | Native launcher installers | Replaced the Python/PowerShell installers with Windows CMD + Windows Script Host JScript, Linux POSIX shell, and macOS shell. No Python/PowerShell dependency for end users. Three development tests execute native installers, verify artifacts and check generated macOS launcher argument forwarding with a mock browser. Linux/macOS desktop integration and actual Brave launch remain untested on those operating systems. |
 | Native image research | Found source-backed `AutoDarkModeSkipImages` launch-time exclusion and confirmed its name in the installed Brave binary. Global per-launch preference, not a per-website CDP parameter. Headless baseline verification failed/timed out, so visual effectiveness is not confirmed. Details in `IMAGE-RESEARCH.md`. Existing launchers were not changed. |
+
+## 0.9.0 release validation — 2026-11-11
+
+- Development platform: Windows; automated browser checks used Brave reporting Chromium `157.0.8103.50` with an isolated profile and the unpacked extension. This is not verification of every Chromium browser.
+- `npm.cmd run check` and `npm.cmd test`: 64 tests passed again after the version/documentation/help-text update. Tests cover rules and precedence, exclusions, backups, controller handoff, localization, and Chromium color vectors. They are not visual regression tests.
+- Local browser checks cover the shared custom-theme repairs, repeated local resampling over the supplied decorative SVG, placeholders, monochrome/multicolor glyph controls, clipped and layered SVGs, own SVG CSS backgrounds, external share SVG shape preservation, and repeated idle/hover states.
+- The public BOOTH page was checked for own-background pagination dots, selection changes, theme switches, and uniform notice surfaces. Generated dots and visible numbered pagination have separate negative controls.
+- The public SEPE question page was checked for all six social/PDF controls at Off, Low, and Maximum in all three custom themes. Original CSS also reproduces the full-size pseudoelement backing, rounded corners, transparent border, and offscreen/transparent labels locally. Text buttons, authored edges, and a small decorative pseudoelement are negative controls.
+- Manager checks cover independent website/path defaults, persistence, dialog dismissal without saving, individual Trash deletion and cancellation, action layout, and long URL tooltips in grouped/ungrouped lists and Trash. Layout checks include 100% and 200% text, narrow/wide windows, light/dark UI, and UI high contrast.
+- The Google account menu was reproduced from anonymized supplied HTML. Some icon cases pass, but later user screenshots still show state-dependent text/surface problems. Do not report the whole authenticated menu as fixed.
+- Website-specific selectors and branches are excluded from production theme repair policy. Source pages and class names belong in research reproductions and verification notes.
+- Browser investigation scripts under `research-artifacts/` are ignored and not available in a fresh clone. The next planned task is a checked-in local regression gallery; it is not included in 0.9.0.
+- New screenshots are owner-supplied originals, shared by both READMEs. They document the UI and do not establish compatibility with all pages.
+- Broader Chrome/Edge, Linux/macOS desktop behavior, out-of-process-frame coverage, and native image controls remain pending as described in the README and roadmap.
+
+Release preparation checks: `npm.cmd run check` passed; all 64 Node tests passed; all seven launcher artifact tests passed outside the filesystem sandbox (Git Bash/Windows Script Host could not start correctly inside it). UTF-8 validation, local documentation links, manifest version, exact screenshot hashes, and `git diff --check` passed. Launcher artifact tests still do not establish Linux/macOS desktop integration.

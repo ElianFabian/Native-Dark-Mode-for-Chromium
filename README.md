@@ -6,7 +6,7 @@
 
 Use Chromium's built-in dark mode on the websites and sections you choose. Save a rule once and the extension applies it when you return.
 
-**Version 0.8.0** adds an optional popup border and lets Windows users update or restore their existing browser shortcuts. [Release notes](docs/RELEASE-0.8.0.md)
+**Version 0.9.0** adds Simulated Native, shared border emphasis, configurable rule defaults, and extensive contrast and performance improvements. [Release notes](docs/RELEASE-0.9.0.md)
 
 This project was built with AI assistance using OpenAI Codex.
 
@@ -27,13 +27,26 @@ Many websites still have no dark theme. On others, dark mode starts off or the s
 
 This project started with a practical goal. Use the browser's own darkening engine where it renders a site well, then remember which sites and sections should use it. You can turn it on for an entire site and keep an exception for a particular hostname or section.
 
+## Choose a website theme
+
+| Theme | Purpose |
+| --- | --- |
+| **Native** | Chromium's own darkening through a debugger session. It remains the default; Chromium decides how the page and images are rendered. |
+| **Simulated Native** | A custom renderer inspired by Chromium, with additional contrast and usability repairs. It requires no debugger session or banner-suppression launcher. |
+| **Soft dark** | A charcoal palette with shared contrast, icon, image-overlay, and border repairs. |
+| **High contrast** | A stronger palette with brighter text and controls, using the same shared repair mechanisms. |
+
+**Simulated Native aims to improve the result, not produce an exact replica of Native.** Chromium's color transform is its starting point. The renderer also considers backgrounds, transparency, image pixels where readable, icon structure, and interaction state to repair problems that Native can leave behind. It aims to retain useful colors, original icon shapes, image content, and layout while improving readability. Differences from Native are intentional when they serve those goals; the name is not a promise of pixel-for-pixel parity or universally better rendering.
+
+Website appearance is separate from the extension interface's light/dark theme, text size, and high-contrast setting. Try another website theme or create an exclusion if a page does not render well.
+
 ## Screenshots
 
 Click either screenshot to open it at full resolution.
 
 ### Extension popup
 
-<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="1200" style="max-width: 100%; height: auto;" alt="Extension popup showing an unsaved regional rule for Amazon, text size controls, and quick access to the rule manager"></a>
+<a href="docs/screenshots/popup.png"><img src="docs/screenshots/popup.png" width="640" style="max-width: 100%; height: auto;" alt="Extension popup showing an enabled Amazon rule, Simulated Native, separator levels, scope switches, and appearance controls"></a>
 
 ### Rule manager
 
@@ -42,15 +55,21 @@ Click either screenshot to open it at full resolution.
 ## Use the extension
 
 1. Visit an HTTP or HTTPS page and open the extension popup.
-2. For a new rule, the popup starts with **Entire website** and shows the site's base address. Select **Path section** to use the current tab's path without its query string or fragment. You can edit the URL before saving.
-3. Under **Website theme**, choose **Native**, **Soft dark**, or **High contrast**, then click **Enable and save**. The extension remembers your choice for that website or section.
+2. For a new rule, the popup uses your **Rule defaults** (initially **Entire website**) and shows the site's base address. Select **Path section** to use the current tab's path without its query string or fragment. You can edit the URL before saving.
+3. Under **Website theme**, choose **Native**, **Simulated Native**, **Soft dark**, or **High contrast**, then click **Enable and save**. The extension remembers your choice for that website or section.
 4. Use **Disable and save** to keep a rule as an exclusion, or open **Manage rules** to edit, search, or remove saved rules.
 
-**Save settings** saves the scope and theme without changing an existing rule's enabled state. A new rule saved this way starts disabled. In the popup, switching a saved section to **Entire website** and saving replaces that section with the website rule.
+On protected extension stores, internal browser or extension pages, and detected PDF viewers, the popup shows a warning explaining why darkening is unavailable and disables the rule controls. You can still open **Manage rules**. Detection cannot identify every embedded viewer in advance.
+
+**Simulated Native** softens bright decorative separators by default. Use **Emphasize separators** to choose Off, Very low, Low, Medium, High, or Maximum. Higher levels strengthen eligible separators, card edges, and compact icon controls without resizing them. Off adds no optional edge, but keeps the theme’s normal borders and contrast repairs. The rule shares this level across **Simulated Native**, **Soft dark**, and **High contrast** for the website or section it covers and includes it in backups.
+
+In the rule manager, open **Rule defaults** to choose the theme, separator level, scope, and domain switches for new rules. Entire website and Path section keep separate domain settings. Path section also lets you choose whether to include subpaths. Existing rules keep their settings. The parent-domain and regional-domain switches apply where the address supports them.
+
+For an existing scope, theme, separator level, and supported scope-switch changes save immediately. Editing the address or changing between website and path scope still requires a save action. **Save settings** saves the scope and theme without changing an existing rule's enabled state. A new rule saved this way starts disabled. In the popup, switching a saved section to **Entire website** and saving replaces that section with the website rule.
 
 The trash icon beside **Save settings** shows the selected saved rule for the current host and asks for confirmation before moving it to **Trash**. For a regional rule, the icon is available on the host where the rule was saved, including its `www` alias. On other matching hosts, the popup offers a local exclusion. The trash icon is disabled for inherited rules, and its tooltip directs you to **Manage rules**.
 
-**Native** is the default for existing rules. **Soft dark** uses charcoal backgrounds, while **High contrast** emphasizes text, borders, and focus indicators. These themes affect the website and its eligible embedded frames. Changing the theme of a saved rule saves it immediately. For a new rule, choose the theme before clicking **Enable and save**.
+**Native** is the default. **Soft dark** uses charcoal backgrounds, while **High contrast** emphasizes text, borders, and focus indicators. **Simulated Native** builds on Chromium-inspired color conversion and adds contextual repairs without a debugger session. These themes affect the website and its eligible embedded frames. Changing the theme of a saved rule saves it immediately. For a new rule, choose the theme before clicking **Enable and save**.
 
 | Option | What it covers |
 | --- | --- |
@@ -66,7 +85,7 @@ To exclude a path from an enabled site or section, enter the more specific URL, 
 
 **Manage rules** opens a full tab where you can search and sort by name or date added, in either direction. **Group by domain** shows collapsible groups with an **Expand all / Collapse all** button. Dates are shown for rules with a saved creation date.
 
-**Remove** moves a rule to **Trash**, after the saved rules list. In a domain group, **Remove group** asks for confirmation before moving all its rules to Trash, including rules hidden by search. You can restore a rule with its settings or choose **Empty trash** and confirm permanent deletion. If a saved rule already occupies the same scope, the deleted copy stays in Trash when you try to restore it.
+**Remove** moves a rule to **Trash**, after the saved rules list. In a domain group, **Remove group** asks for confirmation before moving all its rules to Trash, including rules hidden by search. You can restore a rule with its settings, use **Delete permanently** on an individual entry, or choose **Empty trash**. Permanent deletion asks for confirmation. If a saved rule already occupies the same scope, the deleted copy stays in Trash when you try to restore it.
 
 The manager also offers **Export rule settings** and **Import rule settings**. The import dialog previews new and matching rules. By default it adds only new rules. You can also update matching rules or replace the entire list. The replacement option shows a scrollable list of the current rules it will delete and asks for confirmation. The JSON covers the main rule list. Trash and display preferences stay in local storage.
 
@@ -86,9 +105,13 @@ The [Manifest V3 extension](extension/manifest.json) has a popup, a full-page ru
 2. For an enabled native rule, the [controller](extension/controller.js) attaches through `chrome.debugger` and sends `Emulation.setAutoDarkModeOverride` with `enabled: true`. Chromium handles rendering and images. The custom themes use a [content script](extension/website-theme.js) that applies reversible style overrides in each eligible frame and requires no debugger session.
 3. When a rule stops matching or is disabled, the controller clears its override and releases the connection. If the user cancels the debugging session, automatic activation pauses for that tab. Use **Enable and save** to resume it.
 
-The extension uses `debugger` for native emulation, HTTP and HTTPS site access to match URLs and apply custom themes, `scripting` to apply custom themes in tabs that were already open, and `storage` to keep rules on the device. The extension makes no external network requests.
+The extension uses `debugger` for native emulation, HTTP and HTTPS site access to match URLs and apply custom themes, `scripting` to apply custom themes in tabs that were already open, and `storage` to keep rules on the device. There is no telemetry or analytics service. Custom themes may read image and SVG resources referenced by the page to analyze contrast. Cross-origin reads use CORS without credentials; same-origin reads can use the page’s existing session. Requests are bounded and results are cached. Resource servers can still observe those requests. Unreadable or unsupported resources keep conservative fallback behavior.
 
-Custom themes preserve image, video, and canvas pixels and leave image-backed backgrounds in place. They darken light CSS gradients that contain no images and theme shadow roots that Chromium exposes to extensions. Text over photos and frames where the browser blocks injection can retain the site's original appearance. The extension imports backup versions 1, 2, and 3. Exports use version 3 when a rule matches an exact path only, version 2 when custom themes are present, and version 1 otherwise.
+Custom themes share scheduling, contrast measurement, SVG and background-glyph repairs, image-overlay analysis, optional edges, and cleanup. They can style open shadow roots and closed roots exposed by Chromium's extension API; inaccessible roots and protected frames remain outside their control. They inspect solid and translucent surfaces, decorative gradients and SVGs, sprites, masks, placeholders, and interaction states. Photos, multicolor artwork, and original icon geometry are preserved where the classifier can distinguish them reliably. Some transparent or monochrome static artwork can receive a local backing or tint after bounded analysis; ambiguous or unreadable resources are skipped.
+
+Simulated Native's color conversion is adapted from Chromium under its BSD-style license. Its additional contrast and rendering policies are extension behavior, not a complete port of Blink's paint pipeline. [Chromium license](extension/LICENSE.chromium) · [Rendering guide and fix inventory](docs/WEBSITE-THEME-RENDERING.md)
+
+The extension imports backup versions 1, 2, and 3. Exports use version 3 when a rule matches an exact path only, version 2 when custom themes or separator preferences are present, and version 1 otherwise. Backups containing **Simulated Native** or its separator levels require a build that supports the saved settings.
 
 ## Optional launcher for the debugging banner
 
@@ -122,10 +145,18 @@ The installer was tested on Windows 11, where banner suppression was confirmed i
 
 ## Current limits
 
-- The extension uses an experimental Chromium DevTools Protocol command. Rendering can vary by site and browser version.
-- Chrome, Edge, and other Chromium builds still need end-to-end verification.
-- Rules apply to HTTP and HTTPS websites. Internal browser pages are outside the rule scope.
-- Chromium controls image treatment. Per-site image preservation is deferred. See [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md) for the experimental launch-time option and its limits.
+**This is not perfect.** We work to support as many websites as possible, but every theme can still fail on a particular page or state. Native depends on an experimental Chromium command; custom themes infer the page's intent from its structure and paint. Neither approach guarantees correct contrast everywhere. A site or browser update can change the result.
+
+- Dynamic menus, nested graphics, transitions, sticky content, and complex image backgrounds can still show incorrect colors, delayed adaptation, or flashes. Some authenticated Google account-panel states remain under investigation; local icon fixes do not prove the whole panel is fixed.
+- Contrast targets are engineering heuristics, not an accessibility certification. Small icons, anti-aliasing, font weight, transparency, and perception can affect readability beyond a single ratio.
+- Cross-origin restrictions, complex or animated artwork, inaccessible Shadow DOM, protected frames, PDF viewers, and internal browser pages limit what the custom renderers can inspect or change. Unreadable resources are not forcibly recolored.
+- Preloading and batching reduce visible work and improve responsiveness; very large or frequently changing pages can still be slower than Native.
+- Brave on Windows has the most testing. Chrome, Edge, other Chromium builds, and Linux/macOS still need broader end-to-end verification.
+- Native's image treatment is controlled by Chromium. Its per-site image-preservation option remains deferred; see [IMAGE-RESEARCH.md](IMAGE-RESEARCH.md). This is separate from custom-theme image repairs.
+
+If a page breaks, try a different theme, reduce border emphasis, or save an exclusion. A useful report includes the URL, theme, border level, browser/version, triggering action, screenshot, and relevant HTML/computed styles with personal information removed.
+
+The possible future replacement of Native, a product-name review, and a portable local regression gallery are planning items, not changes in this release. [Roadmap](docs/ROADMAP.md)
 
 ## Development and screenshots
 

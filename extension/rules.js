@@ -1,6 +1,15 @@
 import { regionalBaseForHost, regionalDomain } from './domains.js';
 
-export const CUSTOM_PRESETS = ['soft', 'contrast'];
+export const CUSTOM_PRESETS = ['soft', 'contrast', 'chromium'];
+
+export function isExtensionStore(address) {
+  try {
+    const url = new URL(address);
+    return ['http:', 'https:'].includes(url.protocol) &&
+      (url.hostname === 'chromewebstore.google.com' ||
+        (url.hostname === 'chrome.google.com' && /^\/webstore(?:\/|$)/.test(url.pathname)));
+  } catch { return false; }
+}
 
 export function ruleAddress({ host, path }) {
   // Use a scheme that preserves an explicitly stored port.
@@ -47,6 +56,9 @@ export function groupRulesByDomain(ordered, allRules, order, locale) {
   return [...groups].sort(([first], [second]) => direction * collator.compare(first, second));
 }
 
+export const isSeparatorEmphasis = value => [false, true, 'very-low', 'low', 'high', 'maximum'].includes(value);
+export const palettePresets = ['soft', 'contrast'];
+
 export function normalizeRule(input) {
   const url = new URL(input.url.includes('://') ? input.url : `https://${input.url}`);
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
@@ -71,6 +83,11 @@ export function normalizeRule(input) {
     identity.push(true);
   }
   if (exactPath && path === '/') identity.push('exact-path');
+  // Older rules may have separate levels. Prefer the selected theme's saved value.
+  const previousLevels = input.paletteSeparatorEmphasis;
+  const selectedLevel = palettePresets.includes(input.preset) ? previousLevels?.[input.preset] : undefined;
+  const emphasizeSeparators = [selectedLevel, input.emphasizeSeparators, previousLevels?.soft, previousLevels?.contrast]
+    .find(level => level && isSeparatorEmphasis(level));
   return {
     id: JSON.stringify(identity),
     host, path, includeSubdomains,
@@ -78,7 +95,8 @@ export function normalizeRule(input) {
     ...(regional ? { includeRegionalDomains: true, regionalName: regional.name } : {}),
     ...(regional?.subdomain ? { regionalSubdomain: regional.subdomain } : {}),
     enabled: Boolean(input.enabled),
-    ...(CUSTOM_PRESETS.includes(input.preset) ? { preset: input.preset } : {})
+    ...(CUSTOM_PRESETS.includes(input.preset) ? { preset: input.preset } : {}),
+    ...(emphasizeSeparators ? { emphasizeSeparators } : {})
   };
 }
 
@@ -127,7 +145,8 @@ export function inheritedExclusion(rule, address) {
 function normalizeStoredRule(stored) {
   const rule = normalizeRule({ url: ruleAddress(stored), scope: 'section', enabled: stored.enabled,
     includeSubdomains: stored.includeSubdomains, includeRegionalDomains: stored.includeRegionalDomains,
-    preset: stored.preset, includeSubpaths: stored.includeSubpaths });
+    preset: stored.preset, includeSubpaths: stored.includeSubpaths, emphasizeSeparators: stored.emphasizeSeparators,
+    paletteSeparatorEmphasis: stored.paletteSeparatorEmphasis });
   if (Number.isSafeInteger(stored.createdAt)) rule.createdAt = stored.createdAt;
   return rule;
 }
@@ -227,6 +246,8 @@ export class RuleManager {
       if (typeof patch.enabled === 'boolean') next.enabled = patch.enabled;
       if (CUSTOM_PRESETS.includes(patch.preset)) next.preset = patch.preset;
       else if (patch.preset === 'native') delete next.preset;
+      if (patch.emphasizeSeparators === false) delete next.emphasizeSeparators;
+      else if (isSeparatorEmphasis(patch.emphasizeSeparators)) next.emphasizeSeparators = patch.emphasizeSeparators;
       return next;
     }));
   }
@@ -276,6 +297,7 @@ export class RuleManager {
   apply(tabId, resume = false) {
     return this.controller.reconcile(tabId, async () => {
       const tab = await this.api.tabs.get(tabId);
+      if (isExtensionStore(tab.pendingUrl ?? tab.url)) return undefined;
       return matchingRule(await this.list(), tab.url ?? '');
     }, !resume);
   }

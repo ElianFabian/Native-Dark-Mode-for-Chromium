@@ -3,11 +3,22 @@ body { width: auto; min-width: 0; }
 :root[data-changing-language] { overflow-anchor: none; }
 main {
   --manager-bottom-padding: 32px;
-  max-width: 78rem;
+  max-width: 94rem;
   margin: 0 auto;
   padding: 48px clamp(16px, 2.5vw, 48px) var(--manager-bottom-padding);
 }
 header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; }
+.rule-editor-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin-block-end: .75rem; }
+.rule-editor-heading h2 { margin: 0; }
+.rule-editor-heading > .has-tooltip { min-inline-size: 0; max-inline-size: 100%; }
+#open-rule-defaults, #close-rule-defaults { width: auto; margin: 0; background: var(--secondary); color: var(--text); }
+#open-rule-defaults:enabled:hover, #close-rule-defaults:enabled:hover { background: var(--secondary-hover); }
+#open-rule-defaults { display: inline-flex; align-items: center; gap: .5em; max-width: 100%; text-align: start; background: transparent; color: var(--accent-text); }
+#open-rule-defaults svg { flex: none; width: 1.2em; height: 1.2em; }
+.rule-defaults-header { display: flex; align-items: start; justify-content: space-between; gap: .75rem; }
+.rule-defaults-header h2 { margin: 0; }
+#close-rule-defaults { display: grid; place-items: center; flex: none; min-inline-size: 44px; min-block-size: 44px; padding: 0; font-size: 1.5em; line-height: 1; }
+#close-rule-defaults svg { display: block; inline-size: 1em; block-size: 1em; }
 h1 { margin: 0; font-size: 2.65rem; line-height: 1.15; overflow-wrap: anywhere; }
 header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .language-control { box-sizing: border-box; padding: .5rem .65rem .65rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--panel); }
@@ -36,7 +47,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 #language option { gap: .5em; }
 .workspace-container { container-type: inline-size; }
 #status { min-block-size: 1.5em; margin: 0; }
-.workspace { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 1.7fr); gap: 20px; align-items: start; }
+.workspace { display: grid; grid-template-columns: minmax(280px, 1.3fr) minmax(0, 1.6fr); gap: 20px; align-items: start; }
 .editor-column {
   min-width: 0;
   align-self: stretch;
@@ -51,6 +62,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
   position: sticky;
   top: min(calc(var(--text-toolbar-height) + 24px), calc(100dvh - var(--editor-height, 0px) - var(--manager-bottom-padding)));
 }
+.rule-editor .popup-row > * { flex-basis: 8rem; }
 #remove-editor-rule { background: transparent; color: var(--danger); border-color: var(--danger); }
 #remove-editor-rule:enabled:hover { background: var(--danger-bg); }
 .panel h2 { margin-top: 0; font-size: 1.2rem; line-height: 1.25; }
@@ -169,7 +181,7 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .trash-count:empty, #trash-status:empty { display: none; }
 #empty-trash { background: transparent; color: var(--danger); border-color: var(--danger); }
 #empty-trash:enabled:hover { background: var(--danger-bg); }
-#import-preview {
+#import-preview, #rule-defaults {
   box-sizing: border-box;
   width: min(32rem, calc(100% - 2rem));
   max-height: calc(100dvh - 2rem);
@@ -180,8 +192,15 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
   border-radius: .75rem;
   overflow-wrap: anywhere;
 }
-#import-preview::backdrop { background: rgb(0 0 0 / .55); }
-#import-preview h2 { margin-block-start: 0; }
+:is(#import-preview, #rule-defaults)::backdrop { background: rgb(0 0 0 / .55); }
+:is(#import-preview, #rule-defaults) h2 { margin-block-start: 0; }
+#rule-defaults-status:empty { display: none; }
+#rule-defaults .default-domain-options { margin-block-start: .5rem; }
+#rule-defaults .default-domain-options label { min-block-size: 2rem; margin: 0; }
+:is(#default-scope, #default-preset) .choices { position: relative; }
+:is(#default-scope, #default-preset) .choices .has-tooltip { position: static; }
+:is(#default-scope, #default-preset) .choices .tooltip { inset-block-start: auto; }
+#cancel-rule-defaults { background: var(--secondary); color: var(--text); }
 #import-removals {
   max-block-size: min(10rem, 30dvh);
   overflow-y: auto;
@@ -277,6 +296,10 @@ header label { min-width: min(190px, 100%); max-width: 100%; margin: 0; }
 .rule-edit { background: var(--secondary); color: var(--text); }
 .rule-edit:enabled:hover { background: var(--secondary-hover); }
 .rule-actions .rule-remove { margin-inline-start: auto; background: transparent; color: var(--danger); font-weight: 500; }
+#trash-rules .rule { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; }
+#trash-rules .rule-heading { flex: 1 1 16rem; min-inline-size: 0; }
+#trash-rules .rule-actions { flex: none; flex-direction: column; align-items: stretch; margin-block-start: 0; margin-inline-start: auto; }
+#trash-rules .rule-actions .rule-remove { margin-inline-start: 0; }
 .rule-remove:enabled:hover { background: var(--danger-bg); text-decoration: underline; }
 @media (max-width: 650px) {
   main { --manager-bottom-padding: 16px; padding: 24px 16px var(--manager-bottom-padding); }

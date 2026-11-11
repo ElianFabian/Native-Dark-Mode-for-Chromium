@@ -36,22 +36,35 @@
   <p id="appearance-status" role="status"></p>
 </div>
 <main>
-  <header><h1 data-i18n="manageRules">Manage rules</h1>
-  <label class="language-control">
-    <span class="language-label">
-      <span id="language-auto-icon" class="language-flag-icon" aria-hidden="true"></span>
-      <img id="language-current-flag" class="language-option-flag" alt="" hidden>
-      <span data-i18n="language">Language</span>
-    </span>
-    <select id="language"><option value="auto" data-i18n="automatic">Automatic (browser)</option></select>
-  </label>
+  <header>
+    <h1 data-i18n="manageRules">Manage rules</h1>
+
+      <label class="language-control">
+        <span class="language-label">
+          <span id="language-auto-icon" class="language-flag-icon" aria-hidden="true"></span>
+          <img id="language-current-flag" class="language-option-flag" alt="" hidden>
+          <span data-i18n="language">Language</span>
+        </span>
+        <select id="language"><option value="auto" data-i18n="automatic">Automatic (browser)</option></select>
+      </label>
   </header>
   <p id="status" role="status" aria-live="polite"></p>
   <div class="workspace-container">
     <div class="workspace">
       <div class="editor-column">
         <section class="panel rule-editor" aria-labelledby="editor-title">
-          <h2 id="editor-title" data-i18n="ruleEditor">Rule editor</h2>
+          <div class="rule-editor-heading">
+            <h2 id="editor-title" data-i18n="ruleEditor">Rule editor</h2>
+            <div class="has-tooltip">
+              <button id="open-rule-defaults" type="button" aria-haspopup="dialog" aria-describedby="open-rule-defaults-help" disabled>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+                  <path d="M4 6h7m4 0h5M4 12h3m4 0h9M4 18h11m4 0h1M11 3v6M7 9v6m8 0v6"/>
+                </svg>
+                <span><span data-i18n="ruleDefaults">Rule defaults</span><span aria-hidden="true">…</span></span>
+              </button>
+              <span id="open-rule-defaults-help" class="tooltip" role="tooltip" data-i18n="ruleDefaultsHelp">These settings prefill new rules.</span>
+            </div>
+          </div>
           <fieldset id="scope" class="choice-group rule-field">
             <legend data-i18n="scope">Scope</legend>
             <label for="address" data-i18n="address">Website or section URL</label>
@@ -77,6 +90,7 @@
             <legend data-i18n="websitePreset">Website theme</legend>
             <div class="choices">
               <label><input type="radio" name="website-preset" value="native" checked><span data-i18n="websitePresetNative">Native</span></label>
+              <label><input type="radio" name="website-preset" value="chromium"><span data-i18n="websitePresetChromium">Simulated Native</span></label>
               <label><input type="radio" name="website-preset" value="soft"><span data-i18n="websitePresetSoft">Soft dark</span></label>
               <label><input type="radio" name="website-preset" value="contrast"><span data-i18n="websitePresetContrast">High contrast</span></label>
             </div>
@@ -84,18 +98,32 @@
               <span data-preset="native" data-i18n="websitePresetNativeHelp">Native uses Chromium.</span>
               <span data-preset="soft" data-i18n="websitePresetSoftHelp">Soft dark uses charcoal backgrounds.</span>
               <span data-preset="contrast" data-i18n="websitePresetContrastHelp">High contrast emphasizes text and controls.</span>
+              <span data-preset="chromium" data-i18n="websitePresetChromiumHelp">Inspired by Native, with added contrast repairs. No debugger needed.</span>
             </p>
+            <fieldset id="chromium-separators" class="choice-group chromium-separators">
+              <legend data-i18n="chromiumEmphasizeSeparators">Emphasize separators</legend>
+              <div class="choices">
+                <label><input type="radio" name="separator-emphasis" value="off" checked><span data-i18n="chromiumSeparatorsOff">Off</span></label>
+                <label><input type="radio" name="separator-emphasis" value="very-low"><span data-i18n="chromiumSeparatorsVeryLow">Very low</span></label>
+                <label><input type="radio" name="separator-emphasis" value="low"><span data-i18n="chromiumSeparatorsLow">Low</span></label>
+                <label><input type="radio" name="separator-emphasis" value="medium"><span data-i18n="chromiumSeparatorsMedium">Medium</span></label>
+                <label><input type="radio" name="separator-emphasis" value="high"><span data-i18n="chromiumSeparatorsHigh">High</span></label>
+                <label><input type="radio" name="separator-emphasis" value="maximum"><span data-i18n="chromiumSeparatorsMaximum">Maximum</span></label>
+              </div>
+            </fieldset>
           </fieldset>
           <p class="note" id="scope-hint"></p>
-          <div class="has-tooltip">
-            <button id="toggle" aria-describedby="toggle-help" disabled>Please wait…</button>
-            <span id="toggle-help" class="tooltip" role="tooltip" data-i18n="toggleHelp">Changes whether dark mode is enabled for this scope and saves the rule.</span>
+          <div class="popup-row">
+            <div class="has-tooltip">
+              <button id="toggle" aria-describedby="toggle-help" disabled>Please wait…</button>
+              <span id="toggle-help" class="tooltip" role="tooltip" data-i18n="toggleHelp">Changes whether dark mode is enabled for this scope and saves the rule.</span>
+            </div>
+            <div class="has-tooltip">
+              <button id="save" aria-describedby="save-help" disabled data-i18n="save">Save settings</button>
+              <span id="save-help" class="tooltip" role="tooltip" data-i18n="saveHelp">Saves this scope and its settings without switching the rule on or off. New rules are saved disabled.</span>
+            </div>
+            <button id="cancel-edit" hidden data-i18n="cancel">Cancel</button>
           </div>
-          <div class="has-tooltip">
-            <button id="save" aria-describedby="save-help" disabled data-i18n="save">Save settings</button>
-            <span id="save-help" class="tooltip" role="tooltip" data-i18n="saveHelp">Saves this scope and its settings without switching the rule on or off. New rules are saved disabled.</span>
-          </div>
-          <button id="cancel-edit" hidden data-i18n="cancel">Cancel</button>
           <button id="remove-editor-rule" type="button" hidden data-i18n="moveRuleToTrash">Move rule to Trash</button>
           <p class="note" data-i18n="rulesNote">Saved locally. Disabled rules remain as exclusions. More specific sections take priority. Queries and fragments are ignored.</p>
           <section class="backup-panel">
@@ -156,6 +184,107 @@
       <details class="rules-diagnostics"><summary data-i18n="diagnostics">Diagnostics</summary><pre id="diagnostic"></pre></details>
     </div>
   </div>
+  <dialog id="rule-defaults" aria-labelledby="rule-defaults-title" aria-describedby="rule-defaults-help">
+    <div class="rule-defaults-header">
+      <h2 id="rule-defaults-title" data-i18n="ruleDefaults">Rule defaults</h2>
+      <button id="close-rule-defaults" type="button" data-i18n-label="cancel" aria-label="Cancel">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <path d="m4.5 4.5 15 15m0-15-15 15"/>
+        </svg>
+      </button>
+    </div>
+    <p id="rule-defaults-help" data-i18n="ruleDefaultsHelp">These settings prefill new rules.</p>
+    <form id="rule-defaults-form">
+      <fieldset id="default-scope" class="choice-group rule-field">
+        <legend data-i18n="scope">Scope</legend>
+        <div class="choices">
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-website-help" type="radio" name="default-scope" value="website" checked><span data-i18n="website">Entire website</span></label>
+            <span id="default-website-help" class="tooltip" role="tooltip" data-i18n="scopeWebsiteHelp">Covers the whole hostname. For example, example.com includes example.com/blog and example.com/shop.</span>
+          </div>
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-section-help" type="radio" name="default-scope" value="section"><span data-i18n="section">Path section</span></label>
+            <span id="default-section-help" class="tooltip" role="tooltip" data-i18n="scopeSectionHelp">Covers the selected path. With Include subpaths on, example.com/blog also covers example.com/blog/post.</span>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset id="default-website-options" class="choice-group rule-field">
+        <legend data-i18n="website">Entire website</legend>
+        <div class="rule-scope-options default-domain-options">
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-website-subdomains-help" name="website-subdomains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="subdomains">Include subdomains</span></label>
+            <span id="default-website-subdomains-help" class="tooltip" role="tooltip" data-i18n="defaultSubdomainsHelp">Includes hosts such as shop.example.com under example.com.</span>
+          </div>
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-website-regional-help" name="website-regional" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="regionalDomains">Include regional domains</span></label>
+            <span id="default-website-regional-help" class="tooltip" role="tooltip" data-i18n="defaultRegionalHelp">Includes the same site name under other regional domains, such as example.es and example.fr.</span>
+          </div>
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-website-parentDomain-help" name="website-parentDomain" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="ruleDefaultsParentDomain">Apply to the entire base domain when on a subdomain</span></label>
+            <span id="default-website-parentDomain-help" class="tooltip" role="tooltip" data-i18n="defaultParentDomainHelp">From a subdomain such as shop.example.com, creates the rule for example.com and its subdomains.</span>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset id="default-section-options" class="choice-group rule-field">
+        <legend data-i18n="section">Path section</legend>
+        <div class="rule-scope-options default-domain-options">
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-section-subdomains-help" name="section-subdomains" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="subdomains">Include subdomains</span></label>
+            <span id="default-section-subdomains-help" class="tooltip" role="tooltip" data-i18n="defaultSubdomainsHelp">Includes hosts such as shop.example.com under example.com.</span>
+          </div>
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-section-regional-help" name="section-regional" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="regionalDomains">Include regional domains</span></label>
+            <span id="default-section-regional-help" class="tooltip" role="tooltip" data-i18n="defaultRegionalHelp">Includes the same site name under other regional domains, such as example.es and example.fr.</span>
+          </div>
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-section-parentDomain-help" name="section-parentDomain" class="toggle-switch" type="checkbox" role="switch"> <span data-i18n="ruleDefaultsParentDomain">Apply to the entire base domain when on a subdomain</span></label>
+            <span id="default-section-parentDomain-help" class="tooltip" role="tooltip" data-i18n="defaultParentDomainHelp">From a subdomain such as shop.example.com, creates the rule for example.com and its subdomains.</span>
+          </div>
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-section-subpaths-help" name="section-subpaths" class="toggle-switch" type="checkbox" role="switch" checked> <span data-i18n="includeSubpaths">Include subpaths</span></label>
+            <span id="default-section-subpaths-help" class="tooltip" role="tooltip" data-i18n="defaultSubpathsHelp">For a rule on /blog, also includes /blog/post. Turn it off to match only /blog.</span>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset id="default-preset" class="choice-group rule-field">
+        <legend data-i18n="websitePreset">Website theme</legend>
+        <div class="choices">
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-native-help" type="radio" name="default-preset" value="native" checked><span data-i18n="websitePresetNative">Native</span></label>
+            <span id="default-native-help" class="tooltip" role="tooltip" data-i18n="websitePresetNativeHelp">Native uses Chromium.</span>
+          </div>
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-chromium-help" type="radio" name="default-preset" value="chromium"><span data-i18n="websitePresetChromium">Simulated Native</span></label>
+            <span id="default-chromium-help" class="tooltip" role="tooltip" data-i18n="websitePresetChromiumHelp">Inspired by Native, with added contrast repairs. No debugger needed.</span>
+          </div>
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-soft-help" type="radio" name="default-preset" value="soft"><span data-i18n="websitePresetSoft">Soft dark</span></label>
+            <span id="default-soft-help" class="tooltip" role="tooltip" data-i18n="websitePresetSoftHelp">Soft dark uses charcoal backgrounds.</span>
+          </div>
+          <div class="has-tooltip">
+            <label><input aria-describedby="default-contrast-help" type="radio" name="default-preset" value="contrast"><span data-i18n="websitePresetContrast">High contrast</span></label>
+            <span id="default-contrast-help" class="tooltip" role="tooltip" data-i18n="websitePresetContrastHelp">High contrast emphasizes text and controls.</span>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset id="default-separators" class="choice-group rule-field">
+        <legend data-i18n="chromiumEmphasizeSeparators">Emphasize separators</legend>
+        <div class="choices">
+          <label><input type="radio" name="default-separators" value="off" checked><span data-i18n="chromiumSeparatorsOff">Off</span></label>
+          <label><input type="radio" name="default-separators" value="very-low"><span data-i18n="chromiumSeparatorsVeryLow">Very low</span></label>
+          <label><input type="radio" name="default-separators" value="low"><span data-i18n="chromiumSeparatorsLow">Low</span></label>
+          <label><input type="radio" name="default-separators" value="medium"><span data-i18n="chromiumSeparatorsMedium">Medium</span></label>
+          <label><input type="radio" name="default-separators" value="high"><span data-i18n="chromiumSeparatorsHigh">High</span></label>
+          <label><input type="radio" name="default-separators" value="maximum"><span data-i18n="chromiumSeparatorsMaximum">Maximum</span></label>
+        </div>
+      </fieldset>
+      <p id="rule-defaults-status" role="status"></p>
+      <div class="import-actions">
+        <button id="cancel-rule-defaults" type="button" data-i18n="cancel">Cancel</button>
+        <button type="submit" data-i18n="save">Save settings</button>
+      </div>
+    </form>
+  </dialog>
   <dialog id="import-preview" aria-labelledby="import-title">
     <h2 id="import-title" data-i18n="confirmImport">Import rules</h2>
     <p id="import-summary"></p>

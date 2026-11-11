@@ -32,12 +32,14 @@ export class DarkModeController {
       const rule = await resolveRule();
       const preset = rule?.enabled ? rule.preset : undefined;
       if (preset) {
+        const { emphasizeSeparators } = rule;
+        const settings = { preset, ...(emphasizeSeparators ? { emphasizeSeparators } : {}) };
         if (state.enabled && !state.preset) {
-          state = await this.applyNative(tabId, false, state);
-          if (state.error) return state;
+          return this.applyNative(tabId, false, state, settings);
         }
-        const next = state.preset === preset ? state : await this.write(tabId, { enabled: true, preset });
-        try { await this.sendPreset(tabId, preset); }
+        const next = state.preset === preset && state.emphasizeSeparators === settings.emphasizeSeparators
+          ? state : await this.write(tabId, { enabled: true, ...settings });
+        try { await this.sendPreset(tabId, settings); }
         catch (error) {
           if (next !== state) await this.write(tabId, state);
           throw error;
@@ -45,6 +47,7 @@ export class DarkModeController {
         return next;
       }
       if (state.preset) {
+        if (rule?.enabled) return this.applyNative(tabId, true, state);
         const previous = state;
         state = await this.write(tabId, { enabled: false });
         try { await this.sendPreset(tabId); }
@@ -58,9 +61,12 @@ export class DarkModeController {
     });
   }
 
-  async sendPreset(tabId, preset) {
+  async sendPreset(tabId, settings = {}, immediate = false) {
+    const { preset, emphasizeSeparators } = settings;
     // A tab can still have the content script from before the extension reload.
-    const message = { type: 'apply-website-preset-v3', preset };
+    // Older scripts accept v3 but treat unrecognized presets as disabled.
+    const message = { type: preset === 'chromium' || immediate ? 'apply-website-preset-v4' : 'apply-website-preset-v3',
+      preset, ...(emphasizeSeparators ? { emphasizeSeparators } : {}), ...(immediate ? { immediate: true } : {}) };
     if (preset) {
       let applied;
       try {
@@ -72,10 +78,11 @@ export class DarkModeController {
         // A tab opened before the extension reload may lack the current script.
         const target = { tabId };
         try {
-          await this.api.scripting.executeScript({ target: { ...target, allFrames: true }, files: ['website-theme.js'] });
+          await this.api.scripting.executeScript({ target: { ...target, allFrames: true },
+            files: ['chromium-colors.js', 'website-theme.js'] });
         } catch {
           // A restricted child frame can prevent injection into the entire tab.
-          await this.api.scripting.executeScript({ target, files: ['website-theme.js'] });
+          await this.api.scripting.executeScript({ target, files: ['chromium-colors.js', 'website-theme.js'] });
         }
         applied = await this.api.tabs.sendMessage(tabId, message, { frameId: 0 });
       }
@@ -91,9 +98,10 @@ export class DarkModeController {
     return /Receiving end does not exist|message port closed/i.test(error.message);
   }
 
-  async applyNative(tabId, enabled, old) {
+  async applyNative(tabId, enabled, old, replacementPreset) {
     const target = { tabId };
-    let attached = old.enabled;
+    let attached = old.enabled && !old.preset;
+    let clearingPreset = false;
     try {
       if (enabled) {
         const tab = await this.api.tabs.get(tabId);
@@ -105,20 +113,41 @@ export class DarkModeController {
           attached = true;
         }
         await this.api.debugger.sendCommand(target, 'Emulation.setAutoDarkModeOverride', { enabled: true });
+        if (old.preset) {
+          clearingPreset = true;
+          await this.sendPreset(tabId);
+        }
         return await this.write(tabId, { enabled: true });
       }
       if (attached) {
+        // Prepare the CSS renderer while Native is still covering the page.
+        if (replacementPreset) await this.sendPreset(tabId, replacementPreset, true);
         // Clear the override before releasing the connection.
         await this.api.debugger.sendCommand(target, 'Emulation.setAutoDarkModeOverride', {});
+        if (replacementPreset) {
+          await this.api.debugger.detach(target);
+          attached = false;
+          return await this.write(tabId, { enabled: true, ...replacementPreset });
+        }
         const state = await this.write(tabId, { enabled: false });
         await this.api.debugger.detach(target);
         return state;
       }
       return await this.write(tabId, { enabled: false });
     } catch (error) {
+      if (replacementPreset) {
+        try { await this.sendPreset(tabId); } catch {}
+      }
       // Release our connection if the command fails.
       if (attached) {
+        try { await this.api.debugger.sendCommand(target, 'Emulation.setAutoDarkModeOverride', {}); } catch {}
         try { await this.api.debugger.detach(target); } catch {}
+      }
+      if (enabled && old.preset) {
+        try {
+          if (clearingPreset) await this.sendPreset(tabId, old, true);
+          return await this.write(tabId, { ...old, error: String(error.message ?? error) });
+        } catch {}
       }
       return await this.write(tabId, { enabled: false, error: String(error.message ?? error) });
     }
