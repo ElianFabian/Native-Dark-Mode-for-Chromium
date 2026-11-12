@@ -10,13 +10,17 @@ body.scrolled .notice-shell { top: -120px; }
 main { padding: 130px 24px 24px; }
 article { border: 1px solid #ddd; margin-block: 12px; padding: 12px; background: #fafafa; }
 </style>
-<div class="notice-shell"><div class="region--message-top"><strong>Animated notice</strong><p><a href="#content">Supporting link</a></p></div></div>
+<div class="notice-shell"><div class="region--message-top"><strong>Animated notice</strong><p><a href="#content" data-audit-id="notice-link">Supporting link</a></p></div></div>
 <main id="content"><h1>Scroll-state repaint scheduling</h1><p>The banner uses a 0.5 second top transition. The theme must preserve it while class changes invalidate a longer document.</p></main>
 <script>
 const main = document.querySelector('main');
 for (let i = 0; i < 240; i++) {
   const card = document.createElement('article');
   card.innerHTML = '<h2>Static card ' + i + '</h2><p>Body text <a href="#content">with a link</a></p>';
+  if (i === 0) {
+    card.dataset.auditId = 'first-scroll-card';
+    card.querySelector('a').dataset.auditId = 'scroll-link';
+  }
   main.append(card);
 }
 document.addEventListener('scroll', () => document.body.classList.toggle('scrolled', scrollY > 100), {passive: true});

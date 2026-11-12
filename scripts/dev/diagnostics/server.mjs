@@ -46,7 +46,7 @@ export async function startServer(port = 0) {
       const file = path.resolve(directory, pathname);
       if (!file.startsWith(path.resolve(directory) + path.sep)) return send(403, { error: 'Outside served directory.' });
       if (!(await stat(file)).isFile()) return send(404, { error: 'Not a file.' });
-      const types = { '.html': 'text/html; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.gif': 'image/gif', '.svg': 'image/svg+xml' };
+      const types = { '.html': 'text/html; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
       const type = types[path.extname(file)];
       if (!type) return send(403, { error: 'Unsupported resource.' });
       send(200, await readFile(file), type);

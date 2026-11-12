@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Neutral action surface separation</title>
+<style>
+*{box-sizing:border-box}body{margin:24px;background:white;color:#19191c;font:16px/1.5 Arial}h1{font-size:24px}section{margin:16px 0;padding:16px;background:#f6f6f6}a,button{font:inherit}.action{display:inline-flex;align-items:center;padding:8px 24px;border:0;border-radius:24px;background:#19191c;color:white;text-decoration:none}.bordered{border:1px solid #737373}.transparent{background:transparent;color:#19191c}.brand{background:#005c8a}.dark{background:#18181b;color:white}.dark .action{background:#202024}.picture{background:linear-gradient(90deg,#111,#555)}.same .action{background:#f6f6f6;color:#19191c}button:focus-visible,a:focus-visible{outline:2px solid #a4262c;outline-offset:3px}.action:disabled{opacity:.5}
+</style>
+<h1>Synthetic neutral action surface probes</h1><p>Positive: preserve an authored filled action's separation. Negatives retain their existing fill policy. These are synthetic controls, separate from the original Kotlin article reproduction.</p>
+<section><a href="#next" class="action" data-audit-id="filled">Filled link action</a> <button type="button" class="action" data-audit-id="button">Filled button</button></section>
+<section><a href="#next" class="action transparent" data-audit-id="transparent">Transparent link</a> <button class="action brand" data-audit-id="brand">Brand color</button> <button class="action bordered" data-audit-id="bordered">Distinct edge</button></section>
+<section><button class="action" disabled data-audit-id="disabled">Disabled action</button> <button class="action" aria-pressed="true" data-audit-id="selected">Selected action</button> <button class="action picture" data-audit-id="picture">Picture backing</button></section>
+<section class="dark"><button class="action" data-audit-id="dark">Intentionally subtle dark action</button> <button class="action good" style="background:#707070!important" data-audit-id="good">Already separated</button></section>
+<section class="same"><button class="action" data-audit-id="same">Same source level</button></section>
+<script>document.documentElement.dataset.fixtureReady='yes'</script></html>

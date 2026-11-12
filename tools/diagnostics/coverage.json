@@ -1,5 +1,282 @@
 [
   {
+    "id": "small-dropdown-followup",
+    "symptom": "Small dropdown indicators beside document sharing and editing controls remain dim",
+    "status": "pending",
+    "cases": [
+      "residual-rendering-review",
+      "document-toolbar-controls"
+    ],
+    "evidence": "Reporter screenshot still shows dim small Share/Editing arrows. Exact resource/crop/generated layers and inherited opacity for these variants are missing; the measured toolbar crop is not assumed equivalent. Existing toolbar checks remain valid only for their retained source mechanisms. No new renderer change or live acceptance is claimed."
+  },
+  {
+    "id": "joined-shopping-control-followup",
+    "symptom": "A live quantity arrow stays dark and joined wishlist frames have inconsistent boundary weight",
+    "status": "pending",
+    "cases": [
+      "residual-rendering-review",
+      "compact-action-paint"
+    ],
+    "evidence": "Reporter reopened the quantity arrow and suspects the wishlist main text frame rather than the arrow frame. Prior context was Simulated Native / Off; latest screenshots do not independently reconfirm settings. The local native-overlay and standalone split-arrow checks pass but omit the complete joined pair and current live variant CSS. Full source/applied frame and glyph layers remain required; do not compensate with a new site-specific rule."
+  },
+  {
+    "id": "embedded-counter-startup-followup",
+    "symptom": "A transparent embedded counter flickers initially before its canvas stabilizes",
+    "status": "pending",
+    "cases": [
+      "residual-rendering-review",
+      "embedded-count"
+    ],
+    "evidence": "Reporter confirms partial steady-state improvement but sees flicker just after load or theme application. Steady-state transparent-canvas assertions do not cover cold first paints or theme handoff timing. A local manual child-reload/theme-switch sequence and explicit-canvas negative are retained; original child CSS is reused with reduced parent context. First-frame traces on the reported lifecycle remain pending."
+  },
+  {
+    "id": "development-context-reload",
+    "symptom": "Reloading the unpacked extension can leave stale injected callbacks in an open document",
+    "status": "pending",
+    "cases": [
+      "extension-context-reload"
+    ],
+    "evidence": "Personal DevTools displayed Extension context invalidated errors. This does not prove those callbacks are the currently active renderer or the cause of the reported paint. Browser control was stopped with Escape. A local manual post-reload mutation/recovery scenario records this gap; the automated suite does not reload an unpacked extension or assert stale-context cleanup."
+  },
+  {
+    "id": "embedded-vector-caption",
+    "symptom": "A shopping caption remains dim because the visible lettering is inside an SVG image",
+    "status": "partial",
+    "cases": [
+      "embedded-svg-wordmark",
+      "compact-action-paint"
+    ],
+    "evidence": "Reopened after HTML caption preferences had no visible effect. Public feature-variant CSS hides that div and draws #565959 lettering in a 139x18 inline SVG background. An accessible compact action with a static contain-fitted embedded SVG may adapt neutral foreground attributes only after a removal-mask pixel proof exposes transparency underneath. Colored gradient stops, source path data/alpha and internally backed paint remain unchanged; opaque/faded/disabled/unpaired negatives fail closed."
+  },
+  {
+    "id": "background-crop-capacity",
+    "symptom": "Compact glyph probes are dropped when initial sampling capacity is full",
+    "status": "partial",
+    "cases": [
+      "background-crop-burst",
+      "compact-action-paint"
+    ],
+    "evidence": "An eligible control reaching the eight-pending limit returned without registering a retry. A later hover/theme refresh could then repair it, hiding the initial miss. Register bounded waiters and process four compact tasks concurrently while retaining eight pending entries, static/CORS proof and crop cache limits. A 24-URL latency workload verifies completion without interaction."
+  },
+  {
+    "id": "popup-first-paint",
+    "symptom": "Existing hidden menus open unthemed until hover and root scroll states flash light",
+    "status": "partial",
+    "cases": [
+      "popup-opening"
+    ],
+    "evidence": "Visible semantic popup and root state changes coalesce before browser paint, including changes from a page rAF callback. Ordinary/offscreen work retains the sliced queue and nested dirty roots are deduplicated. Original authenticated Docs menu CSS remains missing; the mechanism reproduction and public Junta checks are distinct."
+  },
+  {
+    "id": "compact-action-followup",
+    "symptom": "Translucent hover labels and compact raster controls retain dark ink or excessive edges",
+    "status": "partial",
+    "cases": [
+      "compact-action-paint"
+    ],
+    "evidence": "A converted action fill no longer inherits unchanged-image text preservation from a distant background. Originally inherited font glyphs follow the action label even with an unknown picture backdrop. Verified compact PNG crops permit small compression variation among near-opaque ink; mixed/unsupported/disabled controls remain conservative. A split control with a covering invisible input uses moderate measured frame ink rather than the glyph-white policy. Short neutral action captions prefer stronger contrast. Reporter reopened Simulated Native Off: exact markup under public AUI styles revealed opacity 0.01 rather than the prior reduced zero. Qualified covering inputs allow at most 0.02; a 0.08 visible-overlay control remains excluded. Small neutral action captions now use font-size preferences 14/12/8.5 instead of the single 8.5 floor. The neutral split-control Off edge now tracks measured source contrast, with an explicit upper-bound expectation, rather than leaving an already adequate but visually heavier gray unchanged. Weak changed fills require a known dark gradient underlay before bypassing picture-ink preservation; a bright-picture glass-action control retains dark source ink in Simulated Native."
+  },
+  {
+    "id": "static-internal-mask",
+    "symptom": "A monochrome footer image with an internal static mask is excluded from contrast repair",
+    "status": "partial",
+    "cases": [
+      "static-masked-logo"
+    ],
+    "evidence": "Bounded SVG static proof accepts local mask/clip references and evenodd/nonzero paint rules, with a 512-node limit. Pixel proof remains on the displayed result; external URLs, animation and complex palette are not made eligible by a filename or site."
+  },
+  {
+    "id": "transparent-embedded-canvas",
+    "symptom": "An embedded transparent counter gains a dark rectangular canvas around its controls",
+    "status": "partial",
+    "cases": [
+      "embedded-count"
+    ],
+    "evidence": "The source count has an authored pale fill, but its frame canvas is transparent. Root/body with no authored canvas retain transparency under a matching dark color-scheme. Explicitly backed frames retain canvas policy. Palette readiness uses an owned probe instead of assuming root fill must equal the palette base."
+  },
+  {
+    "id": "dynamic-catalogue-performance",
+    "symptom": "Dynamic catalogue initial application and scrolling feel slow",
+    "status": "pending",
+    "cases": [
+      "dynamic-catalogue"
+    ],
+    "evidence": "Public BOOTH initial isolated baseline is about 163ms to the active response in one run (about 84ms script and 57ms style); this does not reproduce all user conditions. Nested dirty roots are coalesced and nonglyph nodes reject before activation-wrapper queries. Raw workload/live traces distinguish renderer work from network loading. Broader live smoothness remains pending. Reporter follow-up prioritizes Amazon for the next optimization session: initial application and scrolling during dynamic loading. BOOTH startup, Indeed nested-pane scrolling and visibly sequential control updates remain in scope. Gather comparable cold/warm frame and style/layout/queue/decode traces; do not treat active-response timings or synthetic workload completion as live smoothness acceptance."
+  },
+  {
+    "id": "toolbar-control-families",
+    "symptom": "Toolbar listbox labels, thin glyphs and selected masked icons remain dim",
+    "status": "partial",
+    "cases": [
+      "document-toolbar-controls",
+      "document-content-sprite"
+    ],
+    "evidence": "Supplied original dropdown/minus/A crop offsets plus B content:normal with a large CSS mask and solid blue fill. Shared crop eligibility includes listbox; uniform partially antialiased thin ink is verified by weighted coverage and all visible palette values. A clipped solid-color mask is foreground paint, so repair its background ink without filtering the color swatch or changing mask alpha. Compact enabled neutral listbox/combobox labels in a semantic toolbar use a brighter preference. Source/masked/geometry/state and negative controls are retained; authenticated live result remains for reporter confirmation."
+  },
+  {
+    "id": "accepted-large-image-label",
+    "symptom": "A second contrast check adds rectangular strips behind accepted large image text",
+    "status": "partial",
+    "cases": [
+      "large-image-label"
+    ],
+    "evidence": "Original public JPEG and supplied picture/nested text ancestry retained; actual source CSS/AVIF selection modeled. The font-aware shared policy accepts large source white over the orange region, but the subsequent ratio backing loop ignored that decision. Large original ink accepted with high confidence no longer gets a manufactured rectangle. Small/uncertain/unavailable and authored-backing controls remain. Original image ink is cached from source inheritance, not a parent palette, and invalidated on relevant changes. The remaining small promotional subtitle now tries an adequate full-region neutral foreground before a backing; authored backings and unsupported/mixed fallback remain. Actual page typography/variant remains partly modeled."
+  },
+  {
+    "id": "file-activation-frame",
+    "symptom": "An upload wrapper keeps a dark blue border and does not gain a coherent emphasis stroke",
+    "status": "partial",
+    "cases": [
+      "file-activation-frame"
+    ],
+    "evidence": "Supplied paint locates the .8px #0b4dd0 frame on the relative wrapper, not its opacity-zero static file input; visible caption is absolute and no generated layer/shadow exists. Bounded wrappers with one invisible enabled file input now reuse colored-control border adaptation and inward reinforcement. Tests retain blue ink, fractional width, geometry, zero file opacity and disabled/visible-native/transparent/decorative controls. Source stylesheet remains partly modeled; no authenticated live pass."
+  },
+  {
+    "id": "editable-field-surface",
+    "symptom": "Neutral editable field fills collapse onto their dark canvas",
+    "status": "pending",
+    "cases": [
+      "field-surfaces",
+      "select-proxy-fields"
+    ],
+    "evidence": "Reporter requested a gentle gray backing. Bordered editable neutral fields reuse a modest 1.6:1 canvas separation when their converted fill collapses; source pictures, explicit important fills, read-only/disabled and colored status backgrounds retain policy. Both backdrop prediction and applied palette repair use the same decision. All-theme geometry/text/state/image controls checked; screenshot-specific source CSS remains modeled. The reporter subsequently withdrew the additional field fill while reporting Amazon rectangles. The new field-surface preference was removed entirely; the fixture now protects existing field text/geometry/state/image policy and is not a claim that merged fills were repaired. Amazon strips have a separate diagnosed mechanism."
+  },
+  {
+    "id": "nested-job-pane-scroll",
+    "symptom": "Scrolling an independent details pane triggers document-wide visibility work",
+    "status": "partial",
+    "cases": [
+      "nested-job-pane"
+    ],
+    "evidence": "Supplied independent overflow-y:auto pane under a relative flex container; labels and handlers anonymized. Nested vertical scroll requests now scope unpainted visibility work to the moving pane and coalesce it by animation frame. Window scrolling, horizontal settling and mutation/state repair retain separate paths. All-theme local traces, exposed links and dynamic text checks; live user-page performance is not confirmed."
+  },
+  {
+    "id": "grouped-sprite-publication",
+    "symptom": "Asynchronous icon repairs become visible one by one",
+    "status": "partial",
+    "cases": [
+      "sprite-batch",
+      "document-content-sprite"
+    ],
+    "evidence": "A cold synthetic 32-crop run reproduced about 20 visible steps over 263ms. Two independent source reads and four concurrent tiny crop decodes, with resource-cohort publication, produced one visible update at about 117ms in an isolated run. Cached static/CORS proof and original source/crop bounds remain. A 200ms ready-work publication bound avoids indefinite holding by a slow crop. All-theme cold frame traces and source offsets are asserted; this is not a general live-page performance certification."
+  },
+  {
+    "id": "transparent-inline-label-frame",
+    "symptom": "A transparent inline capsule keeps a dark existing frame on the darkened canvas",
+    "status": "partial",
+    "cases": [
+      "inline-label-frames",
+      "infojobs-validation"
+    ],
+    "evidence": "Reopened from the reporter: the previous div-based reduction missed the actual span/label/li delivery and implicit-canvas context. Bounded existing opaque neutral capsule frames now repair against a known dark backing without requiring an authored white ancestor. All themes/six levels retain fractional width/geometry and transparent reservations. Local verification is distinct from authenticated confirmation."
+  },
+  {
+    "id": "toolbar-placeholder-readability",
+    "symptom": "Toolbar search placeholders remain dim",
+    "status": "partial",
+    "cases": [
+      "document-toolbar-fields",
+      "select-proxy-fields"
+    ],
+    "evidence": "Supplied Docs combobox hierarchy; modeled source hint color/alpha. Shared enabled placeholders prefer at least 6:1 effective contrast, preserving authored opacity-zero hints. Proxy hint labels and disabled labels have separate policies retaining native disabled state and group opacity. All-theme local checks; exact live placeholder CSS remains unverified. Reporter live read confirms #969897 at opacity 1 over #121212: the previous repair applied but remained perceptually dim. Searchable autocomplete combobox hints now prefer 8.5:1, with source geometry and hidden state preserved."
+  },
+  {
+    "id": "camouflaged-duplicate-title",
+    "symptom": "An editable title hidden in the original canvas ink becomes a second visible text layer",
+    "status": "partial",
+    "cases": [
+      "document-title",
+      "document-toolbar-pending"
+    ],
+    "evidence": "Supplied original/applied title ink and overlapping label/input geometry confirm a source input camouflaged in #f8fafd beneath a pointer-transparent absolute label. Bounded generic matching-value/geometry/source-contrast proof preserves the resting input text fill as transparent and retains focus/blur editing, source fonts/layout and unrelated visible/different/no-overlay fields in all custom themes. Private document contents are omitted."
+  },
+  {
+    "id": "composite-rounded-field-frame",
+    "symptom": "Reinforcing a composite search frame leaves bright humps where opaque rounded field hosts meet",
+    "status": "partial",
+    "cases": [
+      "composite-search"
+    ],
+    "evidence": "Supplied measurements show one outer frame, zero inner borders, 20px radii and opaque hosts flush to the outer content height. Inset emphasis paints below descendants. Bounded multi-field frames with measured touching rounded hosts retrace the repaired frame on an unused pointer-transparent upper generated layer, retaining visible overflow, source shadows and focus. Local screenshot-pixel line continuity and menu geometry assertions distinguish the repair from live confirmation; exact source CSS remains reduced."
+  },
+  {
+    "id": "navigation-semantic-underline",
+    "symptom": "A navigation hover or current-page underline stays dark blue and ignores emphasis",
+    "status": "partial",
+    "cases": [
+      "navigation-underlines",
+      "navigation-surfaces"
+    ],
+    "evidence": "Supplied computed facts locate a #004fcb thin bottom border on the transparent wrapper rather than its borderless anchor. Generic navigation control/single-control-wrapper classification adapts visible chromatic ink, extends the repaired ink inward with emphasis and resamples wrapper hover/leave. All-theme six-level local tests retain transparency, blue hue, source widths and layout. Authenticated live source CSS remains modeled/unverified."
+  },
+  {
+    "id": "field-proxy-compact-png",
+    "symptom": "A visible select replacement and native field frames ignore emphasis beside a dark compact PNG glyph",
+    "status": "partial",
+    "cases": [
+      "select-proxy-fields",
+      "custom-selector-pending"
+    ],
+    "evidence": "Public Rubik reference CSS and original 23x7 arrow / 29x29 search PNGs match supplied hidden-select/proxy delivery. Bounded static single-ink PNG analysis allows label/background measurement and resource-only tint. Six levels across all themes assert decoded pixels, alpha, geometry, edge progression and state controls. Source-dark fields and opaque proxy backings remain measurable for their border independently of CORS image availability. Non-overlapping neutral labels outside an explicit reserved right-hand glyph slot adapt separately; an overlapping CORS-denied label is an exclusion. Current authenticated container CSS and a CORS-denied original resource remain unverified/unsupported. Hint and disabled proxy labels are explicitly checked for effective contrast while retaining native disabled state and original 50% group opacity. Reopened reporter facts show enabled labels white and disabled proxy opacity .5 with #b0b0b0 label ink. The disabled preference is strengthened without changing opacity. A failed pixel read can restore the authored light backing only within the original non-overlapping empty slot, repeating the original resource without tinting or CORS bypass. Negative/verified regions remain separate. The reporter rejected the white-slot backing and it was removed. Per the requested arrow-only appearance, a tightly bounded hidden-native-select proxy may replace an inaccessible indicator with a simple clear chevron on a transparent backing, retaining field layout and disabled opacity. This is semantic replacement, not pixel-verified recoloring. Active/open chromatic frames now reuse compound-control repair and the solid frame backing independently of unavailable glyph pixels."
+  },
+  {
+    "id": "thin-progress-ink",
+    "symptom": "A thin semantic progress indicator keeps dark blue fill and matching frame on a dark track",
+    "status": "partial",
+    "cases": [
+      "progress-indicator"
+    ],
+    "evidence": "Supplied role/ARIA structure and track declarations plus applied #004fcb frame/fill on #121212 at fractional scale. Uniform direct-child thin indicators reuse hue-aware contrast repair; matching authored frame adapts without changing width or progress state. All-theme Off/Maximum local checks retain geometry, hue, actual states, readable and mixed-image controls. Source child CSS is modeled from applied evidence; no authenticated live pass claimed. Reporter follow-up supplied the 29% full-width child translated -271.25px. Pure horizontal 2D translation/scaling of a uniform fill now qualifies; rotation, shear and vertical movement remain excluded. Exact transform and progress state are asserted unchanged."
+  },
+  {
+    "id": "custom-selector-source-gap",
+    "symptom": "A hidden-native-select replacement has dark visible text and an unidentified down arrow",
+    "status": "pending",
+    "cases": [
+      "custom-selector-pending"
+    ],
+    "evidence": "Reported InfoJobs DOM contains a hidden select and no-href anchor proxy. Applied styles show dark span ink; empty b has no image/mask/border/generated content. A public older Rubik reference paints a small PNG on the outer container, reproduced separately in select-proxy-fields. Current authenticated container/generated paint is still missing; original PNG response denies CORS. Structural pending page is not a visual pass for that live state. Follow-up confirms the public outer PNG URL, auto size, right-centered no-repeat delivery and actual disabled .5 opacity. Original light slot backing is a conservative alternative to unsupported recoloring; live fallback appearance still requires reporter confirmation. Current fallback was revised after reporter rejection: no restored white rectangle; semantic chevron only, with active/open border sequence retained in local checks."
+  },
+  {
+    "id": "translucent-gradient-card",
+    "symptom": "Dark source text and a selected dashed action remain unreadable over a translucent gradient",
+    "status": "partial",
+    "cases": [
+      "infojobs-validation"
+    ],
+    "evidence": "Original supplied card DOM and public component CSS color-mix stops at .08 alpha. Shared backdrop projection composes a single bounded translucent gradient over a known solid base in all custom themes. Local assertions retain text/action/close-glyph contrast, dashed geometry, source image, bright-important and unknown/layered controls. Actual authenticated CV page remains unverified."
+  },
+  {
+    "id": "document-toolbar-source-gap",
+    "symptom": "A document editor title looks outlined or duplicated and CSS-painted toolbar icons stay dark",
+    "status": "partial",
+    "cases": [
+      "document-toolbar-pending",
+      "document-title",
+      "document-content-sprite",
+      "document-toolbar-fields"
+    ],
+    "evidence": "Source reads confirm the camouflaged duplicate title and original 10000x338 CSS content SVG with 20x20 crops. The sprite is pinned locally; a credential-free request from the actual Docs origin is authorized by the server. Dedicated static/crop bounds, parent-only filtering and all-theme pixel/geometry/resampling assertions cover the original four crops, including the thin semitransparent Add tab plus, with multicolor, readable, animated, disabled, unpaired and allowed/denied-CORS controls. Authenticated live application is unverified. Reporter confirms the main toolbar icon improvement. The Back control is explicitly aria-disabled=true and retains its state; remaining live follow-ups need reporter confirmation. Reporter supplied Back crop (-6988,0), 21x21. The prior disabled exclusion was insufficient readability policy. Verified neutral disabled crops now use a brighter muted preference (effective 4.5:1 when achievable without changing source opacity); enabled matching crops remain brighter. Exact Back geometry, disabled semantics, alpha and all-theme pixels are retained."
+  },
+  {
+    "id": "resting-navigation-fill",
+    "symptom": "Resting navigation controls acquire a permanent hovered fill",
+    "status": "partial",
+    "cases": [
+      "navigation-surfaces"
+    ],
+    "evidence": "Supplied navigation ancestry with modeled source white resting/gray hover fills and transparent/selected underlines. All custom themes Off/Maximum measure resting fill, actual hover/leave, focus/scroll restoration, geometry and independent action preservation. Exact live CSS/authenticated state remains unverified."
+  },
+  {
+    "id": "unlinked-loading-wordmark",
+    "symptom": "An unlinked inline loading wordmark stays dark",
+    "status": "partial",
+    "cases": [
+      "loading-wordmark"
+    ],
+    "evidence": "Reporter supplied original unlinked 113x31 uniform inline path and separate animated 150x1 progress SVG. All custom themes Off/Maximum measure contrast, path/dimensions and unchanged progress animation, with static multicolor and animated-paint controls. Local supplied-source verification only."
+  },
+  {
     "id": "77e6d4c1b6de",
     "symptom": "Scrolling a CSS-animated notice stalls while ancestor class changes invalidate theme paint",
     "status": "partial",
@@ -13,7 +290,8 @@
     "status": "partial",
     "cases": [
       "generated-frame"
-    ]
+    ],
+    "evidence": " Generated strong neutral frames now adapt polarity and strengthen inward; all themes Off/Maximum retain widths, geometric-arrow transforms and transparent reservation."
   },
   {
     "id": "4c2d178cd55c",
@@ -373,5 +651,187 @@
     "symptom": "A component inside Shadow DOM stays light or retains the old theme",
     "status": "pending",
     "cases": []
+  },
+  {
+    "id": "spring-linked-boundaries",
+    "symptom": "Linked course footer and image-only filter keep overly bright borders; outlined action raises its fill; mixed logo followed by text loses backing",
+    "status": "partial",
+    "cases": [
+      "site-spring"
+    ],
+    "evidence": "Public authored CSS and original SVG delivery matched; steady-state local assertions across all custom themes. Public after-fix measurements recorded separately; interaction timing remains manual."
+  },
+  {
+    "id": "spring-metadata-viewports",
+    "symptom": "Compact metadata SVGs with large internal viewports and sibling labels remain dark",
+    "status": "partial",
+    "cases": [
+      "site-spring"
+    ],
+    "evidence": "Public /paths original inline drawings and wrapper context matched. All custom themes checked; no general illustration or arbitrary SVG conformance claimed."
+  },
+  {
+    "id": "headed-card-image",
+    "symptom": "A single-ink image inside a compact circular card badge stays dark beside its heading",
+    "status": "partial",
+    "cases": [
+      "headed-card-glyph"
+    ],
+    "evidence": "Heading and plain-text siblings use equivalent verified compact circular glyph repair. All custom themes/Off/Maximum compare actual ink/backing, geometry, resources and equivalent color; isolated and internally backed multitone images remain negatives."
+  },
+  {
+    "id": "form-filter-panel",
+    "symptom": "An opaque form panel merges with its canvas and neutral drop-shadow filters stay dark",
+    "status": "partial",
+    "cases": [
+      "form-filter-panel"
+    ],
+    "evidence": "Bounded single-panel canvas inference; original auth background bytes pinned with measured desktop placement. All themes/six levels check tonal direction/contrast, filter/geometry, field pixels, resampling and preservation controls. Surrounding responsive layout reduced."
+  },
+  {
+    "id": "native-inset-field",
+    "symptom": "A dark input frame remains near-invisible after its fill darkens",
+    "status": "partial",
+    "cases": [
+      "form-filter-panel"
+    ],
+    "evidence": "Public authored inset border and native input fill matched. All custom themes/six levels cover computed border contrast, geometry, focus/blur, resampling and status-bevel preservation. Off screenshot samples independently check all four side midpoints after selective bevel normalization; this does not assert universal pixel conformance."
+  },
+  {
+    "id": "clipped-heading-panel",
+    "symptom": "Rounded clipped headed panels do not respond to optional emphasis",
+    "status": "partial",
+    "cases": [
+      "clipped-heading-panel"
+    ],
+    "evidence": "Public desktop CSS matched; local background is synthetic external SVG, original asset exceeded bounded extraction. All themes/six levels cover Off, graduated inward outline, geometry, background CSS, resampling and preservation negatives. No universal image-edge contrast claim."
+  },
+  {
+    "id": "unknown-image-heading-bands",
+    "symptom": "Palette themes manufacture solid heading strips over an image",
+    "status": "partial",
+    "cases": [
+      "clipped-heading-panel"
+    ],
+    "evidence": "Source-transparent headings over an external image remain transparent in all themes/six levels. Live source/themed heading fills checked separately; full original banner resource remains a documented extraction gap."
+  },
+  {
+    "id": "dark-gradient-boundary",
+    "symptom": "A neutral horizontal boundary over a dark compound gradient looks heavier than Native in Off",
+    "status": "partial",
+    "cases": [
+      "jitpack-paint"
+    ],
+    "evidence": "Public source resources measured; all themes/six levels now include neutral gradient chroma/monotonic strength, source-important fixed Support hover/focus/late visibility with live inherited glyph ink, and GitLab wordmark preservation compared with its light baseline. Reduced layout and pixel-review limits remain explicit."
+  },
+  {
+    "id": "font-glyph-opacity",
+    "symptom": "Compact icon-font glyphs remain dark or informational opacity erases them",
+    "status": "partial",
+    "cases": [
+      "jitpack-paint"
+    ],
+    "evidence": "Public source resources measured; all themes/six levels now include neutral gradient chroma/monotonic strength, source-important fixed Support hover/focus/late visibility with live inherited glyph ink, and GitLab wordmark preservation compared with its light baseline. Reduced layout and pixel-review limits remain explicit."
+  },
+  {
+    "id": "compact-row-wordmarks",
+    "symptom": "Mixed wordmarks in a labeled compact image row lose dark lettering",
+    "status": "partial",
+    "cases": [
+      "jitpack-paint"
+    ],
+    "evidence": "Public source resources measured; all themes/six levels now include neutral gradient chroma/monotonic strength, source-important fixed Support hover/focus/late visibility with live inherited glyph ink, and GitLab wordmark preservation compared with its light baseline. Reduced layout and pixel-review limits remain explicit."
+  },
+  {
+    "id": "solid-colored-action",
+    "symptom": "White labels on a bright solid-colored action lack contrast",
+    "status": "partial",
+    "cases": [
+      "jitpack-paint"
+    ],
+    "evidence": "Public source resources measured; all themes/six levels now include neutral gradient chroma/monotonic strength, source-important fixed Support hover/focus/late visibility with live inherited glyph ink, and GitLab wordmark preservation compared with its light baseline. Reduced layout and pixel-review limits remain explicit."
+  },
+  {
+    "id": "sibling-link-glyphs",
+    "symptom": "Compact SVG or external image next to a sibling link stays dark",
+    "status": "partial",
+    "cases": [
+      "kotlin-article"
+    ],
+    "evidence": "Compact images beside plain short text now share the existing static glyph repair with sibling-link cases; original image resources and layout stay intact, with a genuinely isolated unlabeled image retained as a negative."
+  },
+  {
+    "id": "semantic-translucent-note",
+    "symptom": "Translucent semantic callout merges with the dark canvas and borderless actions ignore emphasis",
+    "status": "partial",
+    "cases": [
+      "kotlin-article"
+    ],
+    "evidence": "Source blockquote wrapper retains 5% neutral black fill, 16px padding and 6px radius; action retains dark inline-flex pill and original arrow. All themes/six levels assert separation, no manufactured Off frame, monotonic inward emphasis and unchanged geometry. Ordinary unscoped group is a preservation control. Public source/themed styles were checked; automated full-pixel certification is not claimed."
+  },
+  {
+    "id": "collapsed-neutral-action-fill",
+    "symptom": "A neutral filled action loses its source separation after dark conversion",
+    "status": "partial",
+    "cases": [
+      "kotlin-article",
+      "neutral-action-surfaces"
+    ],
+    "evidence": "Original Kotlin pill and backdrop measured; synthetic matrix separates positive filled actions from transparent, brand, outlined, disabled, selected, picture-backed, same-source and intentionally subtle dark controls. All custom themes/six levels test surface/text contrast and geometry; visual acceptance remains separate from thresholds."
+  },
+  {
+    "id": "generated-background-wordmark",
+    "symptom": "A mixed wordmark drawn in a CSS background loses its dark lettering",
+    "status": "partial",
+    "cases": [
+      "background-wordmarks"
+    ],
+    "evidence": "Original Kotlin footer ::before embedded SVG and 149×32 contain delivery retained. All custom themes/six levels cover necessary backing, unchanged image/filter/geometry and source-matching screenshot pixels. Synthetic own-background, crop/repeat, faded, opaque/animated/readable, unlinked, already-backed, oversized and source-dark controls remain separate. Bounded static-resource reads share the existing background queue and loss sampler. Follow-up: authored .5 opacity is retained with a backing; originally-dark low-contrast static lettering can recover a light candidate when verified below 3:1. Unsupported animation remains excluded."
+  },
+  {
+    "id": "borderless-card-off",
+    "symptom": "A source-borderless card acquires an outline with emphasis Off",
+    "status": "partial",
+    "cases": [
+      "kotlin-feedback"
+    ],
+    "evidence": "Public source has opaque #f4f4f4 fill, zero border/outline/shadow, 4px radius and 24px/32px padding around shallow outlined controls. Local all-theme/six-level plus return-to-Off checks distinguish tonal separation from optional frame strength and preserve source control/status/focus geometry. Surrounding article layout and font metrics remain reduced."
+  },
+  {
+    "id": "nested-card-image-glyph",
+    "symptom": "A small monochrome image nested in a labeled link card stays dark",
+    "status": "partial",
+    "cases": [
+      "kotlin-community"
+    ],
+    "evidence": "Public external 48px X and Slack SVGs and transparent wrapper/title hierarchy retained. Local all-theme Off/Maximum checks require bright neutral pixels as well as contrast, exact resource/geometry and preserved already-readable, multicolor, static/animated, delivery/backing/ancestor negatives. Source typography and surrounding layout are reduced. Follow-up: verified static neutral silhouettes up to 128px no longer require link/alt/shallow context; large/unlabeled/unlinked/deep probes are now positives. Fading/disabled/general-animation controls retain exclusions."
+  },
+  {
+    "id": "browser-default-link-scroll-ink",
+    "symptom": "Browser default link ink alternates during scroll resampling",
+    "status": "partial",
+    "cases": [
+      "scroll-banner.html"
+    ],
+    "evidence": "Local and global source sampling now use the same authored color-scheme. Each custom theme/Off and Maximum records 120 scroll frames with default and authored link colors plus an explicitly dark ancestor; geometry and stable frame colors are asserted."
+  },
+  {
+    "id": "verified-opacity-only-artwork",
+    "symptom": "An opacity-only SVG image stays dark because all animation is rejected",
+    "status": "partial",
+    "cases": [
+      "opacity-artwork"
+    ],
+    "evidence": "Structural proof, original static/animated external resource context, all custom themes/Off/Maximum, alpha-extreme contrast and seven actual screenshot frames. Color/geometry/mixed/CSS/script/additive/disappearing and readable controls remain unchanged. General animations remain unsupported."
+  },
+  {
+    "id": "dark-source-panel-separation",
+    "symptom": "An originally dark padded panel loses its grouping when its light canvas darkens",
+    "status": "partial",
+    "cases": [
+      "dark-source-panel",
+      "jitpack-paint"
+    ],
+    "evidence": "Original local JitPack specimen, all themes Off/Maximum contrast and geometry checks, plus dark-parent, unpadded and picture controls. Source background and surrounding separation are distinct measurements."
   }
 ]

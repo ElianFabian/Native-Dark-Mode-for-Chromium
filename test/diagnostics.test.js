@@ -145,7 +145,7 @@ test('captured site assets retain pinned bytes and fixture resource delivery sem
   const manifest = JSON.parse(await readFile(new URL('sources.json', base), 'utf8'));
   assert.ok(manifest.length >= 20);
   for (const asset of manifest) {
-    assert.match(asset.file, /^[\w-]+\.(svg|png|gif)$/);
+    assert.match(asset.file, /^[\w-]+\.(svg|png|gif|jpg|jpeg)$/);
     const bytes = await readFile(new URL(asset.file, base));
     assert.equal(bytes.length, asset.bytes, asset.file);
     assert.equal(createHash('sha256').update(bytes).digest('hex'), asset.sha256, asset.file);
@@ -158,5 +158,113 @@ test('captured site assets retain pinned bytes and fixture resource delivery sem
   assert.doesNotMatch(html, /\bon(?:click|change)\s*=/i);
   for (const label of ['Andaluc\u00eda', 'Espa\u00f1ol', 'Formaci\u00f3n', 'cualificaci\u00f3n']) assert.ok(html.includes(label), label);
   assert.doesNotMatch(html, /[\u00c2\u00c3][\u0080-\u00bf]|\ufffd/);
-  assert.equal(cases.filter(c => c.id.startsWith('site-')).length, 5);
+  assert.equal(cases.filter(c => c.id.startsWith('site-')).length, 6);
+});
+
+test('reported course controls preserve embedded menu/filter drawings and mixed-logo context', async () => {
+  const html=await readFile(new URL('../fixtures/diagnostics/spring-controls.html',import.meta.url),'utf8');
+  const drawings=[...html.matchAll(/src="data:image\/svg\+xml,([^"]+)"/g)].map(([,encoded])=>decodeURIComponent(encoded));
+  assert.deepEqual(drawings.map(svg=>createHash('sha256').update(svg).digest('hex')), [
+    'e89acbc2ad96f303de7ba19de6e8bae77cef9290a08863ad6c7947899db076b9',
+    '08e1ec5c952ed6661dd801842adac26d50950e6010ac1a8bf7e4cceae23c7ac6'
+  ]);
+  assert.match(drawings[1], /fill='%23272B30'|fill='#272B30'/);
+  assert.match(html, /border-color \.15s ease-in-out/);
+  assert.match(html, /<a class="brand"[^>]+><img[^>]+><span>Spring Academy<\/span>/);
+  assert.match(html, /<a class="course"[^>]+>[\s\S]*<div class="footer"/);
+  const metadata=[...html.matchAll(/<div class="icon-text" data-audit-id="metadata-[01]">(<svg.*?<\/svg>)/g)].map(([,svg])=>svg);
+  assert.deepEqual(metadata.map(svg=>createHash('sha256').update(svg).digest('hex')), [
+    '1bef41ecd6ace766a41fc4d64120adcef6f159674951b96e7585403c83f1237a',
+    '2750aa95f2806ff63fe3887f019fc1543e87b4e39eefe2d0857b2a32ca041f29'
+  ]);
+  assert.doesNotMatch(html, /\bon(?:click|change)\s*=/i);
+});
+
+test('headed card image keeps the reported embedded SVG and contrasting image-only controls', async () => {
+  const html=await readFile(new URL('../fixtures/diagnostics/spring-card-glyph.html',import.meta.url),'utf8');
+  const drawings=[...html.matchAll(/src="data:image\/svg\+xml,([^"]+)"/g)].map(([,s])=>decodeURIComponent(s));
+  assert.equal(drawings.length,3);
+  for(const index of [0,2]) assert.equal(createHash('sha256').update(drawings[index]).digest('hex'),
+    'dabd0ab743337e16d2eb3630d4bbd16ce3685e65e1097a2c482d44b4675cdc46');
+  assert.match(html, /<div class="badge" data-audit-id="badge"><img[^>]+><\/div><h2>/);
+  assert.match(html, /data-audit-id="plain-label"[^>]*><\/div><p>/);
+  assert.match(html, /label,isolated/);
+  assert.doesNotMatch(html, /\bon(?:click|change)\s*=/i);
+});
+
+
+test('auth and banner reproductions retain native field and clipped image context', async()=>{
+  const auth=await readFile(new URL('../fixtures/diagnostics/spring-auth-panel.html',import.meta.url),'utf8');
+  const banner=await readFile(new URL('../fixtures/diagnostics/clipped-heading-panel.html',import.meta.url),'utf8');
+  assert.match(auth,/site-assets\/spring-auth-background\.svg/);
+  assert.match(auth,/border:1px inset #334155/);
+  assert.match(auth,/transition-duration:\.2s/);
+  assert.match(auth,/<div class="email-field-wrap"><span class="email-field-icon"/);
+  assert.match(banner,/background:#000 url\(banner-pattern\.svg\) no-repeat right center\/auto 150%/);
+  assert.match(banner,/border-radius:16px;overflow:hidden/);
+  assert.match(banner,/\.copy\{padding:32px\}/);
+  for(const id of ['artwork','transparent','square','framed'])assert.ok(banner.includes('data-audit-id="'+id+'"'));
+  assert.doesNotMatch(auth+banner,/\bon(?:click|change)\s*=/i);
+});
+
+
+test('JitPack reproduction retains original icon font and source paint context',async()=>{
+  const font=await readFile(new URL('../fixtures/diagnostics/jitpack-fontawesome.woff2',import.meta.url));
+  assert.equal(createHash('sha256').update(font).digest('hex'),'2adefcbc041e7d18fcf2d417879dc5a09997aa64d675b7a3c4b6ce33da13f3fe');
+  const html=await readFile(new URL('../fixtures/diagnostics/jitpack-paint.html',import.meta.url),'utf8');
+  assert.match(html,/border-bottom:2px solid #e2e8f0/);
+  assert.match(html,/linear-gradient\(135deg,#1a1a2e 0%,#16213e 40%,#0f3460 100%\)/);
+  assert.match(html,/opacity:\.3/);
+  assert.match(html,/background:#3bc492!important;color:white!important/);
+  assert.match(html,/\.support:hover\{background:#2fa87d!important\}/);
+  assert.doesNotMatch(html,/\bon(?:click|change)\s*=/i);
+});
+
+
+test('Kotlin article reproduction retains sibling delivery and semantic note context',async()=>{
+  const html=await readFile(new URL('../fixtures/diagnostics/kotlin-article.html',import.meta.url),'utf8');
+  assert.match(html,/<span class="meta"><svg[\s\S]*?<\/svg><a href="#edit">Edit page<\/a><span>/);
+  assert.match(html,/src="site-assets\/kotlin-github\.svg"[^>]+width="18"[^>]+><a href="#github">/);
+  assert.match(html,/<blockquote class="prompt"><h3 class="a11y-title">tip<\/h3><div class="wrapper"/);
+  assert.match(html,/padding:16px;gap:24px;background:rgba\(25,25,28,\.05\);border-radius:6px/);
+  assert.match(html,/width:max-content;max-width:100%/);
+  assert.match(html,/flex-direction:row-reverse/);
+  assert.match(html,/type="button" class="button"/);
+  assert.match(html,/padding:22px;border:1px solid rgba\(25,25,28,\.2\);border-radius:8px;background:rgba\(25,25,28,\.05\)/);
+  for(const id of ['ordinary','unpaired','decoration'])assert.ok(html.includes('data-audit-id="'+id+'"'));
+  assert.doesNotMatch(html,/\bon(?:click|change)\s*=/i);
+});
+
+
+test('CSS wordmark reproduction keeps original embedded SVG and generated-layer delivery',async()=>{
+  const html=await readFile(new URL('../fixtures/diagnostics/background-wordmarks.html',import.meta.url),'utf8');
+  const original=await readFile(new URL('../fixtures/diagnostics/site-assets/kotlin-jetbrains.svg',import.meta.url),'utf8');
+  const embedded=[...html.matchAll(/url\("data:image\/svg\+xml,([^"\n]+)"\)/g)];
+  assert.equal(embedded.length,2);
+  for(const [,uri]of embedded)assert.equal(decodeURIComponent(uri),original);
+  assert.match(html,/position:relative;width:149px;height:32px/);
+  assert.match(html,/content:"";display:block;position:absolute;top:0;left:0;width:100%;height:100%/);
+  assert.match(html,/background-size:contain;background-position:0% 0%;background-repeat:no-repeat/);
+  assert.match(html,/\.brand::after\{content:"";display:none/);
+  assert.doesNotMatch(html,/<img\b|\bon(?:click|change)\s*=/i);
+});
+
+
+test('feedback reproduction separates the borderless panel from authored control and state frames',async()=>{
+  const html=await readFile(new URL('../fixtures/diagnostics/kotlin-feedback.html',import.meta.url),'utf8');
+  assert.match(html,/padding:24px 32px;background:#f4f4f4;border:0;border-radius:4px;box-shadow:none/);
+  assert.match(html,/\.inactive\{display:none\}/);
+  assert.match(html,/border:1px solid rgba\(25,25,28,\.3\);border-radius:24px;padding:5px 15px/);
+  assert.match(html,/transition:color \.1s,background-color \.1s,border-color \.1s/);
+  for(const id of ['reported','yes','no','framed','outlined','transparent','square'])assert.ok(html.includes('data-audit-id="'+id+'"'));
+  assert.doesNotMatch(html,/\bon(?:click|change)\s*=/i);
+});
+
+test('community glyph reproduction retains external delivery and nested separate labels',async()=>{
+  const html=await readFile(new URL('../fixtures/diagnostics/kotlin-community.html',import.meta.url),'utf8');
+  assert.match(html,/<a class="card"[^>]+><div class="wrapper"><div class="image"><img src="site-assets\/kotlin-community-x.svg"/);
+  assert.match(html,/<div class="bottom"><div class="title">X<\/div>/);
+  assert.match(html,/width:424px;padding:16px;background:white;border:1px solid rgba\(25,25,28,\.2\);border-radius:8px/);
+  assert.match(html,/site-assets\/kotlin-community-slack.svg/);
+  assert.doesNotMatch(html,/<svg\b|data:image|\bon(?:click|change)\s*=/i);
 });

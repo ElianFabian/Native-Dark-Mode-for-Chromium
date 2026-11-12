@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Pending reporter review · small arrows, joined frames and iframe startup</title>
+<style>
+body { margin:24px; max-width:900px; font:16px/1.5 Arial; color:#222; background:#fff }
+section { margin:24px 0; padding:16px; border:1px dashed #777 }
+iframe { width:200px; height:40px; border:0 }
+code { overflow-wrap:anywhere }
+button { font:inherit }
+</style>
+<h1>Pending reporter review · 12 November 2026</h1>
+<p>These reports remain open. Existing local mechanism checks do not establish acceptance on the reporter's pages. This page records missing evidence and a manual startup sequence; it does not fabricate the unavailable source styles.</p>
+<section>
+ <h2>Docs · small dropdown arrows</h2>
+ <p>The latest screenshot still shows dim small indicators beside Share and Editing. Their source resource, visible crop, generated layers and inherited opacity have not been supplied. Do not assume that they use the measured toolbar dropdown crop at (-7144,0).</p>
+ <p>Compare with the separately measured <a href="document-toolbar-controls.html">toolbar control families</a> and <a href="document-toolbar-pending.html">original structure record</a>. A future repair must retain enabled/disabled and selected-state distinctions and the source geometry.</p>
+ <p><strong>Pending:</strong> obtain the actual source paint and test these small variants on opening and after repeated resampling. Screenshot-only evidence is not an automated contrast pass.</p>
+</section>
+<section>
+ <h2>Amazon · quantity arrow and joined wishlist frame</h2>
+ <p>The quantity indicator remains dark on the reporter's page. The main text portion of the wishlist split button also appears to have different boundary weight from the arrow portion. The reporter suspects the main text frame rather than the arrow frame.</p>
+ <p>The earlier context was Simulated Native with border Off; the latest screenshot does not independently reconfirm both settings. The <a href="compact-action-paint.html">source-based compact control reproduction</a> contains a single native-select overlay and a standalone split-arrow portion. It does not match the complete joined pair and all current live variant styles.</p>
+ <p><strong>Pending:</strong> capture the full quantity control and both joined frame layers, including source/applied colors, alpha, fractional widths, shadows and generated paint. Compare Off with stronger levels without changing layout or flattening focus/hover states. Retain visible-overlay, disabled and multicolor preservation controls.</p>
+</section>
+<section>
+ <h2>JitPack iframe · initial load and theme handoff</h2>
+ <p>The counter canvas is improved at rest, but the reporter sees flicker for a while immediately after load or theme application. The <a href="embedded-count.html">steady-state iframe regression</a> checks transparent versus explicitly backed canvases; it does not assert first-frame stability.</p>
+ <ol>
+  <li>Record frames while loading this document with a theme already enabled.</li>
+  <li>Reload the child below and record its first paints without hovering.</li>
+  <li>Apply and switch themes from the lab, then repeat the child reload.</li>
+  <li>Compare with an explicitly backed frame. Separate source canvas paint, renderer handoff and late resources before classifying any flash.</li>
+ </ol>
+ <p><button id="reload" type="button">Reload both child documents</button></p>
+ <p>Reported transparent source canvas:</p>
+ <iframe title="Transparent counter startup probe" src="embedded-count-frame.html"></iframe>
+ <p>Synthetic preservation control with an explicit source canvas:</p>
+ <iframe title="Explicitly backed startup control" src="embedded-count-frame.html?backed"></iframe>
+ <p><strong>Pending:</strong> cold-load and theme-handoff frame traces. This manual probe reuses the supplied child markup/CSS with reduced parent layout and no live scripts; it is not a reproduction of the authenticated page lifecycle.</p>
+</section>
+<section>
+ <h2>Next session · performance, Amazon first</h2>
+ <p>Prioritize Amazon initial theme application and scrolling while new content loads. Also retain BOOTH initial application, Indeed's nested scrolling pane and visibly sequential control repairs. Use cold/warm traces to distinguish style/layout work, renderer queues, image decoding and page network/lazy-loading work. Existing isolated timings are not a live smoothness pass.</p>
+ <p>Related synthetic workloads: <a href="dynamic-catalogue.html">dynamic catalogue</a>, <a href="nested-job-pane.html">nested scrolling pane</a> and <a href="sprite-batch.html">sprite publication</a>. No performance change is introduced by this pending record.</p>
+</section>
+<script>
+document.querySelector('#reload').onclick=()=>document.querySelectorAll('iframe').forEach(frame=>{frame.src=frame.getAttribute('src')});
+document.documentElement.dataset.fixtureReady='yes';
+</script>
+</html>

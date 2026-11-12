@@ -17,6 +17,7 @@
   #pattern { background-repeat: repeat; }
   #unlabeled { height: 36px; }
   #threecolor { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25' fill='none'%3E%3Cpath d='M0 2h7v21H0z' fill='%230055aa'/%3E%3Cpath d='M9 2h7v21H9z' fill='%23cc3300'/%3E%3Cpath d='M18 2h7v21h-7z' fill='%23008044'/%3E%3C/svg%3E"); }
+  #complex { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25' fill='none'%3E%3Cpath fill='%230055aa' d='M0 0h5v25H0z'/%3E%3Cpath fill='%23cc3300' d='M5 0h5v25H5z'/%3E%3Cpath fill='%23008044' d='M10 0h5v25H10z'/%3E%3Cpath fill='%238000aa' d='M15 0h5v25H15z'/%3E%3Cpath fill='%23778800' d='M20 0h5v25H20z'/%3E%3C/svg%3E"); }
   #media img { width: 64px; height: 24px; }
 </style>
 <h1>Nested labels with compact background glyphs</h1>
@@ -29,9 +30,10 @@
 <section><div id="media" class="label" data-contact-test="positive"><p>Glyph beside multicolor artwork · retain source and geometry</p><img src="multicolor-artwork.svg" alt="Multicolor artwork"></div></section>
 <section><div id="multicolor" class="label" data-contact-test="positive"><p>Adapt both source inks independently</p></div></section>
 <section><div id="pattern" class="label" data-contact-test="positive"><p>Repeating glyph · preserve tiling</p></div></section>
+<section><div id="threecolor" class="label" data-contact-test="positive"><p>Adapt three source inks independently</p></div></section>
 <h2>Conservative negative controls</h2>
 <p>Unlabeled patterns, larger illustrations and complex palettes stay outside this bounded glyph repair. Their unchanged paint is not a contrast pass.</p>
 <section><div id="unlabeled" class="label" style="background-repeat:repeat" data-contact-test="negative" aria-hidden="true"></div><p>Unlabeled decorative pattern</p></section>
-<section><div id="threecolor" class="label" data-contact-test="negative"><p>Complex palette negative</p></div></section>
+<section><div id="complex" class="label" data-contact-test="negative"><p>Complex palette negative · five inks</p></div></section>
 <section><div id="large" class="label" data-contact-test="negative"><p>Large decorative artwork</p></div></section>
 </html>

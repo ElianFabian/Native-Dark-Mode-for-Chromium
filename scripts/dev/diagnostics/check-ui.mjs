@@ -11,6 +11,30 @@ const server = await startServer(), browser = await launchBrowser();
 try {
   const page = await browser.open(server.base);
   await until(() => page.evaluate(`document.querySelectorAll('#cases .card').length===${cases.length}`), 'gallery modules');
+  await page.send('Emulation.setDeviceMetricsOverride', { width: 1400, height: 1000, deviceScaleFactor: 1, mobile: false });
+  if (!await page.evaluate("[...document.querySelectorAll('button')].every(e=>e.dataset.help&&e.getAttribute('aria-description')===e.dataset.help)")) throw Error('Lab actions lack help descriptions');
+  await page.evaluate("document.querySelector('#run').focus()");
+  if (!await page.evaluate("(()=>{const t=document.querySelector('#lab-help'),b=document.querySelector('#run');return !t.hidden&&t.textContent.includes('not the complete project test suite')&&b.getAttribute('aria-describedby')===t.id&&document.activeElement===b})()")) throw Error('Keyboard help did not open immediately or stole focus');
+  const helpDocument=await page.send('DOM.getDocument');
+  const helpButton=await page.send('DOM.querySelector',{nodeId:helpDocument.root.nodeId,selector:'#run'});
+  const accessible=await page.send('Accessibility.getPartialAXTree',{nodeId:helpButton.nodeId});
+  if(!accessible.nodes.some(n=>n.role?.value==='button'&&n.description?.value.includes('not the complete project test suite')))throw Error('Help unavailable in accessibility tree');
+  await page.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape'});
+  if(!await page.evaluate("document.querySelector('#lab-help').hidden&&!document.querySelector('#run').hasAttribute('aria-describedby')&&document.activeElement.id==='run'"))throw Error('Escape did not dismiss help while retaining focus');
+  await page.evaluate('document.activeElement.blur()');
+  const runBox=await page.evaluate("(()=>{const r=document.querySelector('#run').getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2}})()");
+  await page.send('Input.dispatchMouseEvent',{type:'mouseMoved',...runBox});
+  if(!await page.evaluate("document.querySelector('#lab-help').hidden"))throw Error('Hover help skipped its delay');
+  await until(()=>page.evaluate("!document.querySelector('#lab-help').hidden"),'delayed hover help');
+  const tipBox=await page.evaluate("(()=>{const r=document.querySelector('#lab-help').getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2}})()");
+  await page.send('Input.dispatchMouseEvent',{type:'mouseMoved',...tipBox});
+  // Longer than the deliberate 150ms exit grace: hovering the bubble must
+  // cancel dismissal, so people can comfortably read the entire explanation.
+  await page.evaluate('new Promise(resolve=>setTimeout(resolve,220))');
+  if(!await page.evaluate("!document.querySelector('#lab-help').hidden"))throw Error('Help vanished while hovered');
+  await writeFile(path.join(artifacts,'ui-help.png'),Buffer.from((await page.send('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  await page.evaluate("document.querySelector('#refresh').click()");
+  if(!await page.evaluate("document.querySelector('#lab-help').hidden"))throw Error('Action click did not dismiss help');
   await page.evaluate("document.querySelector('#case-search').value='GIF';document.querySelector('#case-search').dispatchEvent(new Event('input'))");
   if (!await page.evaluate("[...document.querySelectorAll('#cases .card')].some(e=>!e.hidden&&e.textContent.includes('GIF'))")) throw Error('Gallery search');
   const badOrigin = await fetch(server.base + '/api/run', { method: 'POST', headers: { Origin: 'http://evil.example', 'Content-Type': 'application/json' }, body: '{}' });
@@ -19,6 +43,18 @@ try {
   if (badSuite.status !== 400) throw Error('Missing fixed-suite guard');
   const traversal = await fetch(server.base + '/fixtures/%2e%2e%2fextension/manifest.json');
   if (traversal.status !== 403) throw Error('Missing file containment guard');
+  const fontResponse=await fetch(server.base+'/fixtures/diagnostics/jitpack-fontawesome.woff2');
+  if(fontResponse.status!==200||fontResponse.headers.get('content-type')!=='font/woff2')throw Error('Icon font delivery failed');
+  // fonts.ready resolves even after a failed download. Require the face to load
+  // and check the actual platform font used by a visible private-use glyph.
+  const fontPage=await browser.open(server.base+'/fixtures/diagnostics/jitpack-paint.html');
+  await until(()=>fontPage.evaluate("document.querySelector('[data-audit-id=support-icon]')!==null"),'font fixture');
+  if(!await fontPage.evaluate("(async()=>{const faces=await document.fonts.load('20px FixtureIcons','\\uf075');return faces.length===1&&faces[0].status==='loaded'})()"))throw Error('Icon font did not decode');
+  const fontDoc=await fontPage.send('DOM.getDocument'),fontNode=await fontPage.send('DOM.querySelector',{nodeId:fontDoc.root.nodeId,selector:'[data-audit-id=support-icon]'});
+  await fontPage.send('DOM.enable');await fontPage.send('CSS.enable');
+  const platform=await fontPage.send('CSS.getPlatformFontsForNode',{nodeId:fontNode.nodeId});
+  if(!platform.fonts.some(f=>f.isCustomFont&&f.glyphCount>0))throw Error('Private-use icon rendered in a fallback font');
+  await fontPage.close();
   let report;
   for (const name of (await readdir(artifacts)).filter(n => /^run-/.test(n)).sort().reverse()) {
     try { const data = JSON.parse(await readFile(path.join(artifacts, name, 'capture.json'), 'utf8')); if (data.captures.some(c => c.specimen === 'subtle-frame')) { report = data; break; } } catch { /* Ignore incomplete runs. */ }
@@ -32,6 +68,8 @@ try {
   const document = await page.send('DOM.getDocument'), input = await page.send('DOM.querySelector', { nodeId: document.root.nodeId, selector: '#file' });
   await page.send('DOM.setFileInputFiles', { nodeId: input.nodeId, files: [file] });
   await until(() => page.evaluate("document.querySelectorAll('#queue article').length>0"), 'grouped review queue');
+  await page.evaluate("document.querySelector('#queue button').focus()");
+  if(!await page.evaluate("!document.querySelector('#lab-help').hidden&&document.querySelector('#lab-help').textContent.includes('representative measurement')"))throw Error('Dynamic review action lacks help');
   await page.evaluate("document.querySelector('#queue button').click()");
   if (!await page.evaluate("!document.querySelector('#detail').hidden && document.querySelector('#raw').textContent.includes('original')")) throw Error('Raw evidence');
   await page.evaluate("[...document.querySelectorAll('#queue button')].find(b=>b.textContent==='Accept this appearance').click();document.querySelector('#queue-filter').value='accepted';document.querySelector('#queue-filter').dispatchEvent(new Event('change'))");
@@ -48,6 +86,7 @@ try {
   await page.evaluate("document.querySelector('[data-tab=gallery]').click()");
   if (await page.evaluate('document.documentElement.scrollWidth>innerWidth')) throw Error('Narrow large-text gallery overflow');
   if (!await page.evaluate("(()=>{const e=document.querySelector('#run');e.focus();return document.activeElement===e&&getComputedStyle(e).outlineStyle!=='none'})()")) throw Error('Keyboard focus');
+  if(!await page.evaluate("(()=>{const t=document.querySelector('#lab-help'),r=t.getBoundingClientRect();return !t.hidden&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight})()"))throw Error('Large-text help overflows narrow viewport');
   await page.send('Page.navigate', { url: server.base + '/fixtures/diagnostics/specimens.html?group=images' });
   await until(() => page.evaluate("document.documentElement.dataset.fixtureReady==='yes'&&[...document.images].every(i=>i.complete&&i.naturalWidth>0)"), 'all local PNG/SVG/GIF images decoded');
   await page.send('Emulation.setDeviceMetricsOverride', { width: 1000, height: 900, deviceScaleFactor: 1, mobile: false });
@@ -117,5 +156,5 @@ try {
     await until(() => page.evaluate("getComputedStyle(document.querySelector('[data-audit-id=efp-logo]')).backgroundColor==='rgb(255, 255, 255)'"), 'original EFP logo backing');
   }
   await writeFile(path.join(artifacts, 'reported-artwork-corrected.png'), Buffer.from((await page.send('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
-  console.log('Lab UI passed: gallery search, grouped evidence, accept/reopen, narrow large-text layout, focus, server guards, image decoding, GIF animation, original Indeed gradient/glyph preservation with modeled heading contrast, Junta logo context/light backing, and reported formacion GIF/EFP logo context in all custom themes.');
+  console.log('Lab UI passed: accessible static/dynamic help, delayed hover/keyboard/Escape/click/hoverable bubble and narrow large-text bounds, gallery search, grouped evidence, accept/reopen, narrow large-text layout, focus, server guards, image decoding, GIF animation, original Indeed gradient/glyph preservation with modeled heading contrast, Junta logo context/light backing, and reported formacion GIF/EFP logo context in all custom themes.');
 } finally { await browser.close(); await server.close(); }

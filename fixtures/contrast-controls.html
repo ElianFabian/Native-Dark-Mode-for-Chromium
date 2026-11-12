@@ -4,9 +4,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Contrast controls and static artwork regression fixture</title>
 <style>
+  @font-face { font-family: FixtureIcons; src: url("diagnostics/jitpack-fontawesome.woff2") format("woff2"); }
   body { background: white; color: #111; font: 18px/1.5 sans-serif; margin: 24px; }
   section { padding: 16px; margin-bottom: 16px; }
   .artwork { display: flex; flex-wrap: wrap; gap: 24px; }
+  .cors-artwork { row-gap:100px; margin-bottom:100px; }
+  .cors-artwork>a { position:relative; }
+  .cors-artwork>a::after { content:attr(data-caption); position:absolute; top:calc(100% + 8px); left:0; width:160px; font-size:14px; line-height:1.4; color:inherit; }
   .artwork img { display: block; width: 160px; height: 56px; }
   #menu-edge { border-block: 1px solid black; }
   #muted-edge { background: #f7f7f8; border: 1px solid #f7f7f8; }
@@ -23,10 +27,10 @@
   #decorative { width: 48px; height: 48px; border: 2px solid #111; transform: rotate(45deg); }
   #sticky-tools { position: fixed; top: 8px; right: 8px; padding: 8px; background: white; color: #323232; }
   #font-glyph { display: inline-block; width: 32px; height: 32px; color: inherit; }
-  #font-glyph::before { content: '\e8b6'; font: 24px/32px sans-serif; color: inherit; }
+  #font-glyph::before { content: '\f002'; font: 24px/32px FixtureIcons; color: inherit; }
   body.scrolled #font-glyph::before { color: #323232; }
-  #decorative-glyph::before { content: '\e8b6'; color: #cf2040; }
-  #disabled-glyph::before { content: '\e8b6'; color: #323232; }
+  #decorative-glyph::before { content: '\f002'; font-family: FixtureIcons; color: #cf2040; }
+  #disabled-glyph::before { content: '\f002'; font-family: FixtureIcons; color: #323232; }
   .small-svg { display: inline-block; width: 24px; height: 24px; vertical-align: middle; }
   .small-svg svg { width: 100%; height: 100%; fill: inherit; }
   #pointer-svg { cursor: pointer; fill: #0b4dd0; color: #74727e; }
@@ -36,7 +40,8 @@
 </style>
 <h1>Contrast controls and artwork</h1>
 <p>Use all three custom themes, Off and stronger separator levels, fractional scale, hover/focus and repeated resampling.</p>
-<section class="artwork">
+<p id="artwork-guide"><strong>Images in order:</strong> 1. Static single-color mark. 2. Static multicolor mark. 3. Single-color SVG with a subtle opacity pulse: 100% → 80% → 100%, repeating every 2 seconds. The first and third use the same original ink, #02303a. The third stays in place; its small transparency change can be almost invisible on a dark background.</p>
+<section class="artwork" aria-describedby="artwork-guide">
   <a id="solid" href="#solid"><img src="solid-artwork.svg" alt="Static single-color mark"></a>
   <a id="multicolor" href="#multicolor"><img src="multicolor-artwork.svg" alt="Multicolor mark: preserve colors"></a>
   <a id="animated" href="#animated"><img src="animated-artwork.svg" alt="Animated mark: preserve original"></a>
@@ -65,11 +70,11 @@
 <a id="back" aria-label="Go back">Back</a>
 <p>Non-interactive decoration: do not classify this as an arrow.</p>
 <div id="decorative"></div>
-<section class="artwork">
-  <a href="#cors-solid"><img id="cors-solid" src="solid-artwork.svg" alt="CORS-permitted static single-color artwork"></a>
-  <a href="#cors-multicolor"><img id="cors-multicolor" src="multicolor-artwork.svg" alt="CORS multicolor negative"></a>
-  <a href="#cors-animated"><img id="cors-animated" src="animated-artwork.svg" alt="CORS animated negative"></a>
-  <a href="#cors-denied"><img id="cors-denied" src="solid-artwork.svg" alt="Denied CORS negative"></a>
+<section class="artwork cors-artwork" aria-label="Cross-origin image reading controls">
+  <a href="#cors-solid" data-caption="Static SVG - CORS allowed. Verified single ink adapts." aria-label="Static SVG - CORS allowed. Verified single ink adapts."><img id="cors-solid" src="solid-artwork.svg" alt="Static SVG - CORS allowed. Verified single ink adapts."></a>
+  <a href="#cors-multicolor" data-caption="Multicolor SVG - CORS allowed. Retain palette; assess backing." aria-label="Multicolor SVG - CORS allowed. Retain palette; assess backing."><img id="cors-multicolor" src="multicolor-artwork.svg" alt="Multicolor SVG - CORS allowed. Retain palette; assess backing."></a>
+  <a href="#cors-animated" data-caption="Opacity-only SVG - CORS allowed. Retain its pulse." aria-label="Opacity-only SVG - CORS allowed. Retain its pulse."><img id="cors-animated" src="animated-artwork.svg" alt="Opacity-only SVG - CORS allowed. Retain its pulse."></a>
+  <a href="#cors-denied" data-caption="Static SVG - CORS blocked. Readability unresolved: pixel reading is blocked." aria-label="Static SVG - CORS blocked. Readability unresolved: pixel reading is blocked."><img id="cors-denied" src="solid-artwork.svg" alt="Static SVG - CORS blocked. Readability unresolved: pixel reading is blocked."></a>
 </section>
 <section>
   <span id="pointer-svg" class="small-svg"><span><svg viewBox="0 0 24 24"><path d="M2 12Q12-2 22 12Q12 26 2 12M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0"/></svg></span></span>

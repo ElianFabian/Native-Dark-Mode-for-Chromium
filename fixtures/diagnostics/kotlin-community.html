@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Nested community card image glyph</title><style>
+*{box-sizing:border-box}body{margin:24px;background:white;color:#27282c;font:16px/1.15 Arial}h1{font-size:24px}.cards{display:flex;flex-wrap:wrap;gap:16px}.card{display:block;width:424px;padding:16px;background:white;border:1px solid rgba(25,25,28,.2);border-radius:8px;text-decoration:none}.wrapper{display:flex;flex-direction:column}.image{line-height:18.4px}.image img{display:inline;width:48px;height:48px}.bottom{margin-top:9.609375px}.title{color:#27282c;font:600 16px/24px Arial}.offset{margin-top:8px}.description{font:13px/28px Arial;color:rgba(39,40,44,.5)}.card:focus-visible{outline:2px solid #005c8a;outline-offset:3px}.preservation{margin-top:24px}.preservation h2{font-size:20px}.white .image{background:white!important}.faded .image{opacity:.5}.large .image img{width:96px;height:96px}
+</style><h1>Reported nested image in a labeled card</h1><p>Original external 48px SVG delivery, transparent stretched image wrapper, separate title/description branch, opaque white card with 16px padding, 8px radius and 1px alpha border. Public card source measured 424×156; local Arial and surrounding layout are reduced.</p>
+<section class="cards">
+<a class="card" href="#x" title="X" data-audit-id="card"><div class="wrapper"><div class="image"><img src="site-assets/kotlin-community-x.svg" alt="X" data-audit-id="reported"></div><div class="bottom"><div class="title">X</div><div class="offset"><div class="description">Quick tips and news, straight to your feed.</div></div></div></div></a>
+<a class="card" href="#slack" title="Slack"><div class="wrapper"><div class="image"><img src="site-assets/kotlin-community-slack.svg" alt="Slack" data-audit-id="multicolor"></div><div class="bottom"><div class="title">Slack</div><div class="offset"><div class="description">The public multicolor resource must keep its palette.</div></div></div></div></a>
+</section>
+<section class="preservation"><h2>Synthetic preservation controls</h2><div class="cards" id="controls"></div></section>
+<script>
+const template=document.querySelector('[data-audit-id=card]');
+for(const id of ['white','faded','large','unlabeled','unlinked','deep','disabled','animated','opaque','readable']){
+ const card=template.cloneNode(true);card.removeAttribute('data-audit-id');card.classList.add(id);card.title=id;
+ const img=card.querySelector('img');img.dataset.auditId=id;card.querySelector('.title').textContent=id;card.querySelector('.description').textContent=({white:'Expected repair: adapt verified ink if its white wrapper darkens.',faded:'Preserve authored 50% opacity; low-contrast lettering remains pending.',large:'Verified small neutral silhouette: adapt ink, retain size.',unlabeled:'Verified neutral silhouette: no alternative text is required for pixel repair.',unlinked:'Verified neutral silhouette: no link is required for pixel repair.',deep:'Verified neutral silhouette: nested wrappers retain their layout.',disabled:'Preserve disabled-state appearance; not an enabled-action contrast pass.',animated:'General animated GIF: no single-frame tint decision; readability pending.',opaque:'Opaque artwork: preserve source palette and pixels.',readable:'Already-readable ink: preserve its existing appearance.'})[id];
+ if(id==='unlabeled')img.alt='';
+ if(id==='unlinked')card.removeAttribute('href');
+ if(id==='disabled')card.setAttribute('aria-disabled','true');
+ if(id==='deep'){const wrapper=document.createElement('div');img.parentElement.replaceWith(wrapper);wrapper.append(img);for(let i=0;i<3;i++){const inner=document.createElement('div');img.replaceWith(inner);inner.append(img)}}
+ if(id==='animated')img.src='assets/animated-transparent.gif';
+ if(id==='opaque')img.src='assets/opaque-artwork.png';
+ if(id==='readable')img.src='assets/readable-neutral.svg';
+ document.querySelector('#controls').append(card);
+}
+Promise.all([...document.images].map(i=>i.decode())).then(()=>document.documentElement.dataset.fixtureReady='yes');
+</script></html>

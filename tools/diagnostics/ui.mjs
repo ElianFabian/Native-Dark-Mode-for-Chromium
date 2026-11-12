@@ -1,8 +1,10 @@
 import { cases } from './cases.mjs';
 import { analyze, compare, validateReport } from './analysis.mjs';
 import { triage } from './triage.mjs';
+import { installHelp, setHelp } from './help.mjs';
 const $ = selector => document.querySelector(selector);
 const node = (tag, text, parent) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; parent?.append(e); return e; };
+installHelp();
 function tab(id) {
   for (const e of document.querySelectorAll('[data-tab]')) { const selected = e.dataset.tab === id; e.setAttribute('aria-pressed', selected); $('#' + e.dataset.tab).hidden = !selected; }
 }
@@ -16,7 +18,7 @@ for (const entry of cases) {
   if (entry.observed) { const notice = node('p', entry.observed, card); notice.className = 'case-warning'; }
   const url = entry.file ? '/fixtures/' + entry.file : '/fixtures/diagnostics/cases.html?case=' + entry.id;
   const frame = node('iframe', undefined, card); frame.title = entry.title + ' original preview'; frame.loading = 'lazy'; frame.src = entry.file ? url : url + '&preview=1';
-  const link = node('a', 'Open original specimen', card); link.href = url; link.target = '_blank'; link.rel = 'noopener'; node('p', entry.evidence, card);
+  const link = setHelp(node('a', 'Open original specimen', card), 'Open this local reproduction at full size in a new tab. It shows authored paint unless a website theme is enabled for its local address.'); link.href = url; link.target = '_blank'; link.rel = 'noopener'; node('p', entry.evidence, card);
 }
 $('#case-search').oninput = () => { for (const card of $('#cases').children) card.hidden = !card.dataset.search.includes($('#case-search').value.toLowerCase()); };
 fetch('/tools/diagnostics/coverage.json').then(r => r.json()).then(entries => {
@@ -38,8 +40,8 @@ function showQueue() {
     node('h4', `${finding.kind} · ${finding.location}`, card); node('p', finding.reason, card);
     node('p', `${finding.themes.join(', ')} · ${finding.levels.join(', ')} · ${finding.checks.length} grouped measurements${finding.range ? ' · range ' + finding.range.map(v => v.toFixed(3)).join('–') : ''}`, card);
     const actions = node('div', undefined, card); actions.className = 'toolbar';
-    node('button', 'Inspect evidence', actions).onclick = () => { inspect(analysis.checks.find(c => c.id === finding.representative)); $('#detail').scrollIntoView({ block: 'start' }); };
-    node('button', finding.disposition === 'accepted' ? 'Reopen review' : 'Accept this appearance', actions).onclick = () => {
+    setHelp(node('button', 'Inspect evidence', actions), 'Show a representative measurement, original and themed paint, available screenshots and raw facts for this grouped finding.').onclick = () => { inspect(analysis.checks.find(c => c.id === finding.representative)); $('#detail').scrollIntoView({ block: 'start' }); };
+    setHelp(node('button', finding.disposition === 'accepted' ? 'Reopen review' : 'Accept this appearance', actions), finding.disposition === 'accepted' ? 'Mark this accepted appearance as pending review again. The original measurements remain unchanged.' : 'Record that you reviewed and accept this appearance. Raw evidence and failed test assertions stay unchanged; the renderer and extension rules are not modified.').onclick = () => {
       reviews = reviews.filter(r => r.fingerprint !== finding.fingerprint);
       if (finding.disposition !== 'accepted') reviews.push({ fingerprint: finding.fingerprint, disposition: 'accepted', location: finding.location });
       try { localStorage.setItem('diagnostic-reviews-v1', JSON.stringify(reviews)); } catch { $('#summary').textContent = 'Review updated for this session; local storage unavailable. Export decisions to retain them.'; }
@@ -86,7 +88,7 @@ function filter() {
   for (const check of checks.slice(0, 500)) {
     const row = node('tr', undefined, $('#rows')), cell = node('td', undefined, row);
     const record = recordIndex.get(check.capture).get(check.element);
-    const button = node('button', `${check.capture.split('/')[0]} · ${record.location?.label ?? check.element}`, cell); button.onclick = () => inspect(check);
+    const button = setHelp(node('button', `${check.capture.split('/')[0]} · ${record.location?.label ?? check.element}`, cell), 'Inspect the original and themed paint, location, screenshots and raw facts for this measurement.'); button.onclick = () => inspect(check);
     node('td', `${check.theme} · ${check.level}`, row); node('td', check.kind + ' ' + check.layer, row);
     const value = metric(check), target = $('#metric').value === 'value' ? check.target : null;
     node('td', `${value === null ? '—' : value.toFixed(3)} / ${target ?? '—'}`, row); node('td', check.status, row);

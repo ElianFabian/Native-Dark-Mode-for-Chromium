@@ -45,3 +45,5 @@ figure img { display: block; width: 100%; height: 64px; object-fit: contain; mar
 .dots { list-style: none; padding: 0; display: flex; gap: 10px; }.dots button { width: 13px; height: 13px; padding: 0; border: none; border-radius: 50%; font-size: 0; background: #d5d8de; }.dots [aria-current=true] { background: #ff4a52; }
 [hidden] { display: none !important; } html[data-single] header p { display: none; } html[data-single] h1 { font-size: 18px; } html[data-single] #groups { display: none; } html[data-single] section { margin-top: 12px; }
 @media(prefers-reduced-motion:reduce) { .track { transition: none; } }
+
+.arrow-caption{display:inline-block;max-width:170px;vertical-align:middle;margin-right:16px;font-size:14px}

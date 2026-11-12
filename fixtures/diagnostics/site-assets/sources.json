@@ -182,5 +182,165 @@
     "sha256": "d47c1e50db91bb597b75edc63362cd0c568e4f5f15a3f8be1b6adff24e89e447",
     "provenance": "Public asset, original bytes; small next-arrow crop at -105px -7px, 11x15 CSS pixels, 400x900 background size",
     "retrieved": "2026-11-11"
+  },
+  {
+    "file": "spring-broadcom.svg",
+    "url": "https://spring.academy/broadcom-logo-DYnrwN9y.svg",
+    "bytes": 38919,
+    "sha256": "0d1a63603e6472c7792da96acf7fb0980e2fc6c5d62aef704ffe45cad40f03be",
+    "provenance": "Public asset, original UTF-8 response bytes",
+    "retrieved": "2026-11-12"
+  },
+  {
+    "file": "spring-auth-background.svg",
+    "url": "https://spring.academy/auth-BfPKhiO2.svg",
+    "bytes": 245900,
+    "sha256": "63bc7574b87091e6e74cb010d3e0278f59317457ccd0eb7cabff85bbf5f6216b",
+    "provenance": "Public auth background resource, original response bytes; development-only 4 MiB extraction bound",
+    "retrieved": "2026-11-12"
+  },
+  {
+    "file": "jitpack-github-logo.png",
+    "url": "https://jitpack.io/w/img/github-logo.png",
+    "bytes": 41512,
+    "sha256": "1b296e5f99b10de236781ea29c7caea64a28561f3b3704c5564efc71b1273482",
+    "provenance": "Public original JitPack resource, unchanged bytes",
+    "retrieved": "2026-11-12"
+  },
+  {
+    "file": "jitpack-bitbucket-logo.png",
+    "url": "https://jitpack.io/w/img/bitbucket-logo.png",
+    "bytes": 12848,
+    "sha256": "401f7aceff42e0178bf55ae605652d064dbb24ed0983e21538a1f1a2a9edca64",
+    "provenance": "Public original JitPack resource, unchanged bytes",
+    "retrieved": "2026-11-12"
+  },
+  {
+    "file": "jitpack-gitlab-logo.png",
+    "url": "https://jitpack.io/w/img/gitlab-logo.png",
+    "bytes": 23183,
+    "sha256": "0969e35ccd6f7a92ae2022ca151a942af3d9134aa629b0171dcc5f51d470cbf1",
+    "provenance": "Public original JitPack resource, unchanged bytes",
+    "retrieved": "2026-11-12"
+  },
+  {
+    "file": "jitpack-android-arsenal-logo.png",
+    "url": "https://jitpack.io/w/img/android-arsenal-logo.png",
+    "bytes": 57367,
+    "sha256": "2bb1797dbf16991f403bd418e88bc11adecba54c69b9c0a04bc486a71932f1f6",
+    "provenance": "Public original JitPack resource, unchanged bytes",
+    "retrieved": "2026-11-12"
+  },
+  {
+    "file": "jitpack-docker-logo.png",
+    "url": "https://jitpack.io/w/img/docker-logo.png",
+    "bytes": 22265,
+    "sha256": "b1443b203e25f422d136c31c959a8db1f0603431356f59165bbeadfe4df2e213",
+    "provenance": "Public original JitPack resource, unchanged bytes",
+    "retrieved": "2026-11-12"
+  },
+  {
+    "file": "jitpack-jitpack-logo-watermark.svg",
+    "url": "https://jitpack.io/w/img/jitpack-logo-watermark.svg",
+    "bytes": 1916,
+    "sha256": "7859ad699558bfbb007623d396e7125e91cddaaeb83be5ae38173f0d10982c2c",
+    "provenance": "Public original JitPack resource, unchanged bytes",
+    "retrieved": "2026-11-12"
+  },
+  {
+    "file": "kotlin-github.svg",
+    "url": "https://kotlinlang.org/docs/images/github.svg",
+    "bytes": 789,
+    "sha256": "379749a47f95146eb88302c787a0c11a2742c8bb193bdedc678fa9742087c29a",
+    "retrieved": "2026-11-12",
+    "provenance": "Original public Kotlin documentation inline image resource; unchanged response bytes"
+  },
+  {
+    "file": "kotlin-jetbrains.svg",
+    "url": "https://kotlinlang.org/docs/api-references.html",
+    "bytes": 3587,
+    "sha256": "79560774655a24ab5752de5194fbc71016bf312416282a46a0f75ee200d54283",
+    "retrieved": "2026-11-12",
+    "provenance": "Unchanged decoded bytes of the original embedded ::before background SVG in public computed CSS; fixture retains its data URI delivery"
+  },
+  {
+    "file": "kotlin-community-x.svg",
+    "url": "https://kotlinlang.org/_next/static/media/keep-in-touch-twitter-icon.8d020cc9.svg",
+    "bytes": 434,
+    "sha256": "d8f932f31c46634d59792063ee07a912d91ddd399a45c30f9c0edbb3f73eb275",
+    "retrieved": "2026-11-12",
+    "provenance": "Original public Kotlin community external image response; unchanged bytes"
+  },
+  {
+    "file": "kotlin-community-slack.svg",
+    "url": "https://kotlinlang.org/_next/static/media/keep-in-touch-slack-icon.77c2809f.svg",
+    "bytes": 1913,
+    "sha256": "2a499a39c9b0b962e870b9fa5fb563b84dd728825d64f526677d52e8b7c72d5c",
+    "retrieved": "2026-11-12",
+    "provenance": "Original public Kotlin community external image response; unchanged bytes"
+  },
+  {
+    "file": "infojobs-select-arrow.png",
+    "url": "https://media.infojobs.net/appgrade/backgrounds/bg-select-arrow.png",
+    "bytes": 166,
+    "sha256": "98cd2cbf71e26a02eb13a5cbb5be054e56f6c37e2eee364eca57997a4578f7b6",
+    "provenance": "Original public PNG referenced by the official Rubik chosen control CSS; HTTPS transport.",
+    "retrieved": "2026-11-12"
+  },
+  {
+    "file": "infojobs-search-glyph.png",
+    "url": "https://media.infojobs.net/appgrade/backgrounds/bg-magglass-light.png",
+    "bytes": 505,
+    "sha256": "daa569207d9dc33aa60e6c646c84d7cacbfe57abe6acc13971c2b28fcd51d272",
+    "provenance": "Original public PNG referenced by the official Rubik chosen control CSS; HTTPS transport.",
+    "retrieved": "2026-11-12"
+  },
+  {
+    "file": "docs-material-common-grey.svg",
+    "url": "https://ssl.gstatic.com/docs/common/material_common_sprite1066_gm3_grey_medium.svg",
+    "bytes": 824794,
+    "sha256": "d146e505b4e81f3a5daf2b02279e94f7a3551bf8b88a9da6ea9e949628a71995",
+    "retrieved": "2026-11-12",
+    "provenance": "Original public Google Docs CSS content sprite; supplied live crop offsets. A credential-free request with Origin https://docs.google.com receives matching Access-Control-Allow-Origin; a request without Origin does not. Local copy retains source bytes and uses the dedicated bounded CSS content crop path."
+  },
+  {
+    "file": "docs-material-common-mask.svg",
+    "url": "https://ssl.gstatic.com/docs/common/material_common_sprite1066.svg",
+    "bytes": 823625,
+    "sha256": "58f740c446a957aad27c53e576796bf49cf85a0bb08a31c7796e28a919ae8bcb",
+    "retrieved": "2026-11-12",
+    "provenance": "Original public Google Docs mask sprite. Reporter supplied CSS mask delivery on a solid-color 10000x338 element, selected B at (-8016,0), clipped to 20x20. Origin https://docs.google.com is explicitly authorized by the server. Source bytes retained unchanged."
+  },
+  {
+    "file": "amazon-window-display.jpg",
+    "url": "https://m.media-amazon.com/images/I/61TGzC7jKqL._AC_AIweblab1431263,T1_SF1282.5,2052_QL80_.jpg?aicid=homepage-single-creative-card",
+    "bytes": 65683,
+    "sha256": "8354c603787bc572d7ccfe5385b55e93793a0f02c90973526beab893c44c80a0",
+    "retrieved": "2026-11-12",
+    "provenance": "Original public JPEG fallback referenced by reporter supplied picture. Local reduced picture keeps external image delivery and artwork aspect ratio; AVIF/2x selection and original surrounding CSS are not verified. Credential-free requests with Origin https://www.amazon.es receive Access-Control-Allow-Origin: * for both the supplied JPEG and AVIF URLs; this confirms resource access, not full live layout verification."
+  },
+  {
+    "file": "gradle-footer-mono.svg",
+    "url": "https://plugins.gradle.org/assets/images/b409413fbfb34c70133e5efa6d472bbe-gradle-logo-landscape-mono-dark.svg",
+    "bytes": 4637,
+    "sha256": "a5621424b65cbfa866ec8390efc802afe7e0502f519e1e82279e35aa7c01cd20",
+    "retrieved": "2026-11-12",
+    "provenance": "Original public same-origin SVG from the reported plugin footer. Internal static class mask and evenodd geometry retained; no source ink or alpha edits."
+  },
+  {
+    "file": "amazon-controls-sprite.png",
+    "url": "https://m.media-amazon.com/images/S/sash/McBZv0ZvnbehkIx.png",
+    "bytes": 16237,
+    "sha256": "d47c1e50db91bb597b75edc63362cd0c568e4f5f15a3f8be1b6adff24e89e447",
+    "retrieved": "2026-11-12",
+    "provenance": "Original public raster control sprite. Live desktop visible dropdown 10x8 at -7px -102px and right arrow 11x15 at -5px -35px, background-size 400x900. Cross-origin display, CORS-bound reads."
+  },
+  {
+    "file": "amazon-alexa-wordmark.svg",
+    "url": "https://m.media-amazon.com/images/I/51waPb-h-9L._RC%7C71ALooeEWlL.css,41WcY5PbsbL.css,61-ts5BTkUL.css,61QI8YTJreL.css,41kTi7oQucL.css,01FcI3FsaiL.css,213z74TUCPL.css,01-Mnqi69mL.css,31fa2d137QL.css,21B9Pjqs9IL.css,41wk4ggJg5L.css,21CB9R4dxNL.css,111Bp55OByL.css,01kzFeaY0rL.css,21KQnzhmfTL.css,41bqNBi+QSL.css,619LXNvN+lL.css,01NLp3ZKNoL.css_.css?AUIClients/NavDesktopUberAsset#desktop.language-es.es.1173010-T1.1126664-T1.1253326-T1.1236111-T1.1189111-T1",
+    "bytes": 11900,
+    "sha256": "e6c8b93c6ae409fb5312616544e295ef2eae08ae2aab8567619d68eb9bb14a66",
+    "retrieved": "2026-11-12",
+    "provenance": "Original decoded 139x18 embedded SVG from the public body.rufus-cl-alexa-plus closed navigation avatar rule. Visible para-compras lettering is vector paths; the adjacent HTML caption is display:none. Fixture preserves data-URI delivery, 131x18 contain host and the original gradient."
   }
 ]

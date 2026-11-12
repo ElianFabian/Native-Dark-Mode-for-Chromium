@@ -19,6 +19,7 @@
   const transitionMarker = 'data-native-dark-mode-transition';
   const sampleMarker = 'data-native-dark-mode-sampling';
   const chromiumProbe = '--native-dark-mode-chromium-active';
+  const paletteProbe = '--native-dark-mode-palette-active';
   const transitionProbe = '--native-dark-mode-transition-guard';
   // An extension reload can leave its previous sheet in an open document.
   function removePreviousThemeSheets(root) {
@@ -36,18 +37,61 @@
   const shadowRoots = new Set();
   const elementColorRules = new Map();
   const authoredPaint = new WeakMap();
+  let inspectingElement;
   const colorRules = new Map();
   const unusedColorRules = [];
   let sampledElements = new WeakSet();
   const artworkContrast = new WeakMap();
   const staticArtwork = new Map();
+  const linkedArtworkBackings = new WeakMap();
+  const neutralImageProbes = new WeakMap();
+  const authoredArtworkLayers = new WeakMap();
+  const fieldBackgrounds = new Map();
+  const camouflagedInputs = new WeakMap();
+  const placeholderSources = new WeakMap();
+  const contentSpriteSources = new Map();
+  const contentSpriteCrops = new Map();
+  const readSpriteResource = boundedTaskPool(2);
+  const decodeSpriteCrop = boundedTaskPool(4);
+  const spriteCohorts = new Map();
+
+  function boundedTaskPool(limit) {
+    const waiting = []; let active = 0;
+    function pump() {
+      while (active < limit && waiting.length) {
+        const {task,resolve,reject} = waiting.shift(); active++;
+        Promise.resolve().then(task).then(resolve,reject).finally(()=>{active--;pump()});
+      }
+    }
+    return task => new Promise((resolve,reject)=>{waiting.push({task,resolve,reject});pump()});
+  }
+
+  function spriteCohort(source) {
+    if (!spriteCohorts.has(source)) spriteCohorts.set(source,{pending:0,ready:new Set(),timer:undefined,frame:undefined});
+    return spriteCohorts.get(source);
+  }
+
+  function publishSpriteCohort(group, bounded = false) {
+    if (group.pending && !bounded) return;
+    if (group.frame !== undefined) return;
+    group.frame=requestAnimationFrame(()=>{
+      group.frame=undefined;clearTimeout(group.timer);group.timer=undefined;
+      for (const entry of group.ready) {
+        entry.done=true;
+        for (const user of entry.users) if(preset&&user.isConnected)scheduleDirtySurface(user);
+        entry.users.clear();
+      }
+      group.ready.clear();
+    });
+  }
   const labeledSvgArtwork = new Map();
   let artworkReadQueue = Promise.resolve();
   const overlayImages = new Map();
   const cssOverlayImages = new Map();
   const overlayRequests = new WeakMap();
   const overlayLabels = new WeakMap();
-  const overlayAuthoredInk = new WeakMap();
+  let overlayAuthoredInk = new WeakMap();
+  const overlayInkLabels = new Set();
   const raisedLinks = new WeakSet();
   const chromiumColorCache = new Map();
   const paletteTransitionRules = new Map();
@@ -105,9 +149,12 @@
   let viewportNeedsResample = false;
   let viewportLookahead = false;
   let viewportPreloadAfter = false;
+  let statePaintQueued = false;
+  let transparentFrameCanvas = false;
   let horizontalScrollTimer;
   const scrollOffsets = new WeakMap();
   const dirtySurfaces = new Set();
+  const scrollingSurfaces = new Set();
   const hoverTargets = new Set();
   let hoverFrame;
   let elements;
@@ -117,7 +164,7 @@
     'very-low': { minimum: 1.65, opacity: .3, edgeWidth: 1 },
     low: { minimum: 2.5, opacity: .46, edgeWidth: 1 },
     true: { minimum: 3.7, opacity: .64, edgeWidth: 1 },
-    high: { minimum: 5.3, opacity: .82, edgeWidth: 1 },
+    high: { minimum: 6.4, opacity: .9, edgeWidth: 1.5 },
     maximum: { minimum: 8, opacity: 1, edgeWidth: 2 }
   };
 
@@ -135,7 +182,7 @@
       paint('icon-light', 'filter: brightness(0) invert(1)')
     ];
     return [
-      `:root:root { color-scheme: dark !important; background-color: ${colors.base} !important; color: ${colors.text} !important; ${backdrop(colors.base)} !important; }`,
+      `:root:root { ${paletteProbe}: ${colors.base}; color-scheme: dark !important; background-color: ${colors.base} !important; color: ${colors.text} !important; ${backdrop(colors.base)} !important; }`,
       `:root body { background-color: ${colors.surface} !important; ${backdrop(colors.surface)} !important; }`,
       paint('surface', `background-color: ${colors.surface} !important; ${backdrop(colors.surface)}`),
       paint('raised', `background-color: ${colors.raised} !important; ${backdrop(colors.raised)}`),
@@ -156,7 +203,6 @@
       `${selector('white-card-label')}, ${selector('white-card-label')} * {
         color: white !important; -webkit-text-fill-color: white !important;
       }`,
-      paint('heading-backdrop', `background-color: ${colors.base}`),
       paint('breadcrumb-backdrop', `background-color: ${colors.base} !important; ${backdrop(colors.base)}`),
       paint('canvas-image', 'background-blend-mode: multiply'),
       paint('decorative-background', 'filter: brightness(.18)'),
@@ -164,7 +210,6 @@
         `${selector(`decorative-${pseudo}`)}::${pseudo} { filter: brightness(.18) !important; }`),
       paint('card-raised', `background-color: ${colors.raised} !important; ${backdrop(colors.raised)}`),
       paint('card-recessed', `background-color: ${colors.base} !important; ${backdrop(colors.base)}`),
-      `${selector('card-edge')}:not(:focus-visible) { outline: 1px solid color-mix(in srgb, ${colors.border} 65%, ${colors.surface}) !important; outline-offset: -1px !important; }`,
       paint('isolated-label', 'mix-blend-mode: normal'),
       paint('undimmed-label', 'filter: none'),
       ...borderEdges.map(side => paint(`border-${side.toLowerCase()}`, `border-${side.toLowerCase()}-color: ${colors.border}`)),
@@ -329,15 +374,19 @@
     const surface = roles.includes('surface') ? colors.surface : roles.includes('raised') ? colors.raised : null;
     const ink = surface?.slice(1).match(/../g).map(channel => parseInt(channel, 16));
     const darkened = ink && [...ink, 1];
-    const cardPaint = separatedCardPaint(element, style, solid, darkened);
+    const cardPaint = separatedCardPaint(element, style, solid ?? chromiumSrgb(backgroundColor),
+      darkened ?? colors.surface.slice(1).match(/../g).map(channel => parseInt(channel, 16)).concat(1));
     if (cardPaint) artworkPaint += `background-color: ${rgba(cardPaint.surface)} !important;` +
-      (cardPaint.shadow ? `box-shadow: ${cardPaint.shadow} !important;` : '');
+      (cardPaint.shadow ? `box-shadow: ${cardPaint.shadow} !important;` : '') +
+      (cardPaint.filter ? `filter: ${cardPaint.filter} !important;` : '');
     const sourceBackdrop = !darkened && authoredSolidBackdrop(element);
     const frameBackdrop = cardPaint?.surface ?? darkened ?? (sourceBackdrop && luminance(sourceBackdrop) > .6 &&
       Math.max(...sourceBackdrop.slice(0, 3)) - Math.min(...sourceBackdrop.slice(0, 3)) <= 16 ?
       colors.surface.slice(1).match(/../g).map(channel => parseInt(channel, 16)).concat(1) : null);
     const boxBorder = authoredFrameBorder(element, style, frameBackdrop);
     if (boxBorder) pseudoPaint.push([':not(:focus-visible)', boxBorder]);
+    const compositeFrame = compositeFieldFrame(element,style,boxBorder);
+    if (compositeFrame) pseudoPaint.push([':not(:focus-within)::after',compositeFrame]);
     if (darkened && element.matches('span,small,label,[role="status"]')) {
       pseudoPaint.push(...labelPseudoSurfaces(element, chromiumSrgb(backgroundColor), darkened));
     }
@@ -349,7 +398,7 @@
     if (imageLabel || artworkPaint || pseudoPaint.length) {
       paletteRepairs.set(element, [(imageLabel || '') + artworkPaint, pseudoPaint]);
     }
-    if (solid?.[3] >= .75 && !coloredControl &&
+    if (!cardPaint?.filter && solid?.[3] >= .75 && !coloredControl &&
         element.matches('article,aside,div,section,li,td') && !element.closest(`${interactive},[role="tablist"]`) &&
         (style.boxShadow !== 'none' || (parseFloat(style.borderTopLeftRadius) >= 4 && parseFloat(style.paddingTop) >= 6))) {
       roles.push('card');
@@ -390,6 +439,10 @@
     const paintsBackground = element === document.documentElement || element === document.body ||
       roles.some(role => ['surface', 'raised', 'gradient', 'badge'].includes(role));
     const properties = paintsBackground || imageLabel || raised ? ['color', 'background-color'] : ['color'];
+    // Border transitions otherwise leak the previous themed ink into the next
+    // authored snapshot while the marker is temporarily absent for sampling.
+    properties.push(...borderSides.map(side => `border-${side.toLowerCase()}-color`));
+    if (cardPaint?.filter) properties.push('filter', 'box-shadow');
     if (paletteFades.has(element)) properties.push('background-image');
     const transition = paintTransition(element, style, properties);
     if (transition) paletteTransitions.set(element, transition);
@@ -397,29 +450,67 @@
   }
 
   function inspect(element, backdrops, switchingRenderer = false) {
+    if (window !== window.top && document.body && [document.documentElement,document.body].includes(element)) {
+      const disabled=sheet.disabled;
+      try {
+        // Palette canvas defaults are global rules, not element markers.
+        // Read both real source layers before interpreting frame transparency.
+        sheet.disabled=true;
+        transparentFrameCanvas=[document.documentElement,document.body].every(node=>{
+          const source=getComputedStyle(node);
+          return chromiumSrgb(source.backgroundColor)?.[3]===0&&source.backgroundImage==='none';
+        });
+      } finally { sheet.disabled=disabled; }
+    }
+    // UA form paint is intentionally delegated to the dark browser scheme.
+    // Exposing normal source link colors must not turn a native field's UA
+    // backing into an authored white fill. Explicit authored schemes and
+    // appearance:none controls continue through their ordinary source path.
+    let nativeControl = false;
+    if (preset === 'chromium' && element.matches('input,select,textarea')) {
+      const nativeStyle = getComputedStyle(element);
+      nativeControl = nativeStyle.appearance !== 'none' && nativeStyle.colorScheme === 'normal';
+      if (nativeControl) element.setAttribute(sampleMarker, 'native-control');
+    }
+    // Vector image paint is a decision for this sample's backing/context, not
+    // a permanent property of the decoded source resource.
+    const artwork = artworkContrast.get(element);
+    if (artwork) delete artwork.svgPaint;
     if (element instanceof HTMLElement || element instanceof SVGSVGElement) {
       const style = getComputedStyle(element);
+      if (element.matches('input[placeholder],textarea[placeholder]')) {
+        placeholderSources.set(element,{opacity:getComputedStyle(element,'::placeholder').opacity});
+      }
+      rememberArtworkLayers(element, style);
+      const destination = originalTransitionColors(element, style);
       authoredPaint.set(element, {
-        color: style.color, webkitTextFillColor: style.webkitTextFillColor,
-        backgroundColor: style.backgroundColor, backgroundImage: style.backgroundImage,
-        backgroundBlendMode: style.backgroundBlendMode, backgroundRepeat: style.backgroundRepeat,
+        color: destination.color ?? style.color, webkitTextFillColor: destination.webkitTextFillColor ?? style.webkitTextFillColor,
+        backgroundColor: destination.backgroundColor ?? style.backgroundColor, backgroundImage: style.backgroundImage,
+        backgroundBlendMode: style.backgroundBlendMode, backgroundRepeat: style.backgroundRepeat, maskImage: style.maskImage,
         backgroundSize: style.backgroundSize, cursor: style.cursor,
         // Backdrop projection must classify a cached parent exactly as when it
         // was inspected directly, including raised/compact surface policy.
-        display: style.display, boxShadow: style.boxShadow, borderTopLeftRadius: style.borderTopLeftRadius,
+        display: style.display, position: style.position, right: style.right, boxShadow: destination.boxShadow ?? style.boxShadow, borderTopLeftRadius: style.borderTopLeftRadius,
+        paddingTop: style.paddingTop, paddingLeft: style.paddingLeft, mixBlendMode: style.mixBlendMode,
+        opacity: style.opacity, filter: destination.filter ?? style.filter,
+        overflowX: style.overflowX, overflowY: style.overflowY,
         borderStyle: style.borderStyle, borderImageSource: style.borderImageSource,
+        transform: style.transform, clipPath: style.clipPath,
         outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth, outlineColor: style.outlineColor,
-        textDecorationLine: style.textDecorationLine, textDecorationColor: style.textDecorationColor,
+        textDecorationLine: style.textDecorationLine, textDecorationColor: destination.textDecorationColor ?? style.textDecorationColor,
         textDecorationStyle: style.textDecorationStyle, textDecorationThickness: style.textDecorationThickness,
         textUnderlineOffset: style.textUnderlineOffset,
         ...(style.backgroundImage !== 'none' ? Object.fromEntries([
           'backgroundPositionX', 'backgroundPositionY', 'backgroundOrigin', 'backgroundClip',
           'filter', 'transform', 'opacity', 'mixBlendMode'
         ].map(property => [property, style[property]])) : {}),
-        ...(chromiumSrgb(style.backgroundColor)?.[3] || labeledPointerControl(element, style) &&
+        ...(style.content.startsWith('url(') ? Object.fromEntries([
+          'content','position','left','top','width','height'
+        ].map(property=>[property,style[property]])) : {}),
+        ...(chromiumSrgb(style.backgroundColor)?.[3] || paintedBorderSides(style).length || labeledPointerControl(element, style) &&
           (style.backgroundImage !== 'none' || borderEdges.some(side => parseFloat(style[`border${side}Width`]) > 0)) ?
           Object.fromEntries(borderEdges.flatMap(side => ['Color', 'Style', 'Width'].map(property =>
-            [`border${side}${property}`, style[`border${side}${property}`]]))) : {})
+            [`border${side}${property}`, property === 'Color' ? destination[`border${side}Color`] ?? style[`border${side}Color`] : style[`border${side}${property}`]]))) : {})
       });
     }
     const root = element.shadowRoot ?? (element instanceof HTMLElement
@@ -436,8 +527,15 @@
       schedule(root);
     }
     sampledElements.add(element);
-    return preset === 'chromium' ? chromiumColors(element, backdrops, switchingRenderer) :
-      rolesFor(element, switchingRenderer);
+    const previous = inspectingElement;
+    inspectingElement = element;
+    try {
+      return preset === 'chromium' ? chromiumColors(element, backdrops, switchingRenderer) :
+        rolesFor(element, switchingRenderer);
+    } finally {
+      inspectingElement = previous;
+      if (nativeControl) element.removeAttribute(sampleMarker);
+    }
   }
 
   const rgba = ([r, g, b, alpha]) => `rgba(${r}, ${g}, ${b}, ${alpha})`;
@@ -552,11 +650,17 @@
   const svgGlyphs = new Map();
   const externalSvgGlyphs = new Map();
   const compactBackgrounds = new Map();
-  let compactBackgroundQueue = Promise.resolve();
+  const compactBackgroundTask = boundedTaskPool(4);
   let compactBackgroundPending = 0;
+  const compactBackgroundWaiters = new Set();
+  function finishCompactBackground() {
+    compactBackgroundPending--;
+    for (const user of compactBackgroundWaiters) if (preset && user.isConnected) scheduleDirtySurface(user);
+    compactBackgroundWaiters.clear();
+  }
   const svgPaint = /\b(fill|stroke)\s*=\s*(['"])([^'"]+)\2/gi;
 
-  function backgroundSvgGlyph(style, boundedBox = false, twoTone = false, allowRepeat = false) {
+  function backgroundSvgGlyph(style, boundedBox = false, maximumInks = 1, allowRepeat = false) {
     const image = style.backgroundImage;
     if ((style.backgroundRepeat !== 'no-repeat' &&
           !(allowRepeat && ['repeat', 'repeat-x', 'repeat-y'].includes(style.backgroundRepeat))) ||
@@ -565,7 +669,7 @@
             style.backgroundSize.split(' ').some(size => parseFloat(size) > 48)))) return null;
     const match = /^url\("data:image\/svg\+xml,((?:\\.|[^"\\])+)"\)$/i.exec(image);
     if (!match || match[1].length > 4096) return null;
-    const key = `${image}|${twoTone}`;
+    const key = `${image}|${maximumInks}`;
     if (svgGlyphs.has(key)) return svgGlyphs.get(key);
     let svg;
     try { svg = decodeURIComponent(match[1].replace(/\\(["\\])/g, '$1')); } catch { return null; }
@@ -590,7 +694,7 @@
         paints.length && gradientColor(paints[0], true);
       const inks = paints.map(value => /^#[\da-f]{6}$/i.test(value) ?
         [1, 3, 5].map(index => parseInt(value.slice(index, index + 2), 16)).concat(1) : gradientColor(value, true));
-      const multi = twoTone && new Set(paints).size <= 2 && inks.every(color => color?.[3] === 1);
+      const multi = maximumInks > 1 && new Set(paints).size <= maximumInks && inks.every(color => color?.[3] === 1);
       if (ink?.[3] === 1 && (paints.every(value => value === paints[0]) || multi)) glyph = { svg, ink, multi };
     }
     if (svgGlyphs.size >= 128) svgGlyphs.clear();
@@ -612,17 +716,17 @@
     if (!style.backgroundImage.startsWith('url("data:image/svg+xml,')) return null;
     const glyph = backgroundSvgGlyph(style);
     if (glyph) return glyph;
-    // A short label can accompany a small two-ink drawing or a repeated glyph
+    // A short label can accompany a small simple drawing or a repeated glyph
     // tile. Recolor each verified SVG ink; never filter the whole container.
-    if (element.textContent.trim().length <= 160 &&
+    if (!element.matches('[role="img"]') && element.textContent.trim().length <= 160 &&
         (Array.prototype.some.call(element.childNodes, textNode) || wrappedBackgroundGlyphLabel(element, style))) {
-      const labeled = backgroundSvgGlyph(style, false, true, true);
+      const labeled = backgroundSvgGlyph(style, false, element.closest(interactive) ? 2 : 4, true);
       if (labeled) return { ...labeled, paletteGlyph: true, repeated: style.backgroundRepeat !== 'no-repeat' };
     }
     if (!labeledPointerControl(element, style)) return null;
     const box = element.getBoundingClientRect();
     return box.width > 0 && box.height > 0 && Math.max(box.width, box.height) <= 48 ?
-      backgroundSvgGlyph(style, true, true) : null;
+      backgroundSvgGlyph(style, true, 2) : null;
   }
 
   function wrappedBackgroundGlyphLabel(element, style) {
@@ -641,6 +745,218 @@
       if (Array.prototype.some.call(label.childNodes, textNode)) return label.textContent.trim().length <= 160;
     }
     return false;
+  }
+
+  function selectProxyFrame(element, includeDisabled = false) {
+    if (!element.matches('div,span') || !element.querySelector(':scope > a[tabindex],:scope > [role="combobox"]')) return false;
+    const select = element.parentElement?.querySelector(':scope > select');
+    if (!select || (!includeDisabled && (select.disabled || element.closest('[aria-disabled="true"]'))) ||
+        getComputedStyle(select).display !== 'none') return false;
+    return element.clientWidth > 0 && element.clientWidth <= 720 && element.clientHeight >= 20 && element.clientHeight <= 80;
+  }
+
+  function fieldLabelBackdrop(element, style) {
+    if (!element.matches(`${textInput},input:is([type="password"],[type="email"],[type="url"],[type="tel"],[type="number"])`) ||
+        !style.backgroundImage.startsWith('url(') || style.backgroundRepeat !== 'no-repeat' ||
+        style.filter !== 'none' || style.opacity !== '1' || style.maskImage !== 'none' ||
+        style.transform !== 'none' || style.mixBlendMode !== 'normal' || style.backgroundBlendMode !== 'normal' ||
+        !/^(?:9[5-9](?:\.\d+)?|100)%$/.test(style.backgroundPositionX)) return false;
+    const size = style.backgroundSize.split(' ').map(value=>/^\d+(?:\.\d+)?px$/.test(value)?parseFloat(value):NaN);
+    if (size.length !== 2 || size.some(value=>!(value>0&&value<=48))) return false;
+    // A tiny edge-aligned field adornment is not a full input backdrop. Its
+    // known footprint lets the label use the measured solid fill, independently
+    // of CORS access to the image. This does not authorize image recoloring.
+    return element.clientWidth >= 160 && element.clientWidth <= 1024 &&
+      element.clientHeight >= 20 && element.clientHeight <= 80 && size[1] <= element.clientHeight &&
+      size[0]*size[1] <= element.clientWidth*element.clientHeight*.1;
+  }
+
+  function fieldBackgroundGlyph(element, style) {
+    const field = selectProxyFrame(element,true) || element.matches(`${textInput},input:is([type="password"],[type="email"],[type="url"],[type="tel"],[type="number"])`);
+    const smallSize = /^(?:\d+(?:\.\d+)?px)(?: \d+(?:\.\d+)?px)?$/.test(style.backgroundSize) &&
+      style.backgroundSize.split(' ').every(v=>parseFloat(v)>0&&parseFloat(v)<=48);
+    if (!style.backgroundImage.startsWith('url(') || !field || element.matches(':disabled,[aria-disabled="true"]') ||
+        style.backgroundRepeat !== 'no-repeat' || style.filter !== 'none' ||
+        (!(Number(style.opacity)>=.35&&Number(style.opacity)<=1)) ||
+        style.mixBlendMode !== 'normal' || style.backgroundBlendMode !== 'normal' || style.maskImage !== 'none' ||
+        style.transform !== 'none' || !/^(?:9[5-9](?:\.\d+)?|100)%$/.test(style.backgroundPositionX) ||
+        !(['auto','auto auto'].includes(style.backgroundSize)||smallSize)) return null;
+    let entry = fieldBackgrounds.get(style.backgroundImage);
+    if (!entry) {
+      if (fieldBackgrounds.size >= 64) return null;
+      const match = /^url\("([^"\\]+)"\)$/.exec(style.backgroundImage);
+      if (!match) return null;
+      const source = new URL(match[1],location.href).href;
+      if (!/^(?:https?:|data:image\/png)/i.test(source)) return null;
+      entry = {done:false,ink:null,users:new Set()};fieldBackgrounds.set(style.backgroundImage,entry);
+      artworkReadQueue = artworkReadQueue.then(async()=>{
+        const resource=await readImageResource(source,new URL(source).origin===location.origin?'same-origin':'cors',32768);
+        if(!resource){entry.unreadable=true;return}
+        if(resource.type!=='image/png'||resource.data.length<24||resource.data.length>32768)return;
+        const view=new DataView(resource.data.buffer,resource.data.byteOffset,resource.data.byteLength);
+        const width=view.getUint32(16),height=view.getUint32(20);
+        if(!width||!height||width>48||height>48||!await globalThis.ImageDecoder?.isTypeSupported(resource.type))return;
+        let decoder,bitmap;
+        try{
+          decoder=new ImageDecoder({data:resource.data,type:resource.type,preferAnimation:true});
+          await decoder.tracks.ready;await decoder.completed;
+          if(decoder.tracks.selectedTrack?.frameCount!==1)return;
+          bitmap=await createImageBitmap(new Blob([resource.data],{type:resource.type}));
+          const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+          const context=canvas.getContext('2d',{willReadFrequently:true});context.drawImage(bitmap,0,0);
+          const pixels=context.getImageData(0,0,width,height).data,ink=solidSilhouetteInk(pixels,4);
+          if(!ink)return;
+          // Include partially antialiased paint in the palette proof, rather
+          // than mistaking a multicolor crop's opaque portion for one ink.
+          for(let i=0;i<pixels.length;i+=4)if(pixels[i+3]>=32&&ink.slice(0,3).some((c,j)=>Math.abs(c-pixels[i+j])>8))return;
+          Object.assign(entry,{ink,width,height,data:'data:image/png;base64,'+btoa(String.fromCharCode(...resource.data))});
+        }finally{bitmap?.close();decoder?.close()}
+      }).catch(()=>{}).finally(()=>{entry.done=true;for(const user of entry.users)if(preset&&user.isConnected)scheduleDirtySurface(user);entry.users.clear()});
+    }
+    if(!entry.done)entry.users.add(element);
+    return entry.ink?entry:null;
+  }
+
+  function fieldBackgroundPaint(element, style, getBackdrop) {
+    const glyph=fieldBackgroundGlyph(element,style),backdrop=glyph&&getBackdrop(element);
+    if(!glyph||!backdrop)return '';
+    const ink=contrastingGlyphInk(glyph.ink,backdrop,7,true);
+    if(!ink)return '';
+    // Recolor the resource only. The static PNG's dimensions and alpha remain
+    // intact; filtering its text-bearing host would also filter every label.
+    const [r,g,b]=ink.slice(0,3).map(c=>c/255);
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${glyph.width}" height="${glyph.height}"><filter id="ink" color-interpolation-filters="sRGB"><feColorMatrix values="0 0 0 0 ${r} 0 0 0 0 ${g} 0 0 0 0 ${b} 0 0 0 1 0"/></filter><image width="${glyph.width}" height="${glyph.height}" href="${glyph.data}" filter="url(#ink)"/></svg>`;
+    const image=`url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+    if(fieldBackgrounds.size<128)fieldBackgrounds.set(image,glyph);
+    return `background-image: ${image} !important;`;
+  }
+
+  function selectProxyParts(frame) {
+    const control=frame.querySelector(':scope > a[tabindex]:not([href]),:scope > [role="combobox"]');
+    const slot=control?.querySelector(':scope > :is(div,span):last-child');
+    const label=control&&[...control.querySelectorAll(':scope > span')].find(node=>node!==slot&&node.textContent.trim());
+    if(!slot||!label||slot.textContent.trim()||slot.childElementCount>1||slot.getAttribute('aria-label')||slot.matches('[role="img"]')||
+        slot.firstElementChild&&!slot.firstElementChild.matches('b:empty,i:empty,span:empty,small:empty'))return null;
+    return {control,slot,label};
+  }
+
+  function solidControlBackdrop(element, source, getBackdrop) {
+    const measured=getBackdrop(element);
+    if(measured)return measured;
+    const fill=chromiumSrgb(source.backgroundColor);
+    // The control's outer frame and replacement indicator sit on its solid
+    // fill; unreadable inset image pixels do not describe that backing.
+    return fill?.[3]===1?(palettes[preset]?chromiumSrgb(getComputedStyle(element).backgroundColor):chromiumSurfaceColor(element,source,fill)):null;
+  }
+
+  function semanticSelectArrow(element, getBackdrop) {
+    if(!selectProxyFrame(element,true))return [];
+    const source=authoredBackdropStyle(element),entry=fieldBackgrounds.get(source.backgroundImage);
+    const parts=selectProxyParts(element),anchor=parts?.control,slot=parts?.slot,label=parts?.label;
+    const backdrop=solidControlBackdrop(element,source,getBackdrop);
+    if(!entry?.done||!entry.unreadable||!slot||!label||!backdrop||luminance(backdrop)>.18||
+        source.backgroundRepeat!=='no-repeat'||source.backgroundSize!=='auto'||source.backgroundPositionX!=='100%'||
+        !(slot.clientWidth>0&&slot.clientWidth<=48)||slot.clientHeight<20||slot.clientHeight>80||
+        label.getBoundingClientRect().right>slot.getBoundingClientRect().left||
+        getComputedStyle(slot,'::after').content!=='none')return [];
+    const paint=authoredBackdropStyle(slot);
+    if(paint.position!=='absolute'||paint.right!=='0px'||paint.backgroundImage!=='none'||chromiumSrgb(paint.backgroundColor)?.[3]!==0||
+        paint.filter!=='none'||paint.transform!=='none'||paintedBorderSides(paint).length)return [];
+    // An explicitly requested semantic fallback for an inaccessible dropdown
+    // indicator: draw only a small chevron, never restore a light rectangle or
+    // pretend that unknown PNG pixels were verified/recolored.
+    const expanded=element.getAttribute('aria-expanded')==='true'||anchor.getAttribute('aria-expanded')==='true';
+    return [['','background-image: none !important;'],[' > :is(a[tabindex]:not([href]),[role="combobox"]) > :is(div,span):last-child::after',
+      `content: "" !important; position: absolute !important; inset: 50% auto auto 50% !important;
+       width: 7px !important; height: 7px !important; box-sizing: border-box !important;
+       background: none !important; border: solid white !important; border-width: 0 2px 2px 0 !important;
+       transform: translate(-50%,-65%) rotate(${expanded?225:45}deg) !important; pointer-events: none !important;`]];
+  }
+
+  function proxyLabelPaint(element, style, getBackdrop) {
+    style = authoredBackdropStyle(element);
+    if (!element.matches('span') || element.childElementCount || !element.textContent.trim() ||
+        element.textContent.trim().length > 160) return '';
+    const anchor = element.parentElement, frame = anchor?.parentElement;
+    if (!anchor?.matches('a[tabindex]:not([href]),[role="combobox"]') || !frame || !selectProxyFrame(frame,true)) return '';
+    const select = frame.parentElement.querySelector(':scope > select');
+    const disabled = select.disabled || Boolean(frame.closest('[aria-disabled="true"]'));
+    const hint = !select.selectedOptions.length || !select.selectedOptions[0].textContent.trim();
+    const layer = authoredBackdropStyle(frame), parts=selectProxyParts(frame), slot=parts?.slot;
+    if (!slot || parts.label!==element ||
+        layer.backgroundRepeat !== 'no-repeat' || layer.backgroundSize !== 'auto' ||
+        !layer.backgroundImage.startsWith('url(') || layer.backgroundPositionX !== '100%' ||
+        layer.filter !== 'none' || (!disabled && layer.opacity !== '1') || layer.mixBlendMode !== 'normal') return '';
+    const reserved = slot.getBoundingClientRect(), label = element.getBoundingClientRect();
+    // This structure reserves a separate right-hand glyph slot. Adapt only
+    // its non-overlapping label; no claim about unreadable image pixels is
+    // needed, and no replacement arrow is invented when CORS is denied.
+    if (slot.clientWidth <= 0 || slot.clientWidth > 48 || label.right > reserved.left ||
+        label.height <= 0 || label.height > reserved.height) return '';
+    const source = chromiumSrgb(layer.backgroundColor), ink = chromiumSrgb(style.color);
+    if (!source || source[3] !== 1 || luminance(source) < .75 || !ink || ink[3] !== 1 ||
+        Math.max(...ink.slice(0,3))-Math.min(...ink.slice(0,3)) > 24) return '';
+    const backing = palettes[preset] ? chromiumSrgb(getComputedStyle(frame).backgroundColor) :
+      chromiumSurfaceColor(frame,layer,source) ?? source;
+    if (!backing || backing[3] !== 1 || luminance(backing) > .18) return '';
+    let repaired;
+    if (disabled) {
+      let opacity=1;
+      for(let node=element;node&&node!==frame.parentElement;node=node.parentElement){
+        const paint=authoredBackdropStyle(node);if(paint.filter!=='none')return '';opacity*=Number(paint.opacity);
+      }
+      const outside=getBackdrop(frame.parentElement);
+      if(!(opacity>=.35&&opacity<=1)||!outside)return '';
+      const visible=compositeColor([...backing.slice(0,3),opacity],outside);
+      let gray=opacity<.8?240:192;
+      while(gray<255&&contrastRatio(luminance(compositeColor([gray,gray,gray,opacity],outside)),luminance(visible))<4.5)gray=Math.min(255,gray+4);
+      repaired=[gray,gray,gray,1];
+    } else if (hint) {
+      const muted=[160,160,160,1];repaired=readableColor(muted,backing,6)??muted;
+    } else repaired = contrastingGlyphInk(ink,backing,4.5,true);
+    return repaired ? `color: ${rgba(repaired)} !important; -webkit-text-fill-color: ${rgba(repaired)} !important;` : '';
+  }
+
+  function camouflagedInputPaint(element, style) {
+    style = authoredBackdropStyle(element);
+    if (!element.matches('input:not([type]),input[type="text"]') || element.matches(':focus,:disabled') ||
+        !element.value.trim() || element.value.length > 512 || style.opacity !== '1' || style.filter !== 'none' ||
+        style.webkitTextFillColor !== style.color || chromiumSrgb(style.backgroundColor)?.[3] !== 0) return '';
+    const backing = authoredSolidBackdrop(element), ink = chromiumSrgb(style.color);
+    if (!backing || luminance(backing) < .6 || !ink || ink[3] !== 1 ||
+        contrastRatio(luminance(ink),luminance(backing)) > 1.15) return '';
+    const input = element.getBoundingClientRect();
+    for(let root=element.parentElement,depth=0;root&&depth<3;depth++,root=root.parentElement){
+      if(root.clientWidth>1024||root.clientHeight>80||root.querySelectorAll('*').length>32)break;
+      for(const label of root.querySelectorAll('div,span,label')){
+        if(label.contains(element)||label.textContent.trim()!==element.value.trim())continue;
+        const s=getComputedStyle(label),r=label.getBoundingClientRect(),source=authoredBackdropStyle(label);
+        if(s.position!=='absolute'||s.pointerEvents!=='none'||s.visibility!=='visible'||s.opacity!=='1'||
+            Math.abs(r.left-input.left)>2||Math.abs(r.top-input.top)>2||r.width<input.width*.8||
+            r.width>input.width*1.2||r.height<input.height*.8||r.height>input.height*1.5)continue;
+        const foreground=chromiumSrgb(source.color);
+        if(foreground?.[3]!==1||contrastRatio(luminance(foreground),luminance(backing))<4.5)continue;
+        // Some editors camouflage their resting input in the original canvas
+        // color beneath a visible duplicate label. Preserve one visible copy;
+        // focus restores normal editing rather than changing fonts or strokes.
+        camouflagedInputs.set(element,root);
+        return '-webkit-text-fill-color: transparent !important;';
+      }
+    }
+    return '';
+  }
+
+  function glyphLabelTextPaint(element, style, backdrop, ink) {
+    if (!backdrop || luminance(backdrop) > .18 || !ink || ink[3] !== 1 ||
+        Math.max(...ink.slice(0,3))-Math.min(...ink.slice(0,3)) > 12 ||
+        parseFloat(style.fontSize) > 20 || element.textContent.trim().length > 160 ||
+        !Array.prototype.some.call(element.childNodes,textNode) ||
+        element.closest(':disabled,[aria-disabled="true"]')) return '';
+    const parent = element.parentElement;
+    const glyph = elementBackgroundGlyph(element,authoredBackdropStyle(element)) ||
+      (parent && elementBackgroundGlyph(parent,authoredBackdropStyle(parent)));
+    const readable = glyph && readableColor(ink,backdrop,8.5);
+    return readable ? `color: ${rgba(readable)} !important; -webkit-text-fill-color: ${rgba(readable)} !important;` : '';
   }
 
   function contrastingGlyphInk(original, backdrop, minimum, preferNative = false) {
@@ -716,7 +1032,7 @@
     return readableColor(transformed || original, backdrop, minimum) ?? transformed;
   }
 
-  async function compactBackgroundInk(source, width, height, size, position, repeat) {
+  async function sampleStaticBackground(source, width, height, size, position, repeat, inspectPixels) {
     const resource = await readImageResource(source, new URL(source).origin === location.origin ? 'same-origin' : 'cors');
     if (!resource) return null;
     let decoder, objectUrl;
@@ -777,16 +1093,23 @@
       // Tiny antialiased arrows may contain fewer than sixteen near-opaque
       // pixels. Scale only this bounded crop's evidence floor; retain the
       // single-ink and transparency checks and the artwork default elsewhere.
-      return solidSilhouetteInk(context.getImageData(0, 0, canvas.width, canvas.height).data,
-        Math.min(16, Math.max(8, Math.ceil(canvas.width * canvas.height * .06))));
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      return inspectPixels ? inspectPixels(pixels, canvas.width, canvas.height) :
+        solidSilhouetteInk(pixels, Math.min(16, Math.max(8, Math.ceil(canvas.width * canvas.height * .06))), 16);
     } catch { return null; }
     finally { decoder?.close(); if (objectUrl) URL.revokeObjectURL(objectUrl); }
   }
 
   function compactBackgroundFilter(element, style, backdrop, pseudo = '') {
+    // Most page elements have no compact resource. Reject them before walking
+    // activation wrappers or querying a large ancestor's form descendants.
+    const width = pseudo ? parseFloat(style.width) : element.clientWidth;
+    const height = pseudo ? parseFloat(style.height) : element.clientHeight;
+    const match = /^url\("([^"\\]+)"\)$/.exec(style.backgroundImage);
+    if (!match || !(width > 0 && height > 0 && width <= 48 && height <= 48)) return '';
     if (!backdrop || luminance(backdrop) >= .18 || style.filter !== 'none' || style.opacity !== '1' ||
         style.mixBlendMode !== 'normal' || chromiumSrgb(style.backgroundColor)?.[3] !== 0 ||
-        style.maskImage !== 'none' || !element.closest(interactive) || element.closest(':disabled,[aria-disabled="true"]') ||
+        style.maskImage !== 'none' || !(element.closest(interactive) || overlayActivationFrame(element)) || element.closest(':disabled,[aria-disabled="true"]') ||
         element.matches('[role="img"]') || element.closest('[id*="logo" i],[class*="logo" i],[id*="avatar" i],[class*="avatar" i]')) return '';
     if (!pseudo && (Array.prototype.some.call(element.childNodes, textNode) ||
         Array.from(element.children).some(child => {
@@ -797,28 +1120,33 @@
             !/^circle\(0(?:px|%)?\)$/.test(paint.clipPath) &&
             paint.clip !== 'rect(0px, 0px, 0px, 0px)';
         }))) return '';
-    const width = pseudo ? parseFloat(style.width) : element.clientWidth;
-    const height = pseudo ? parseFloat(style.height) : element.clientHeight;
-    if (!(width > 0 && height > 0 && width <= 48 && height <= 48) || style.backgroundOrigin !== 'padding-box') return '';
-    const match = /^url\("([^"\\]+)"\)$/.exec(style.backgroundImage);
-    if (!match) return '';
+    if (style.backgroundOrigin !== 'padding-box') return '';
     const source = new URL(match[1], location.href).href;
     if (!/^(?:https?:|data:image\/)/i.test(source)) return '';
     const position = [style.backgroundPositionX, style.backgroundPositionY];
     const key = JSON.stringify([source, width, height, style.backgroundSize, position, style.backgroundRepeat]);
     let entry = compactBackgrounds.get(key);
     if (!entry) {
-      if (compactBackgroundPending >= 8 || compactBackgrounds.size >= 128) return '';
+      if (compactBackgrounds.size >= 128) return '';
+      if (compactBackgroundPending >= 8) {
+        // A busy first viewport must retry eligible controls when capacity
+        // frees up, rather than depending on a later hover/theme change.
+        if (compactBackgroundWaiters.size < 128) compactBackgroundWaiters.add(element);
+        return '';
+      }
       entry = { done: false, ink: null, users: new Set() }; compactBackgrounds.set(key, entry); compactBackgroundPending++;
-      compactBackgroundQueue = compactBackgroundQueue.then(() => compactBackgroundInk(source, width, height,
+      void compactBackgroundTask(() => sampleStaticBackground(source, width, height,
         style.backgroundSize, position, style.backgroundRepeat)).then(ink => {
         entry.ink = ink; entry.done = true;
         for (const user of entry.users) if (preset && user.isConnected && ink) scheduleDirtySurface(user);
         entry.users.clear();
-      }).catch(() => { entry.done = true; entry.users.clear(); }).finally(() => { compactBackgroundPending--; });
+      }).catch(() => { entry.done = true; entry.users.clear(); }).finally(finishCompactBackground);
     }
     if (!entry.done) { entry.users.add(element); return ''; }
-    const ink = entry.ink;
+    return glyphContrastFilter(entry.ink,backdrop);
+  }
+
+  function glyphContrastFilter(ink, backdrop) {
     if (!ink || !readableColor(ink, backdrop, 7)) return '';
     if (Math.max(...ink.slice(0, 3)) - Math.min(...ink.slice(0, 3)) <= 24) {
       return 'brightness(0) invert(1)';
@@ -826,6 +1154,266 @@
     const target = contrastingGlyphInk(ink, backdrop, 7, true);
     const lift = Math.max(0, ...ink.slice(0, 3).map((channel, i) => (target[i] - channel) / (255 - channel || 1)));
     return `invert(1) brightness(${1 - Math.min(1, lift)}) invert(1)`;
+  }
+
+  async function contentSpriteDocument(source) {
+    if (!contentSpriteSources.has(source)) {
+      if (contentSpriteSources.size >= 8) return null;
+      const task=readSpriteResource(async()=>{
+        const resource=await readImageResource(source,new URL(source).origin===location.origin?'same-origin':'cors',1048576);
+        if(resource?.type!=='image/svg+xml')return null;
+        const text=new TextDecoder().decode(resource.data);
+        if(/<!DOCTYPE|<!ENTITY|<\?xml-stylesheet/i.test(text))return null;
+        const document=new DOMParser().parseFromString(text,'image/svg+xml'),svg=document.documentElement;
+        const width=Number(svg.getAttribute('width')),height=Number(svg.getAttribute('height'));
+        const view=(svg.getAttribute('viewBox')??'').trim().split(/[ ,]+/).map(Number);
+        const nodes=[svg,...svg.querySelectorAll('*')];
+        if(svg.localName!=='svg'||svg.namespaceURI!=='http://www.w3.org/2000/svg'||nodes.length>8192||
+            !(width>0&&height>0&&width<=16384&&height<=16384&&width*height<=4194304)||
+            view.length!==4||view.some(n=>!Number.isFinite(n))||view[2]<=0||view[3]<=0||
+            (svg.getAttribute('preserveAspectRatio')!=='none'&&Math.abs(width/height-view[2]/view[3])>.000001))return null;
+        const tags=/^(svg|g|path|circle|ellipse|line|polygon|polyline|rect|defs|clipPath|linearGradient|radialGradient|stop|title|desc|use|mask|filter|feGaussianBlur|feFlood|feBlend|feOffset|feColorMatrix|feComposite|feMerge|feMergeNode)$/;
+        if(nodes.some(node=>!tags.test(node.localName)||[...node.attributes].some(a=>/^on/i.test(a.localName)||
+            (a.localName==='href'&&!/^#[\w:.-]+$/.test(a.value))||
+            (/url\s*\(/i.test(a.value)&&!/^url\(#[\w:.-]+\)$/.test(a.value))||
+            (a.localName==='style'&&!/^mask-type:\s*(?:alpha|luminance)\s*;?$/.test(a.value)))))return null;
+        if([...svg.querySelectorAll('feGaussianBlur')].some(n=>(n.getAttribute('stdDeviation')??'0').split(/[ ,]+/).some(v=>!Number.isFinite(Number(v))||Number(v)<0||Number(v)>16)))return null;
+        for(const filter of svg.querySelectorAll('filter'))for(const name of ['width','height']){
+          const value=filter.getAttribute(name)??'120%';
+          if(!/^\d+(?:\.\d+)?%?$/.test(value)||parseFloat(value)>(value.endsWith('%')?200:256))return null;
+        }
+        return {svg,view};
+      }).catch(()=>null);
+      contentSpriteSources.set(source,task);
+    }
+    return contentSpriteSources.get(source);
+  }
+
+  function contentSpriteFilter(element, hostStyle, getBackdrop) {
+    const sprite=element.childElementCount===1&&element.firstElementChild;
+    if(!(sprite instanceof HTMLElement))return '';
+    const style=authoredBackdropStyle(sprite),host=authoredBackdropStyle(element);
+    const match=/^url\("([^"\\]+)"\)$/.exec(style.content??'');
+    if(!match||sprite.childElementCount||element.textContent.trim()||style.position!=='absolute'||
+        style.transform!=='none'||style.filter!=='none'||style.opacity!=='1'||style.mixBlendMode!=='normal'||
+        host.position!=='relative'||host.filter!=='none'||host.opacity!=='1'||host.transform!=='none'||host.maskImage!=='none'||
+        host.mixBlendMode!=='normal'||chromiumSrgb(host.backgroundColor)?.[3]!==0||
+        style.backgroundImage!=='none'||chromiumSrgb(style.backgroundColor)?.[3]!==0||
+        !element.closest(`${interactive},[role="checkbox"],[role="combobox"],[role="listbox"],[role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"],[role="radio"]`)||
+        element.closest('[role="img"],[class*="logo" i],[class*="avatar" i]'))return '';
+    const parent=element;
+    const clip=getComputedStyle(parent),width=parent.clientWidth,height=parent.clientHeight;
+    const left=/^-?\d+(?:\.\d+)?px$/.test(style.left)?parseFloat(style.left):NaN;
+    const top=/^-?\d+(?:\.\d+)?px$/.test(style.top)?parseFloat(style.top):NaN;
+    if(!['hidden','clip'].includes(clip.overflowX)||!['hidden','clip'].includes(clip.overflowY)||
+        !(width>0&&height>0&&width<=48&&height<=48)||left>0||top>0||!Number.isFinite(left+top)||
+        -left+width>sprite.clientWidth||-top+height>sprite.clientHeight||
+        ['Top','Right','Bottom','Left'].some(side=>parseFloat(clip[`padding${side}`])!==0)||
+        paintedBorderSides(clip).length)return '';
+    const backdrop=getBackdrop(parent);
+    if(!backdrop||luminance(backdrop)>=.18)return '';
+    const source=new URL(match[1],location.href).href;
+    if(!/^(?:https?:|data:image\/svg\+xml)/i.test(source))return '';
+    const dimensions=[sprite.clientWidth,sprite.clientHeight],key=JSON.stringify([source,width,height,left,top,dimensions]);
+    let entry=contentSpriteCrops.get(key);
+    if(!entry){
+      if(contentSpriteCrops.size>=128)return '';
+      entry={done:false,ink:null,users:new Set()};contentSpriteCrops.set(key,entry);
+      const group=spriteCohort(source);group.pending++;
+      const resource=contentSpriteDocument(source);
+      resource.then(image=>image&&decodeSpriteCrop(async()=>{
+        const svg=image.svg.cloneNode(true),[x,y,w,h]=image.view;
+        svg.setAttribute('width',width);svg.setAttribute('height',height);
+        svg.setAttribute('viewBox',`${x-left*w/dimensions[0]} ${y-top*h/dimensions[1]} ${width*w/dimensions[0]} ${height*h/dimensions[1]}`);
+        svg.setAttribute('preserveAspectRatio','none');
+        const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)],{type:'image/svg+xml'}));
+        let timeout;
+        try{
+          const probe=new Image();probe.src=url;
+          await Promise.race([probe.decode(),new Promise((_,reject)=>{timeout=setTimeout(reject,2000)})]);
+          const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+          const context=canvas.getContext('2d',{willReadFrequently:true});context.drawImage(probe,0,0);
+          const pixels=context.getImageData(0,0,width,height).data;
+          const weighted=pixels.reduce((sum,value,index)=>sum+(index%4===3?value/255:0),0);
+          let ink=weighted>=Math.max(4,width*height*.005)?solidSilhouetteInk(pixels,Math.max(2,Math.ceil(width*height*.005))):null;
+          if(!ink&&weighted>=Math.max(4,width*height*.005)){
+            let strongest=3;for(let n=7;n<pixels.length;n+=4)if(pixels[n]>pixels[strongest])strongest=n;
+            // Thin antialiased strokes can have no near-opaque pixel. Their
+            // visible palette still has to be uniform, including partial ink.
+            if(pixels[strongest]>=128)ink=[...pixels.slice(strongest-3,strongest),1];
+          }
+          if(ink){
+            for(let i=0;i<pixels.length;i+=4)if(pixels[i+3]>=32&&ink.slice(0,3).some((c,j)=>Math.abs(c-pixels[i+j])>8))return;
+            entry.ink=ink;
+          }
+        }finally{clearTimeout(timeout);URL.revokeObjectURL(url)}
+      })).catch(()=>{}).finally(()=>{
+        group.pending--;group.ready.add(entry);
+        // Publish a resource's completed crops together instead of repainting
+        // each icon as it decodes. A slow crop cannot hold ready work indefinitely.
+        if(group.timer===undefined)group.timer=setTimeout(()=>publishSpriteCohort(group,true),200);
+        publishSpriteCohort(group);
+      });
+      // Four tiny viewports decode concurrently; at most two source reads run.
+      // Keep static/CORS proof and crop budgets, without blocking on unrelated artwork.
+    }
+    if(!entry.done&&entry.users.size<64)entry.users.add(element);
+    if(!entry.done)return '';
+    const disabled=element.closest(':disabled,[aria-disabled="true"]');
+    if(!disabled)return glyphContrastFilter(entry.ink,backdrop);
+    if(!entry.ink||Math.max(...entry.ink.slice(0,3))-Math.min(...entry.ink.slice(0,3))>24)return '';
+    let opacity=1;
+    for(let node=element,depth=0;node&&depth<16;node=node.parentElement,depth++){
+      const layer=authoredBackdropStyle(node);
+      if(layer.filter!=='none'||layer.mixBlendMode!=='normal')return '';
+      opacity*=Number(layer.opacity);
+    }
+    if(opacity<.35||opacity>1||contrastRatio(luminance(compositeColor([...entry.ink.slice(0,3),opacity],backdrop)),luminance(backdrop))>=4.5)return '';
+    let gray=192;
+    while(gray<255&&contrastRatio(luminance(compositeColor([gray,gray,gray,opacity],backdrop)),luminance(backdrop))<4.5)gray=Math.min(255,gray+4);
+    // Retain native/ARIA disabled state and authored group opacity. Neutral
+    // disabled glyphs stay dimmer than enabled white glyphs on the same backing.
+    return `brightness(0) invert(${gray/255})`;
+  }
+
+  function clippedMaskInk(element, getBackdrop) {
+    const source=authoredBackdropStyle(element),parent=element.parentElement;
+    if(!source.maskImage?.startsWith('url(')||source.content?.startsWith('url(')||!parent||element.childElementCount||element.textContent.trim()||
+        !element.closest(`${interactive},[role="combobox"],[role="listbox"],[role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]`)||element.closest(':disabled,[aria-disabled="true"]'))return '';
+    const clip=getComputedStyle(parent),style=getComputedStyle(element),r=parent.getBoundingClientRect();
+    const ink=chromiumSrgb(source.backgroundColor),backdrop=getBackdrop(parent);
+    if(!ink||ink[3]!==1||source.backgroundImage!=='none'||source.filter!=='none'||source.opacity!=='1'||source.transform!=='none'||
+        source.position!=='absolute'||!['hidden','clip'].includes(clip.overflowX)||!['hidden','clip'].includes(clip.overflowY)||
+        clip.position!=='relative'||r.width<=0||r.height<=0||r.width>48||r.height>48||
+        element.clientWidth*element.clientHeight>4194304||!backdrop||luminance(backdrop)>.18||
+        !/^url\("[^"\\]+"\)$/.test(style.maskImage))return '';
+    const repaired=contrastingGlyphInk(ink,backdrop,7,true);
+    return repaired?`background-color: ${rgba(repaired)} !important;`:'';
+  }
+
+  function toolbarColorIndicator(element) {
+    if(!element.closest('[role="toolbar"]')||!element.closest(actionButton)||
+        !element.style.getPropertyValue('border-bottom-color')||element.childElementCount!==1||element.textContent.trim())return '';
+    const source=authoredBackdropStyle(element),box=element.getBoundingClientRect(),clip=element.firstElementChild;
+    const glyph=clip.childElementCount===1&&clip.firstElementChild,paint=glyph&&authoredBackdropStyle(glyph);
+    if(box.width<=0||box.width>48||box.height<=0||box.height>64||source.backgroundImage!=='none'||
+        source.borderImageSource!=='none'||paintedBorderSides(source).join(',')!=='Bottom'||
+        !(parseFloat(source.borderBottomWidth)>0&&parseFloat(source.borderBottomWidth)<=4)||
+        !paint||!(paint.content?.startsWith('url(')||paint.maskImage?.startsWith('url(')))return '';
+    // Inline color beneath a glyph represents the chosen formatting color.
+    // Repair the glyph independently, retaining this source value.
+    return `border-bottom-color: ${source.borderBottomColor} !important;`;
+  }
+
+  function toolbarControlText(element, getBackdrop) {
+    if(!element.closest('[role="toolbar"]')||element.closest(':disabled,[aria-disabled="true"]')||
+        !(element.matches('input:not([type]),input[type="text"]')||!element.childElementCount&&element.textContent.trim()&&element.textContent.trim().length<=100))return '';
+    const control=element.closest('[role="combobox"],[role="listbox"]');
+    if(!control||control.clientWidth>320||control.clientHeight>80)return '';
+    const source=authoredBackdropStyle(element),ink=chromiumSrgb(source.webkitTextFillColor),backdrop=getBackdrop(element);
+    if(!ink||ink[3]<.25||Math.max(...ink.slice(0,3))-Math.min(...ink.slice(0,3))>24||!backdrop||luminance(backdrop)>.18)return '';
+    const visible=compositeColor(ink,backdrop),repair=readableColor(visible,backdrop,12);
+    return repair?`color: ${rgba(repair)} !important; -webkit-text-fill-color: ${rgba(repair)} !important;`:'';
+  }
+
+  function compactControlLabel(element, getBackdrop) {
+    if (element.childElementCount || !element.textContent.trim() || element.textContent.trim().length > 100 ||
+        element.closest(':disabled,[aria-disabled="true"]')) return '';
+    const control = element.closest(actionButton);
+    if (!control || control.clientWidth > 320 || control.clientHeight > 80) return '';
+    const source = authoredBackdropStyle(element), ink = chromiumSrgb(source.webkitTextFillColor), backdrop = getBackdrop(element);
+    if (!ink || ink[3] < .25 || Math.max(...ink.slice(0,3))-Math.min(...ink.slice(0,3)) > 24 || !backdrop || luminance(backdrop) > .18) return '';
+    const size=parseFloat(source.fontSize??getComputedStyle(element).fontSize);
+    const minimum=size<=14?14:size<=16?12:8.5;
+    const repair = readableColor(compositeColor(ink,backdrop),backdrop,minimum);
+    return repair ? `color: ${rgba(repair)} !important; -webkit-text-fill-color: ${rgba(repair)} !important;` : '';
+  }
+
+  function embeddedControlWordmarkPaint(element, getBackdrop) {
+    if(!element.matches('div,span')||element.childElementCount||element.textContent.trim()||
+        element.clientWidth<48||element.clientWidth>320||element.clientHeight<8||element.clientHeight>48||
+        element.clientWidth<element.clientHeight*2||element.closest(':disabled,[aria-disabled="true"]'))return '';
+    const control=element.closest('button,[role="button"],a[href]'),source=authoredBackdropStyle(element);
+    if(!control||!(control.getAttribute('aria-label')||control.textContent.trim())||control.clientWidth>480||control.clientHeight>96||
+        source.backgroundSize!=='contain'||source.backgroundRepeat!=='no-repeat'||source.backgroundOrigin!=='padding-box'||
+        source.opacity!=='1'||source.filter!=='none'||source.transform!=='none'||source.mixBlendMode!=='normal'||
+        source.maskImage!=='none'||chromiumSrgb(source.backgroundColor)?.[3]!==0)return '';
+    for(let node=element;node;node=node.parentElement){
+      const layer=authoredBackdropStyle(node);
+      if(layer.opacity!=='1'||layer.filter!=='none'||layer.mixBlendMode!=='normal')return '';
+      if(node===control)break;
+    }
+    const match=/^url\("data:image\/svg\+xml(?:;charset=[^,]+)?,((?:\\.|[^"\\])+)"\)$/i.exec(source.backgroundImage);
+    const backdrop=match&&getBackdrop(control);
+    if(!match||match[1].length>49152||!backdrop||luminance(backdrop)>.18)return '';
+    const key=JSON.stringify(['embedded-wordmark',source.backgroundImage,backdrop]);
+    let entry=compactBackgrounds.get(key);
+    if(!entry){
+      if(compactBackgrounds.size>=128)return '';
+      if(compactBackgroundPending>=8){if(compactBackgroundWaiters.size<128)compactBackgroundWaiters.add(element);return '';}
+      entry={done:false,image:null,users:new Set()};compactBackgrounds.set(key,entry);compactBackgroundPending++;
+      void compactBackgroundTask(async()=>{
+        const text=decodeURIComponent(match[1].replace(/\\(["\\])/g,'$1')),data=new TextEncoder().encode(text);
+        if(data.length>32768||/<!DOCTYPE|<!ENTITY|<\?xml-stylesheet/i.test(text)||!isStaticSvgArtwork(data))return;
+        const svg=new DOMParser().parseFromString(text,'image/svg+xml').documentElement,nodes=[svg,...svg.querySelectorAll('*')];
+        const width=Number(svg.getAttribute('width')),height=Number(svg.getAttribute('height'));
+        if(!(width>0&&width<=320&&height>0&&height<=48)||nodes.length>128||nodes.some(n=>
+          !/^(svg|g|path|circle|ellipse|line|polygon|polyline|rect|defs|linearGradient|radialGradient|stop|title|desc)$/.test(n.localName)))return;
+        const shapes=[...svg.querySelectorAll('path,circle,ellipse,line,polygon,polyline,rect')],candidates=[];
+        for(const [index,shape]of shapes.entries()){
+          if(shape.closest('defs')||shape.localName==='rect')continue;
+          for(const property of ['fill','stroke']){
+            const value=shape.getAttribute(property);
+            if(!value||!(/^(?:#[\da-f]{3,8}|rgba?\([^)]+\)|black|white|gray)$/i.test(value)))continue;
+            const ink=gradientColor(value,true);
+            if(!ink||Math.max(...ink.slice(0,3))-Math.min(...ink.slice(0,3))>24)continue;
+            const repaired=contrastingGlyphInk(ink,backdrop,7,true);
+            if(repaired)candidates.push({index,property,ink:rgba(repaired)});
+          }
+        }
+        if(!candidates.length)return;
+        const without=svg.cloneNode(true),mask=svg.cloneNode(true);
+        const withoutShapes=[...without.querySelectorAll('path,circle,ellipse,line,polygon,polyline,rect')];
+        const maskShapes=[...mask.querySelectorAll('path,circle,ellipse,line,polygon,polyline,rect')];
+        for(const shape of maskShapes)if(!shape.closest('defs')){shape.setAttribute('fill','none');shape.setAttribute('stroke','none');}
+        for(const candidate of candidates){withoutShapes[candidate.index].setAttribute(candidate.property,'none');maskShapes[candidate.index].setAttribute(candidate.property,'white');}
+        const pixels=async image=>{
+          const probe=new Image();probe.src=`data:image/svg+xml,${encodeURIComponent(new XMLSerializer().serializeToString(image))}`;
+          let timer;
+          try{
+            await Promise.race([probe.decode(),new Promise((_,reject)=>{timer=setTimeout(reject,2000)})]);
+            const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+            const context=canvas.getContext('2d',{willReadFrequently:true});context.drawImage(probe,0,0,width,height);
+            return context.getImageData(0,0,width,height).data;
+          }finally{clearTimeout(timer)}
+        };
+        const [below,ink]=await Promise.all([pixels(without),pixels(mask)]);
+        let coverage=0;
+        for(let n=3;n<ink.length;n+=4){
+          coverage+=ink[n]/255;
+          // Removing the neutral foreground must expose transparency. A
+          // pupil/letter over another painted shape is not canvas-backed ink.
+          if(ink[n]>=32&&below[n]>8)return;
+        }
+        if(coverage<8||coverage>width*height*.75)return;
+        for(const candidate of candidates)shapes[candidate.index].setAttribute(candidate.property,candidate.ink);
+        entry.image=`url("data:image/svg+xml,${encodeURIComponent(new XMLSerializer().serializeToString(svg))}")`;
+      }).catch(()=>{}).finally(()=>{
+        entry.done=true;for(const user of entry.users)if(preset&&user.isConnected)scheduleDirtySurface(user);entry.users.clear();finishCompactBackground();
+      });
+    }
+    if(!entry.done){entry.users.add(element);return '';}
+    return entry.image?`background-image: ${entry.image} !important;`:'';
+  }
+
+  function embeddedCanvasPaint(element) {
+    if (![document.documentElement,document.body].includes(element) || window === window.top || !document.body) return '';
+    if (!transparentFrameCanvas) return '';
+    // Transparent widgets are painted over their embedding page. A replacement
+    // canvas makes a new rectangular patch, even when every child is correct.
+    // Retain the shared dark scheme: a scheme mismatch with the embedding page
+    // makes Chromium provide an opaque compatibility canvas of its own.
+    return 'background-color: transparent !important; color-scheme: dark !important;';
   }
 
   function isDecorativeBackground(element, style) {
@@ -954,13 +1542,20 @@
     return result === shadow ? null : result;
   }
 
-  function hasImageBackdrop(element, style, backdrops) {
+  function hasImageBackdrop(element, style, backdrops, solid = new Map()) {
     if (backdrops.has(element)) return backdrops.get(element);
-    let hasImage = style.backgroundImage !== 'none' && !elementBackgroundGlyph(element, style) && !paleSvgBackground(style.backgroundImage) &&
+    let hasImage = style.backgroundImage !== 'none' && !elementBackgroundGlyph(element, style) && !fieldBackgroundGlyph(element,style) && !fieldLabelBackdrop(element,style) && !paleSvgBackground(style.backgroundImage) &&
       !chromiumGradient(style, isHeadingBackground(element));
+    // A translucent CSS gradient is measurable paint when its solid backing
+    // is known. Keeping source ink as if these were unchanged picture pixels
+    // leaves dark labels on the newly dark composited result.
+    if (hasImage && style.backgroundImage.includes('gradient(')) {
+      const measured = chromiumTextBackdrop(element, solid);
+      if (measured && luminance(measured) < .18) hasImage = false;
+    }
     if (!hasImage && chromiumSrgb(style.backgroundColor)?.[3] !== 1) {
       const parent = element.assignedSlot ?? element.parentElement ?? element.getRootNode().host;
-      if (parent) hasImage = backdrops.get(parent) ?? hasImageBackdrop(parent, authoredBackdropStyle(parent), backdrops);
+      if (parent) hasImage = backdrops.get(parent) ?? hasImageBackdrop(parent, authoredBackdropStyle(parent), backdrops, solid);
     }
     backdrops.set(element, hasImage);
     return hasImage;
@@ -1101,13 +1696,34 @@
     return sampledImageLabelPaint(element, style, overlayColors(element, image), minimum, true);
   }
 
+  function forgetOverlayInk(root) {
+    if(!root)return;
+    for(const label of overlayInkLabels)if(!label.isConnected||label===root||root.contains(label)){
+      overlayAuthoredInk.delete(label);overlayInkLabels.delete(label);
+    }
+  }
+
+  function originalImageLabelInk(element, style) {
+    if(overlayAuthoredInk.has(element)&&!sheet.disabled)return overlayAuthoredInk.get(element);
+    let ink;
+    const disabled=sheet.disabled;
+    try{
+      // Measure source inheritance, not a parent's already applied palette.
+      // This synchronous probe is cached; async image completion reuses it.
+      sheet.disabled=true;
+      const source=disabled?style:getComputedStyle(element);
+      ink=chromiumSrgb(originalTransitionColors(element,source).webkitTextFillColor??source.webkitTextFillColor);
+    }finally{sheet.disabled=disabled}
+    if(ink){
+      if(overlayInkLabels.size>=512){const oldest=overlayInkLabels.values().next().value;overlayInkLabels.delete(oldest);overlayAuthoredInk.delete(oldest)}
+      overlayInkLabels.add(element);overlayAuthoredInk.set(element,ink);
+    }
+    return ink;
+  }
+
   function sampledImageLabelPaint(element, style, sampled, minimum, allowBacking) {
-    const fill = style.webkitTextFillColor;
-    const inherited = !sheet.disabled && element.parentElement?.hasAttribute(marker) &&
-      getComputedStyle(element.parentElement).webkitTextFillColor === fill;
-    const authored = inherited && overlayAuthoredInk.get(element) || chromiumSrgb(fill);
+    const authored = originalImageLabelInk(element,style);
     if (!authored?.[3] || style.backgroundClip === 'text') return '';
-    overlayAuthoredInk.set(element, authored);
     const dark = [18, 18, 18, 1], light = [255, 255, 255, 1];
     const colors = sampled?.colors ?? [dark, light];
     const contrast = (ink, backing, alpha) => {
@@ -1121,12 +1737,30 @@
     const decision = globalThis.nativeDarkModeImageTextContrast?.(sampled, {
       authored, fontSize: parseFloat(style.fontSize), fontWeight: parseFloat(style.fontWeight)
     });
-    const ink = decision?.ink ?? (contrast(authored) >= minimum ? authored : contrast(dark) > contrast(light) ? dark : light);
+    let ink = decision?.ink ?? (contrast(authored) >= minimum ? authored : contrast(dark) > contrast(light) ? dark : light);
+    // Before manufacturing a rectangle, try a foreground that meets the
+    // fallback ratio over the entire verified region. Small text over a flat
+    // colored picture often has such an ink even if the perceptual policy
+    // preferred the source polarity. Mixed/unknown pixels retain the backing.
+    let adequateForeground = false;
+    if (allowBacking && sampled && contrast(ink) < minimum && parseFloat(style.fontSize) < 24) {
+      const candidate = contrast(dark) > contrast(light) ? dark : light;
+      // A fully verified image region uses a shared 4.5 foreground floor;
+      // the stronger palette's ordinary-text target must not force a plate
+      // where a readable picture caption can stand on its own.
+      if (contrast(candidate) >= 4.5) { ink = candidate; adequateForeground = true; }
+    }
     const backing = luminance(ink) < .5 ? light : dark;
     const declarations = `color: ${rgba(ink)} !important; -webkit-text-fill-color: ${rgba(ink)} !important;`;
     // Foreground selection must not manufacture a stroke around letters or
     // underlines. Preserve authored shadow/decoration when no backing is used.
-    if (!allowBacking) return declarations;
+    const retainedLargeInk = parseFloat(style.fontSize)>=24 && decision && !decision.uncertain &&
+      decision.coverage>=.9 && (decision.ink.every((channel,index)=>Math.abs(channel-authored[index])<.001) ||
+      luminance(authored)>.75&&luminance(decision.ink)>.75&&Math.max(...authored.slice(0,3))-Math.min(...authored.slice(0,3))<=24);
+    // Do not add a rectangular backing after the shared font-aware policy
+    // confidently accepted the original large text on its unchanged image.
+    // Small text, uncertain regions and unsupported samples retain fallback.
+    if (!allowBacking || retainedLargeInk || adequateForeground) return declarations;
     let alpha = 0;
     while (contrast(ink, backing, alpha) < minimum && alpha < 1) alpha = Math.min(1, alpha + .1);
     return declarations +
@@ -1240,7 +1874,7 @@
 
   function authoredBackdropStyle(element) {
     // Local sampling removes only the target's paint. Its ancestors may still be themed.
-    if (!sheet.disabled && element.hasAttribute(marker) && authoredPaint.has(element)) return authoredPaint.get(element);
+    if ((element === inspectingElement || !sheet.disabled && element.hasAttribute(marker)) && authoredPaint.has(element)) return authoredPaint.get(element);
     return getComputedStyle(element);
   }
 
@@ -1248,9 +1882,16 @@
     if (!element) return null;
     if (cache.has(element)) return cache.get(element);
     const style = simulated ? authoredBackdropStyle(element) : getComputedStyle(element);
-    let backdrop = simulated ?
-      paleSvgBackground(style.backgroundImage)?.backdrop ?? darkGradientBackdrop(style, isHeadingBackground(element)) : null;
-    if (style.backgroundImage === 'none' || elementBackgroundGlyph(element, style)) {
+    let backdrop = simulated ? paleSvgBackground(style.backgroundImage)?.backdrop : null;
+    if (!backdrop && style.backgroundImage.includes('gradient(')) {
+      const color = chromiumSrgb(style.backgroundColor);
+      const layer = simulated ? chromiumSurfaceColor(element, style, color) ?? color : color;
+      const parent = element.assignedSlot ?? element.parentElement ?? element.getRootNode().host;
+      const below = layer?.[3] === 1 ? layer : textBackdrop(parent, cache, simulated);
+      const backing = below && layer ? compositeColor(layer, below) : below;
+      backdrop = measurableGradientBackdrop(style, isHeadingBackground(element), backing, simulated);
+    }
+    if (style.backgroundImage === 'none' || elementBackgroundGlyph(element, style) || fieldBackgroundGlyph(element,style) || fieldLabelBackdrop(element,style)) {
       const color = chromiumSrgb(style.backgroundColor);
       if (color) {
         const layer = simulated ? chromiumSurfaceColor(element, style, color) ?? color : color;
@@ -1275,7 +1916,7 @@
     const layers = [];
     for (let node = element, depth = 0; node && depth < 32; depth++) {
       const style = authoredBackdropStyle(node);
-      if (style.backgroundImage !== 'none' && !elementBackgroundGlyph(node, style)) return null;
+      if (style.backgroundImage !== 'none' && !elementBackgroundGlyph(node, style) && !fieldBackgroundGlyph(node,style)) return null;
       const color = chromiumSrgb(style.backgroundColor);
       if (!color) return null;
       layers.push(color);
@@ -1283,6 +1924,19 @@
       node = node.assignedSlot ?? node.parentElement ?? node.getRootNode().host;
     }
     return null;
+  }
+
+  function darkGradientUnderlay(element) {
+    for(let node=element.parentElement,depth=0;node&&depth<10;node=node.parentElement,depth++) {
+      const source=authoredBackdropStyle(node),image=source.backgroundImage;
+      if(image.includes('gradient(')) {
+        const gradients=image.match(/(?:linear|radial|conic)-gradient\([^;]+/g);
+        const stops=gradients&&[...gradients.join('').matchAll(/rgba?\([^)]+\)/g)].map(m=>chromiumSrgb(m[0]));
+        return source.backgroundBlendMode.split(', ').every(mode=>mode==='normal')&&stops?.length>=2&&stops.every(c=>c&&c[3]===1&&luminance(c)<.08);
+      }
+      if(image!=='none'||chromiumSrgb(source.backgroundColor)?.[3]===1)return false;
+    }
+    return false;
   }
 
   function authoredAccentInk(element, backdrop, minimum) {
@@ -1329,24 +1983,35 @@
     return surface;
   }
 
-  function darkGradientBackdrop(style, headingBackground) {
+  function measurableGradientBackdrop(style, headingBackground, backing = null, simulated = true) {
     const image = style.backgroundImage;
     if (!image.includes('gradient(') ||
         image.match(/[\w-]+(?=\()/g).some(name => !gradientFunction.test(name))) return null;
-    const painted = chromiumGradient(style, headingBackground) ?? image;
+    if (image.length > 4096) return null;
+    const painted = simulated ? chromiumGradient(style, headingBackground) ?? image : image;
+    const stops = [...painted.matchAll(gradientStop)];
+    if (!stops.length || stops.length > 32) return null;
     let lightest = null;
     let maximum = 0;
-    for (const [stop] of painted.matchAll(gradientStop)) {
-      const color = gradientColor(stop, headingBackground);
-      if (color?.[3] !== 1) return null;
+    let darkest = null;
+    let minimum = Infinity;
+    for (const [stop] of stops) {
+      const ink = gradientColor(stop, true);
+      if (!ink) return null;
+      // Layered translucent gradients need spatial composition, not a flat
+      // list of stops. Retain the conservative picture fallback for those.
+      if (ink[3] !== 1 && (!backing || (image.match(/gradient\(/g)?.length !== 1))) return null;
+      const color = ink[3] === 1 ? ink : compositeColor(ink, backing);
       const light = luminance(color);
-      if (light > .18) return null;
+      if (!darkest || light < minimum) { darkest = color; minimum = light; }
       if (!lightest || light > maximum) {
         lightest = color;
         maximum = light;
       }
     }
-    return lightest;
+    // One polarity must work across the supported stop range. Mixed bright
+    // and dark gradients still require spatial image evidence.
+    return maximum <= .18 ? lightest : minimum >= .6 ? darkest : null;
   }
 
   function compositeColor(color, backdrop) {
@@ -1380,6 +2045,10 @@
     const height = Math.max(1, Math.round(image.naturalHeight * scale));
     const pixels = artworkPixels(image, width, height);
     if (!pixels) return null;
+    return artworkLosesContrast(pixels, width, height, original, darkened) ? pixels : null;
+  }
+
+  function artworkLosesContrast(pixels, width, height, original, darkened, minimum = 2) {
     const originalLight = luminance(original);
     const darkenedLight = luminance(darkened);
     const tileSize = 24;
@@ -1396,14 +2065,14 @@
         const ink = [pixels[alpha - 3], pixels[alpha - 2], pixels[alpha - 1], pixels[alpha] / 255];
         const tile = Math.floor(y / tileSize) * columns + Math.floor(x / tileSize);
         totals[tile]++;
-        if (contrastRatio(luminance(compositeColor(ink, darkened)), darkenedLight) < 2 &&
+        if (contrastRatio(luminance(compositeColor(ink, darkened)), darkenedLight) < minimum &&
             contrastRatio(luminance(compositeColor(ink, original)), originalLight) >= 3) losses[tile]++;
       }
     }
     // Assess edges next to transparency locally. Bright badges elsewhere can hide
     // the loss of a dark wordmark in an image-wide average.
     return transparent >= width * height * .05 &&
-      losses.some((count, tile) => count >= 12 && count >= totals[tile] * .6) ? pixels : null;
+      losses.some((count, tile) => count >= 12 && count >= totals[tile] * .6);
   }
 
   function neutralSilhouetteInk(pixels) {
@@ -1431,7 +2100,7 @@
     // A simple internal paint class does not make a resource animated. Reject all
     // other CSS, including imports, URLs, custom properties and animation rules.
     const solidPaint = '(?:#[\\da-f]{3,8}|none|black|white|transparent)';
-    const paintRule = new RegExp(`^\\.[\\w-]+\\s*\\{\\s*(?:(?:fill|stroke)\\s*:\\s*${solidPaint}\\s*;?\\s*)+\\}`, 'i');
+    const paintRule = new RegExp(`^\\.[\\w-]+\\s*\\{\\s*(?:(?:(?:fill|stroke)\\s*:\\s*${solidPaint}|(?:mask|clip-path)\\s*:\\s*url\\(#[\\w:.-]+\\)|(?:fill-rule|clip-rule)\\s*:\\s*(?:evenodd|nonzero))\\s*;?\\s*)+\\}`, 'i');
     for (const style of svg.querySelectorAll('style')) {
       let css = style.textContent.trim();
       while (css) {
@@ -1440,16 +2109,40 @@
         css = css.slice(rule[0].length).trim();
       }
     }
-    return Array.from(svg.querySelectorAll('*')).every(element =>
-      /^(svg|g|path|circle|ellipse|line|polygon|polyline|rect|defs|clipPath|linearGradient|radialGradient|stop|style|title|desc)$/.test(element.localName) &&
+    const nodes = Array.from(svg.querySelectorAll('*'));
+    return nodes.length <= 512 && nodes.every(element =>
+      /^(svg|g|path|circle|ellipse|line|polygon|polyline|rect|defs|clipPath|mask|linearGradient|radialGradient|stop|style|title|desc)$/.test(element.localName) &&
       Array.from(element.attributes).every(attribute => !/^on/i.test(attribute.localName) &&
         (attribute.localName !== 'href' || /^#[\w:.-]+$/.test(attribute.value)) &&
         (!/url\s*\(/i.test(attribute.value) || /^url\(#[\w:.-]+\)$/.test(attribute.value)) &&
         (attribute.localName !== 'style' || /^enable-background:\s*new[\d\s.+-]+;?$/i.test(attribute.value))));
   }
 
-  async function readImageResource(source, mode) {
-    const maxBytes = 512 * 1024;
+  function opacityOnlySvgArtwork(data) {
+    if (data.length > 32768) return null;
+    const svg = new DOMParser().parseFromString(new TextDecoder().decode(data), 'image/svg+xml');
+    const animations = svg.querySelectorAll('animate');
+    if (animations.length !== 1 || svg.querySelectorAll('*').length > 256) return null;
+    const animation = animations[0];
+    if (!['svg', 'g', 'path', 'circle', 'ellipse', 'line', 'polygon', 'polyline', 'rect'].includes(animation.parentElement?.localName) ||
+        animation.getAttribute('attributeName') !== 'opacity' ||
+        [...animation.attributes].some(a => !['attributeName', 'values', 'dur', 'repeatCount', 'calcMode', 'begin'].includes(a.name)) ||
+        !['linear', 'discrete'].includes(animation.getAttribute('calcMode') ?? 'linear') ||
+        !/^(?:0|0s|0ms)$/.test(animation.getAttribute('begin') ?? '0') ||
+        !/^\d+(?:\.\d+)?(?:ms|s)$/.test(animation.getAttribute('dur') ?? '') ||
+        !(parseFloat(animation.getAttribute('dur')) > 0) ||
+        !/^(?:indefinite|\d+(?:\.\d+)?)$/.test(animation.getAttribute('repeatCount') ?? '1')) return null;
+    const values = (animation.getAttribute('values') ?? '').split(';').map(v => v.trim());
+    if (values.length < 2 || values.length > 32 || values.some(v => !/^(?:0(?:\.\d+)?|\.\d+|1(?:\.0+)?)$/.test(v))) return null;
+    const minimumOpacity = Math.min(...values.map(Number));
+    // Intentionally disappearing artwork is not a continuously readable glyph.
+    if (minimumOpacity < .5) return null;
+    animation.remove();
+    const staticData = new TextEncoder().encode(new XMLSerializer().serializeToString(svg));
+    return isStaticSvgArtwork(staticData) ? { data: staticData, minimumOpacity } : null;
+  }
+
+  async function readImageResource(source, mode, maxBytes = 512 * 1024) {
     let reader;
     try {
       const response = await fetch(source, { mode, credentials: mode === 'cors' ? 'omit' : 'same-origin',
@@ -1490,7 +2183,12 @@
     let decoder;
     try {
       if (type === 'image/svg+xml') {
-        if (!isStaticSvgArtwork(data)) return null;
+        if (!isStaticSvgArtwork(data)) {
+          const opacity = opacityOnlySvgArtwork(data);
+          if (!opacity) return null;
+          const ink = await resourceSilhouetteInk({ ...resource, data: opacity.data });
+          return ink ? { kind: 'opacity-svg', ink, minimumOpacity: opacity.minimumOpacity } : null;
+        }
         return { kind: 'svg', ink: crossOrigin ? await resourceSilhouetteInk(resource) : null };
       }
       if (crossOrigin) return null;
@@ -1532,10 +2230,7 @@
     }
   }
 
-  function checkArtworkTint(image, sample) {
-    const source = image.currentSrc;
-    const { naturalWidth: width, naturalHeight: height } = image;
-    if (width * height > 262144) return;
+  function staticArtworkResource(source) {
     if (!staticArtwork.has(source)) {
       if (staticArtwork.size >= 64) staticArtwork.delete(staticArtwork.keys().next().value);
       // Serialize resource verification/decoding rather than starting one read
@@ -1545,7 +2240,14 @@
       staticArtwork.set(source, result);
       artworkReadQueue = result.catch(() => null);
     }
-    const cached = staticArtwork.get(source);
+    return staticArtwork.get(source);
+  }
+
+  function checkArtworkTint(image, sample) {
+    const source = image.currentSrc;
+    const { naturalWidth: width, naturalHeight: height } = image;
+    if (width * height > 262144) return;
+    const cached = staticArtworkResource(source);
     if (Object.hasOwn(cached, 'verified')) {
       applyArtworkTint(image, sample, cached.verified);
       return;
@@ -1561,12 +2263,19 @@
   function applyArtworkTint(image, sample, resource) {
       if (!resource) return;
       const { naturalWidth: width, naturalHeight: height } = image;
+      if (resource.kind === 'opacity-svg') {
+        if (!sample.imageOnlyGlyph || !sample.backdrop) return;
+        const lift = silhouetteColorLift(resource.ink, sample.backdrop, resource.minimumOpacity);
+        if (!lift) return;
+        sample.colorLift = lift; sample.tint = true; sample.opacityOnly = true;
+        return;
+      }
+      if (sample.imageOnlyGlyph && !sample.colorLift && !sample.crossOriginSolid && !sample.neutralTint) return;
       if (sample.crossOriginSolid) {
         const ink = resource.ink;
-        const brighter = ink && readableColor(ink, sample.backdrop, 7);
-        if (!brighter) return;
-        const channel = ink.indexOf(Math.min(...ink.slice(0, 3)));
-        sample.colorLift = (brighter[channel] - ink[channel]) / (255 - ink[channel]);
+        const lift = ink && silhouetteColorLift(ink, sample.backdrop);
+        if (!lift) return;
+        sample.colorLift = lift;
         sample.tint = true;
         return;
       }
@@ -1611,6 +2320,59 @@
     }
     if (!(element instanceof HTMLImageElement)) return {};
     const parent = element.parentElement;
+    if (parent?.matches('a[href]') && parent.childElementCount === 1 && !parent.textContent.trim() && element.alt &&
+        element.clientWidth >= 96 && element.clientWidth <= 400 && element.clientHeight >= 20 && element.clientHeight <= 160 &&
+        element.complete && element.naturalWidth * element.naturalHeight <= 262144 &&
+        style.filter === 'none' && style.opacity === '1' && style.mixBlendMode === 'normal' &&
+        chromiumSrgb(style.backgroundColor)?.[3] === 0) {
+      const light = authoredSolidBackdrop(parent);
+      const dark = preset === 'chromium' ? chromiumTextBackdrop(parent,new Map()) : textBackdrop(parent,new Map());
+      if (light?.[3] === 1 && luminance(light) > .75 && dark && luminance(dark) < .12) {
+        const key = `${element.currentSrc}|${light}|${dark}`;
+        let sample = linkedArtworkBackings.get(element);
+        if (sample?.key !== key) {
+          const pixels = sampleArtwork(element,light,dark);
+          sample = { key, backing: false }; linkedArtworkBackings.set(element,sample);
+          // Uniform glyphs use their existing tint path. Mixed artwork keeps
+          // source colors; a static-resource proof is required before backing it.
+          if (pixels && !solidSilhouetteInk(pixels)) {
+            const pending = staticArtworkResource(element.currentSrc);
+            const decide = resource => {
+              if (!resource || resource.kind === 'opacity-svg' || linkedArtworkBackings.get(element) !== sample) return;
+              sample.backing = true;
+              if (preset && element.isConnected) scheduleDirtySurface(element);
+            };
+            if (Object.hasOwn(pending,'verified')) decide(pending.verified); else pending.then(decide);
+          }
+        }
+        if (sample.backing) return { backing: light };
+      }
+    }
+    // Compact image rows with adjacent labels often carry mixed wordmarks.
+    // Preserve a light backing only after the existing pixel loss test agrees.
+    let row = parent?.parentElement;
+    for (let depth=0;row&&depth<2&&!['flex','inline-flex'].includes(getComputedStyle(row).display);depth++) row=row.parentElement;
+    if (row && row.children.length <= 12 && ['flex', 'inline-flex'].includes(getComputedStyle(row).display) &&
+        row.querySelectorAll('img').length >= 2 && row.querySelectorAll('img').length <= 8 &&
+        row.textContent.trim() && row.textContent.trim().length <= 120 &&
+        !row.querySelector('button,input,video,canvas') && parent.querySelectorAll('img').length === 1 &&
+        element.clientWidth >= 48 && element.clientWidth <= 320 && element.clientHeight >= 20 && element.clientHeight <= 64) {
+      const light = authoredSolidBackdrop(row);
+      const dark = palettes[preset] ? textBackdrop(row, new Map()) :
+        light && (chromiumColor(light, 'background') ?? light);
+      const backing = artworkBackingForImage(element, light, dark, false, 48);
+      if (backing) return { backing };
+    }
+    // A home/header link can contain a logo followed by the site's name. Keep
+    // a backing on the image alone; whitening the whole link would affect text.
+    if (parent instanceof HTMLAnchorElement && parent.firstElementChild === element &&
+        parent.childElementCount > 1 && parent.textContent.trim().length <= 120 &&
+        (parent.closest('header,[role="banner"]') || parent.relList.contains('home') ||
+          (parent.origin === location.origin && parent.pathname === '/'))) {
+      const [light, dark] = surroundingArtworkColors(element);
+      const backing = artworkBackingForImage(element, light, dark);
+      if (backing) return { backing };
+    }
     if (parent instanceof HTMLAnchorElement && element.style.getPropertyPriority('background-color') !== 'important') {
       const linkStyle = getComputedStyle(parent);
       // An inline link around a block image has no box behind the image.
@@ -1637,7 +2399,7 @@
     return { backing };
   }
 
-  function artworkBackingForImage(image, original, darkened, allowTint = false) {
+  function artworkBackingForImage(image, original, darkened, allowTint = false, minimumWidth = 96) {
     if (!darkened || original?.[3] !== 1 || luminance(original) < .75 || luminance(darkened) > .12) return null;
     if (!image.complete || !image.naturalWidth || !image.naturalHeight ||
         image.style.getPropertyPriority('background-color') === 'important') return null;
@@ -1645,7 +2407,7 @@
     if (!['inline', 'block'].includes(imageStyle.display) || imageStyle.backgroundImage !== 'none' ||
         chromiumSrgb(imageStyle.backgroundColor)?.[3] !== 0 || imageStyle.mixBlendMode !== 'normal' ||
         imageStyle.filter !== 'none' || imageStyle.opacity !== '1' ||
-        ['absolute', 'fixed'].includes(imageStyle.position) || image.clientWidth < 96 || image.clientHeight < 20) return null;
+        ['absolute', 'fixed'].includes(imageStyle.position) || image.clientWidth < minimumWidth || image.clientHeight < 20) return null;
     const key = `${image.currentSrc}|${original}|${darkened}|${allowTint}`;
     let sample = artworkContrast.get(image);
     if (sample?.key !== key) {
@@ -1655,6 +2417,101 @@
       if (allowTint && neutralSilhouetteInk(pixels)) checkArtworkTint(image, sample);
     }
     return sample.keepBackdrop ? original : null;
+  }
+
+  function rememberArtworkLayers(element, style) {
+    if (element.childElementCount || element.textContent.trim() || element.clientWidth < 96 ||
+        element.clientWidth > 800 || element.clientHeight < 20 || element.clientHeight > 240) {
+      authoredArtworkLayers.delete(element); return;
+    }
+    const properties = ['backgroundImage','backgroundColor','backgroundSize','backgroundRepeat','backgroundOrigin',
+      'backgroundPositionX','backgroundPositionY','opacity','filter','mixBlendMode','transform','clipPath',
+      'content','display','width','height','outlineStyle','outlineWidth','outlineColor',
+      ...borderEdges.flatMap(side=>['Color','Style','Width'].map(property=>`border${side}${property}`))];
+    const layers = ['', '::before', '::after'].map(pseudo=>{
+      const paint=pseudo?getComputedStyle(element,pseudo):style;
+      return [pseudo,Object.fromEntries(properties.map(property=>[property,paint[property]]))];
+    });
+    if (layers.some(([,paint])=>paint.backgroundImage!=='none')) authoredArtworkLayers.set(element,layers);
+    else authoredArtworkLayers.delete(element);
+  }
+
+  function backgroundArtworkPaint(element, style, getBackdrop) {
+    // Empty compact artwork can live outside a link too. Require known source
+    // backing and measured local edge loss, rather than guessing from a name.
+    // A sampled light backing preserves a mixed logo instead of tinting its inks.
+    // Palette repair runs after applying roles. Reading its own previous
+    // pseudoelement backing here would make the decision alternate on each
+    // sample. Keep authored layer facts separate from the displayed backdrop.
+    const layers = authoredArtworkLayers.get(element);
+    if (!layers) return [];
+    style = layers[0][1];
+    const link = element.matches('a[href]') ? element : element.parentElement;
+    const linked = link?.matches('a[href]');
+    if ((linked && (link.textContent.trim() ||
+        (link !== element && (link.childElementCount !== 1 || element.childElementCount)))) ||
+        (!linked && !element.matches('div,span,[role="img"]')) || element.matches('[aria-hidden="true"]') ||
+        element.childElementCount || element.textContent.trim() ||
+        !(Number(style.opacity) >= .5) || style.filter !== 'none' || style.mixBlendMode !== 'normal' ||
+        style.transform !== 'none' || style.clipPath !== 'none' ||
+        element.closest(':disabled,[aria-disabled="true"]')) return [];
+    if (element.clientWidth < 96 || element.clientWidth > 800 || element.clientHeight < 20 || element.clientHeight > 240) return [];
+    if (layers.filter(([, paint]) => paint.backgroundImage !== 'none').length !== 1) return [];
+    const ownImage = style.backgroundImage !== 'none';
+    const base = ownImage ? element.parentElement : element;
+    let original = authoredSolidBackdrop(base);
+    const backdrop = getBackdrop(base);
+    if (!original || original[3] !== 1 || !backdrop || luminance(backdrop) > .12) return [];
+    // Transparent static wordmarks may already have poor source contrast on
+    // dark backing. Verify that a light candidate actually restores local ink
+    // edges, rather than treating a bad source appearance as acceptance.
+    const sourceWasDark=luminance(original)<.18;
+    if(sourceWasDark)original=[255,255,255,1];
+    if(luminance(original)<.75)return [];
+    const fixes = [];
+    for (const [pseudo, paint] of layers) {
+      const width = pseudo ? parseFloat(paint.width) : element.clientWidth;
+      const height = pseudo ? parseFloat(paint.height) : element.clientHeight;
+      if ((pseudo && paint.content !== '""') || paint.display === 'none' ||
+          !(width >= 96 && width <= 800 && height >= 20 && height <= 240 && width >= height * 2) ||
+          !['contain','cover'].includes(paint.backgroundSize) || !['no-repeat','repeat','repeat-x','repeat-y'].includes(paint.backgroundRepeat) ||
+          paint.backgroundOrigin !== 'padding-box' || chromiumSrgb(paint.backgroundColor)?.[3] !== 0 ||
+          paint.filter !== 'none' || paint.opacity !== '1' || paint.mixBlendMode !== 'normal' ||
+          paint.transform !== 'none' || paint.clipPath !== 'none' || paintedBorderSides(paint).length ||
+          hasPaintedOutline(paint)) continue;
+      const match = /^url\("([^"\\]+)"\)$/.exec(paint.backgroundImage);
+      if (!match) continue;
+      const source = new URL(match[1], location.href).href;
+      if (!/^(?:https?:|data:image\/)/i.test(source)) continue;
+      // The static sampler evaluates the visible crop. A repeat declaration is
+      // accepted only when no additional tile enters it; genuine patterns stay
+      // outside this single-artwork backing rule. Downsample larger hosts so
+      // the evidence stays capped at 16,384 pixels.
+      const position = [paint.backgroundPositionX, paint.backgroundPositionY];
+      if (!position.every(value => value === '0px' || /^(?:100|\d{1,2}(?:\.\d+)?)%$/.test(value))) continue;
+      const key = JSON.stringify(['backing', source, width, height, paint.backgroundSize,paint.backgroundRepeat,position, original, backdrop,sourceWasDark]);
+      let entry = compactBackgrounds.get(key);
+      if (!entry) {
+        if (compactBackgrounds.size >= 128) continue;
+        if (compactBackgroundPending >= 8) {
+          if (compactBackgroundWaiters.size < 32) compactBackgroundWaiters.add(element);
+          continue;
+        }
+        entry = { done: false, backing: false, users: new Set() };
+        compactBackgrounds.set(key, entry); compactBackgroundPending++;
+        const scale=Math.min(1,Math.sqrt(16384/(width*height)));
+        void compactBackgroundTask(() => sampleStaticBackground(source, Math.max(1,Math.floor(width*scale)), Math.max(1,Math.floor(height*scale)),
+          paint.backgroundSize, position, paint.backgroundRepeat, (pixels, w, h) => artworkLosesContrast(pixels, w, h, original, backdrop,sourceWasDark?3:2)))
+          .then(backing => {
+            entry.backing = Boolean(backing); entry.done = true;
+            for (const user of entry.users) if (preset && user.isConnected && backing) scheduleDirtySurface(user);
+            entry.users.clear();
+          }).catch(() => { entry.done = true; entry.users.clear(); }).finally(finishCompactBackground);
+      }
+      if (!entry.done) entry.users.add(element);
+      else if (entry.backing) fixes.push([pseudo, `background-color: ${rgba(original)} !important;`]);
+    }
+    return fixes;
   }
 
   function relatedColorLift(pixels, backdrop) {
@@ -1687,10 +2544,96 @@
     return (brighter[channel] - darkestInk[channel]) / (255 - darkestInk[channel]);
   }
 
+  function silhouetteColorLift(ink, backdrop, minimumOpacity = 1) {
+    const brighter = readableColor(ink, backdrop, 7);
+    if (!brighter) return 0;
+    // The contrast floor alone leaves black functional silhouettes mid-gray.
+    // Use white for neutral ink that needs repair; retain the existing graded
+    // lift for chromatic ink, and leave already-readable neutral ink alone.
+    if (Math.max(...ink.slice(0, 3)) - Math.min(...ink.slice(0, 3)) <= 16) return 1;
+    const channel = ink.indexOf(Math.min(...ink.slice(0, 3)));
+    let lift = (brighter[channel] - ink[channel]) / (255 - ink[channel]);
+    if (minimumOpacity < 1) {
+      const ratio = value => contrastRatio(luminance(compositeColor([
+        ...ink.slice(0,3).map(c=>c+(255-c)*value),minimumOpacity],backdrop)),luminance(backdrop));
+      // Keep the ordinary opaque target when it also supports the dimmest
+      // verified state. Raise further only when that state's readability needs it.
+      if (ratio(lift) < 4.5) {
+        if (ratio(1) < 4.5) return 0;
+        let low=lift,high=1;
+        for(let i=0;i<8;i++){const middle=(low+high)/2;if(ratio(middle)>=4.5)high=middle;else low=middle;}
+        lift=high;
+      }
+    }
+    return lift;
+  }
+
+  function nestedCardImageGlyph(image) {
+    // A card's icon can sit in an empty stretched wrapper, with its label in
+    // another branch. Bound the walk; arbitrary article artwork is not a glyph.
+    if (!(image.alt || image.title) || Math.max(image.clientWidth, image.clientHeight) > 64 ||
+        Math.max(image.naturalWidth, image.naturalHeight) > 128) return false;
+    let node = image.parentElement;
+    for (let depth = 0; node && depth < 3; depth++, node = node.parentElement) {
+      const source = authoredBackdropStyle(node);
+      if (source.opacity !== '1' || source.filter !== 'none' || source.mixBlendMode !== 'normal' ||
+          source.backgroundImage !== 'none') return false;
+      if (node.matches('a[href]')) {
+        const label = node.textContent.trim();
+        return !node.matches('[aria-disabled="true"]') && label.length > 0 && label.length <= 160 &&
+          ['block', 'flex', 'inline-flex', 'grid', 'inline-grid'].includes(source.display) &&
+          node.clientWidth >= 96 && node.clientWidth <= 640 && node.clientHeight >= 64 && node.clientHeight <= 480 &&
+          node.querySelectorAll('img').length === 1;
+      }
+      const fill = chromiumSrgb(source.backgroundColor);
+      const lightWrapper = fill?.[3] === 1 && luminance(fill) > .75 &&
+        Math.max(...fill.slice(0,3))-Math.min(...fill.slice(0,3)) <= 20;
+      if (!node.matches('div,span') || (fill?.[3] !== 0 && !lightWrapper)) return false;
+    }
+    return false;
+  }
+
   function linkedGlyphFilter(image, style, getBackdrop) {
     const link = image.parentElement;
-    const imageOnly = link instanceof HTMLAnchorElement && !link.textContent.trim() && link.childElementCount === 1;
-    if (!(link instanceof HTMLAnchorElement) || !link.hasAttribute('href') ||
+    const imageOnly = link && !link.textContent.trim() && link.childElementCount === 1;
+    const adjacentLink = link?.matches('p,span,div') && (image.alt || image.title) &&
+      ((image.nextElementSibling?.matches('a[href]') && image.nextElementSibling.textContent.trim()) ||
+        (link.querySelectorAll('img').length === 1 && link.textContent.trim().length <= 160 &&
+          Array.prototype.some.call(link.childNodes, textNode))) && Math.max(image.clientWidth, image.clientHeight) <= 32;
+    const iconButton = link?.matches('button,[role="button"]') && imageOnly &&
+      !link.matches(':disabled,[aria-disabled="true"]') &&
+      (link.getAttribute('aria-label') || link.title || image.alt) &&
+      Math.max(image.clientWidth, image.clientHeight) <= 48 &&
+      Math.max(image.naturalWidth, image.naturalHeight) <= 128;
+    const badgeStyle = imageOnly && link.matches('div,span') && authoredBackdropStyle(link);
+    const cardGlyph = badgeStyle && link.nextElementSibling?.matches(`${heading},p,span`) &&
+      link.nextElementSibling.textContent.trim() &&
+      link.nextElementSibling.textContent.trim().length <= 160 &&
+      ['flex', 'inline-flex', 'grid', 'inline-grid'].includes(badgeStyle.display) &&
+      link.clientWidth >= 20 && link.clientHeight >= 20 && link.clientWidth <= 80 && link.clientHeight <= 80 &&
+      parseFloat(badgeStyle.borderTopLeftRadius) >= Math.min(link.clientWidth, link.clientHeight) / 2 &&
+      chromiumSrgb(badgeStyle.backgroundColor)?.[3] === 1 && badgeStyle.backgroundImage === 'none' &&
+      Math.max(image.clientWidth, image.clientHeight) <= 48 && Math.max(image.naturalWidth, image.naturalHeight) <= 128;
+    const nestedCardGlyph = imageOnly && link.matches('div,span') && nestedCardImageGlyph(image);
+    const contextual = link instanceof HTMLAnchorElement && link.hasAttribute('href') || iconButton || cardGlyph || adjacentLink || nestedCardGlyph;
+    // A small verified neutral silhouette does not need a link or alt label
+    // to remain visible. Keep authored fading, disabled states and complex
+    // artwork outside this fallback; static-resource verification still runs.
+    let neutralCandidate = !contextual && image.clientWidth > 0 && image.clientHeight > 0 && image.complete && image.naturalWidth > 0 && Math.max(image.clientWidth,image.clientHeight,image.naturalWidth,image.naturalHeight) <= 128 &&
+      !image.closest(':disabled,[aria-disabled="true"],[aria-hidden="true"]');
+    let neutralDepth=0;
+    for(let node=image;neutralCandidate&&node&&node!==document.body;node=node.parentElement){
+      if(++neutralDepth>16){neutralCandidate=false;break;}
+      const layer=authoredBackdropStyle(node);
+      if(layer.opacity!=='1'||layer.filter!=='none'||layer.mixBlendMode!=='normal')neutralCandidate=false;
+    }
+    if(neutralCandidate){
+      const key=`${image.currentSrc}|${image.naturalWidth}|${image.naturalHeight}`;
+      let probe=neutralImageProbes.get(image);
+      if(probe?.key!==key){probe={key,neutral:Boolean(neutralSilhouetteInk(artworkPixels(image,image.naturalWidth,image.naturalHeight)))};neutralImageProbes.set(image,probe);}
+      neutralCandidate=probe.neutral;
+    }
+    if (!(neutralCandidate || contextual) ||
         !image.complete || !image.naturalWidth || !image.naturalHeight || !image.clientWidth || !image.clientHeight ||
         (imageOnly ? image.clientWidth > 400 || image.clientHeight > 160 ||
           image.naturalWidth * image.naturalHeight > 262144 :
@@ -1706,17 +2649,31 @@
       const pixels = artworkPixels(image, image.naturalWidth, image.naturalHeight);
       const solid = imageOnly && solidSilhouetteInk(pixels);
       const ink = solid ? null : neutralSilhouetteInk(pixels);
-      const brighter = solid && readableColor(solid, backdrop, 7);
-      const channel = solid && solid.indexOf(Math.min(...solid.slice(0, 3)));
-      const colorLift = solid ? (brighter ? (brighter[channel] - solid[channel]) / (255 - solid[channel]) : 0) :
+      const colorLift = solid ? silhouetteColorLift(solid, backdrop) :
         imageOnly ? 0 : ink ? 0 : relatedColorLift(pixels, backdrop);
       const crossOriginSolid = imageOnly && !pixels && new URL(image.currentSrc).origin !== location.origin;
-      sample = { key, tint: false, colorLift, solid: Boolean(solid), crossOriginSolid, backdrop };
+      sample = { key, tint: false, colorLift, solid: Boolean(solid), crossOriginSolid, backdrop, imageOnlyGlyph: imageOnly,
+        neutralTint: Boolean(ink && readableColor(ink, backdrop, 4.5)) };
       artworkContrast.set(image, sample);
-      if (colorLift || crossOriginSolid || (ink && readableColor(ink, backdrop, 4.5))) checkArtworkTint(image, sample);
+      if (imageOnly || colorLift || crossOriginSolid || (ink && readableColor(ink, backdrop, 4.5))) checkArtworkTint(image, sample);
     }
-    if (sample.tint) return sample.colorLift ? `invert(1) brightness(${1 - sample.colorLift}) invert(1)` :
-      'brightness(0) invert(1)';
+    if (sample.tint) {
+      // A uniform white lift desaturates colored ink. For a verified simple
+      // embedded SVG, reuse the vector glyph conversion instead: only paint
+      // changes, retaining alpha, geometry, resource identity and native hue.
+      if (sample.solid && !sample.opacityOnly && image.currentSrc.startsWith('data:image/svg+xml,')) {
+        const glyph = backgroundSvgGlyph({ backgroundImage: `url("${image.currentSrc}")`,
+          backgroundRepeat: 'no-repeat', backgroundSize: 'auto' });
+        const imagePaint = glyph && Math.max(...glyph.ink.slice(0, 3)) - Math.min(...glyph.ink.slice(0, 3)) > 24 &&
+          contrastingSvgBackground(glyph, backdrop, 7, true);
+        if (imagePaint) {
+          sample.svgPaint = `content: ${imagePaint} !important;`;
+          return 'none';
+        }
+      }
+      return sample.colorLift ? `invert(1) brightness(${1 - sample.colorLift}) invert(1)` :
+        'brightness(0) invert(1)';
+    }
   }
 
   function smallLabeledSvgPaint(image, style, getBackdrop) {
@@ -1763,7 +2720,7 @@
     return changed ? `content: url("data:image/svg+xml,${encodeURIComponent(svg)}") !important;` : '';
   }
 
-  function solidSilhouetteInk(pixels, minimumOpaque = 16) {
+  function solidSilhouetteInk(pixels, minimumOpaque = 16, maximumSpread = 8) {
     if (!pixels) return null;
     let ink, transparent = 0, opaque = 0;
     for (let index = 0; index < pixels.length; index += 4) {
@@ -1771,7 +2728,7 @@
       if (pixels[index + 3] < 224) continue;
       const color = [pixels[index], pixels[index + 1], pixels[index + 2], 1];
       ink ??= color;
-      if (color.some((channel, i) => Math.abs(channel - ink[i]) > 8)) return null;
+      if (color.some((channel, i) => Math.abs(channel - ink[i]) > maximumSpread)) return null;
       opaque++;
     }
     return opaque >= minimumOpaque && transparent >= pixels.length / 80 ? ink : null;
@@ -1782,23 +2739,23 @@
     return (readableColor(neutral, backdrop) ?? neutral)[0] / 255;
   }
 
-  function readableColor(color, backdrop, minimum = 4.5) {
+  function readableColor(color, backdrop, minimum = 4.5, steps = 16) {
     const light = luminance(backdrop);
     const ratio = ink => contrastRatio(luminance(compositeColor(ink, backdrop)), light);
     if (ratio(color) >= minimum) return null;
     const target = light + .05 > Math.sqrt(.05 * 1.05) ? 0 : 255;
     minimum = Math.min(minimum, ratio([target, target, target, 1]));
     let low = 0;
-    let high = 16;
+    let high = steps;
     while (high - low > 1) {
       const step = (high + low) >> 1;
       const candidate = color.map((channel, index) => index === 3 ? 1 :
-        Math.round(channel + (target - channel) * step / 16));
+        Math.round(channel + (target - channel) * step / steps));
       if (ratio(candidate) >= minimum) high = step;
       else low = step;
     }
     return color.map((channel, index) => index === 3 ? 1 :
-      Math.round(channel + (target - channel) * high / 16));
+      Math.round(channel + (target - channel) * high / steps));
   }
 
   function perceptualHeadingColor(ink, backdrop) {
@@ -1976,7 +2933,90 @@
     if (!outside) return '';
     const { minimum, edgeWidth } = separatorLevels[emphasizeSeparators];
     const edge = readableColor(backdrop, backdrop, minimum);
-    return `box-shadow: inset 0 0 0 ${edgeWidth}px ${rgba(edge)}, ${shadow} !important;`;
+    return `box-shadow: inset 0 0 0 ${edgeWidth}px ${rgba(edge)}` +
+      (shadow === 'none' ? '' : `, ${shadow}`) + ' !important;';
+  }
+
+  function formPanelEdge(element, backdrop) {
+    if (!emphasizeSeparators) return '';
+    const source = authoredBackdropStyle(element);
+    if (!formPanelShadow(element, source)) return '';
+    return raisedSurfaceEdge(source, backdrop, backdrop, source.boxShadow);
+  }
+
+  function semanticNoteSurface(element) {
+    return element.matches('blockquote,aside,[role="note"]') ||
+      element.parentElement?.matches('blockquote,aside,[role="note"]');
+  }
+
+  function paddedControlPanel(element, style) {
+    if (!element.matches('div,section,article,aside') || element.closest(interactive) ||
+        style.backgroundImage !== 'none' || parseFloat(style.paddingTop) < 12 ||
+        parseFloat(style.borderTopLeftRadius) < 4 || element.clientWidth < 160 || element.clientWidth > 960 ||
+        element.clientHeight < 64 || element.clientHeight > 320 || !element.textContent.trim() ||
+        element.textContent.trim().length > 600 ||
+        element.querySelector('img,video,canvas')) return false;
+    const fill = chromiumSrgb(style.backgroundColor);
+    if (fill?.[3] !== 1 || Math.max(...fill.slice(0, 3)) - Math.min(...fill.slice(0, 3)) > 24) return false;
+    const candidates = element.querySelectorAll('button,input:not([type="hidden"]),select,textarea,[role="button"]');
+    if (candidates.length > 16) return false;
+    const controls = [...candidates]
+      .filter(control => control.clientWidth > 0 && control.clientHeight > 0 && getComputedStyle(control).visibility !== 'hidden');
+    return controls.length > 0 && controls.length <= 8 && controls.every(control => {
+      let node = control;
+      for (let depth = 0; node && depth < 4; depth++) {
+        node = node.parentElement;
+        if (node === element) return true;
+      }
+      return false;
+    });
+  }
+
+  function semanticSurfaceEdge(element, backdrop) {
+    if (!emphasizeSeparators || !backdrop || luminance(backdrop) > .18) return '';
+    const style = authoredBackdropStyle(element), fill = chromiumSrgb(style.backgroundColor);
+    const action = compactTextControl(element) && ['flex', 'inline-flex'].includes(style.display) &&
+      parseFloat(style.borderTopLeftRadius) >= 4;
+    const note = semanticNoteSurface(element), panel = paddedControlPanel(element, style);
+    // Palette cards already receive the preference-controlled card-outline.
+    // Do not stack an inset stroke over that existing optional frame.
+    if (panel && !note && !action && palettes[preset]) return '';
+    if (!(note || action || panel) || !fill?.[3] || style.backgroundImage !== 'none' ||
+        parseFloat(style.paddingTop) < 6 || Math.max(...fill.slice(0, 3)) - Math.min(...fill.slice(0, 3)) > 24) return '';
+    return raisedSurfaceEdge(style, backdrop, backdrop, style.boxShadow);
+  }
+
+  function clippedPanelEdge(element, backdrop) {
+    if (!emphasizeSeparators || !element.matches('div,section,header,aside') || element.closest(interactive)) return '';
+    const source = authoredBackdropStyle(element), fill = chromiumSrgb(source.backgroundColor);
+    if (fill?.[3] !== 1 || source.borderStyle !== 'none' ||
+        source.borderImageSource !== 'none' || hasPaintedOutline(source) ||
+        parseFloat(source.borderTopLeftRadius) < 8 ||
+        !['hidden', 'clip'].includes(source.overflowX) || !['hidden', 'clip'].includes(source.overflowY) ||
+        element.clientWidth < 160 || element.clientHeight < 64 || element.children.length > 32) return '';
+    // An image does not erase the panel's opaque base or its outline. Use
+    // that base for the frame policy, without claiming picture-pixel contrast.
+    backdrop ??= palettes[preset] ? chromiumSrgb(getComputedStyle(element).backgroundColor) :
+      chromiumSurfaceColor(element, source, fill) ?? fill;
+    if (!backdrop || luminance(backdrop) > .18) return '';
+    // A shallow heading distinguishes a clipped content panel from rounded
+    // artwork, empty decoration and distant headings inside a whole page.
+    const queue = [...element.children].map(node => [node, 1]);
+    let found = false, visited = 0;
+    while (queue.length && visited++ < 32) {
+      const [node, depth] = queue.shift();
+      if (node.matches(heading)) { found = true; break; }
+      if (depth < 3) {
+        if (visited + queue.length + node.children.length > 32) return '';
+        queue.push(...[...node.children].map(child => [child, depth + 1]));
+      }
+    }
+    if (!found) return '';
+    const { minimum, edgeWidth } = separatorLevels[emphasizeSeparators];
+    // Outline paints above child pictures; an inset shadow can be covered by
+    // them. A negative offset keeps the frame inside the existing geometry.
+    return `outline: ${edgeWidth}px solid ${rgba(readableColor(backdrop, backdrop, minimum))} !important;` +
+      `outline-offset: -${edgeWidth}px !important;`;
   }
 
   function raisedLink(element, style) {
@@ -1986,21 +3026,188 @@
       element.clientWidth >= 120 && element.clientHeight >= 44;
   }
 
+  function formPanelShadow(element, style) {
+    if (!style.filter?.startsWith('drop-shadow(') || !element.matches('div,section,form') || !element.querySelector(heading) ||
+        !(element.matches('form') || element.querySelectorAll('form').length === 1) ||
+        parseFloat(style.borderTopLeftRadius) < 4 || parseFloat(style.paddingTop) < 16 ||
+        element.clientWidth < 160 || element.clientHeight < 80) return null;
+    const shadows = /drop-shadow\((rgba?\([^)]+\)) (-?[\d.]+px) (-?[\d.]+px) ([\d.]+px)\)/g;
+    const matches = [...style.filter.matchAll(shadows)];
+    if (!matches.length || matches.length > 4 || style.filter.replace(shadows, '').trim()) return null;
+    if (matches.some(([, value]) => {
+      const ink = chromiumSrgb(value);
+      return !ink?.[3] || luminance(ink) >= .05 || Math.max(...ink.slice(0, 3)) - Math.min(...ink.slice(0, 3)) >= 16;
+    })) return null;
+    return style.filter.replace(shadows, (match, value) => match.replace(value,
+      rgba([255, 255, 255, Math.min(.14, chromiumSrgb(value)[3] * .8)])));
+  }
+
+  function formPanelCanvasPaint(element, style, source) {
+    // Bounded structural search: only a padded, light, opaque layout canvas
+    // with one elevated form panel through transparent wrappers qualifies.
+    // Do not scan whole documents or infer elevation from text height.
+    if (!element.matches('div,section,main') || parseFloat(style.paddingTop) < 24 ||
+        element.children.length > 4 || !element.children.length) return null;
+    const queue = [...element.children].map(node => [node, 1]);
+    let panel = null, visited = 0;
+    while (queue.length && visited++ < 48) {
+      const [node, depth] = queue.shift(), layer = authoredBackdropStyle(node);
+      const fill = chromiumSrgb(layer.backgroundColor);
+      if (fill?.[3]) {
+        if (panel || fill[3] !== 1 || layer.backgroundImage !== 'none' ||
+            node.style.getPropertyPriority('background-color') === 'important' ||
+            contrastRatio(luminance(fill), luminance(source)) > 1.12 ||
+            !formPanelShadow(node, layer)) return null;
+        panel = { node, layer, fill };
+      } else {
+        if (layer.backgroundImage !== 'none' || depth >= 4 && node.children.length) return null;
+        if (visited + queue.length + node.children.length > 48) return null;
+        queue.push(...[...node.children].map(child => [child, depth + 1]));
+      }
+    }
+    if (queue.length || !panel) return null;
+    const palette = palettes[preset];
+    const base = palette ? palette.surface.slice(1).match(/../g).map(c => parseInt(c, 16)).concat(1) :
+      chromiumSurfaceColor(panel.node, panel.layer, panel.fill);
+    if (!base || luminance(base) > .18) return null;
+    let low = 0, high = 1;
+    for (let step = 0; step < 12; step++) {
+      const blend = (low + high) / 2;
+      const ink = base.map((c, i) => i === 3 ? 1 : Math.round(c + (255 - c) * blend));
+      if (contrastRatio(luminance(ink), luminance(base)) < 1.18) low = blend;
+      else high = blend;
+    }
+    return { surface: base.map((c, i) => i === 3 ? 1 : Math.round(c + (255 - c) * high)),
+      shadow: null, filter: style.filter };
+  }
+
+  function separatedControlSurface(element, style, source, surface, getOutside) {
+    // Preserve a source-authored filled action's affordance when dark conversion
+    // collapses its fill into the surrounding canvas. This is not a universal
+    // control contrast requirement, nor a reason to frame ordinary text links.
+    if (!compactTextControl(element) || !source || source[3] !== 1 || !surface || surface[3] !== 1 ||
+        Math.max(...source.slice(0, 3)) - Math.min(...source.slice(0, 3)) > 24 ||
+        style.backgroundImage !== 'none' || style.opacity !== '1' || style.filter !== 'none' ||
+        style.mixBlendMode !== 'normal' || element.style.getPropertyPriority('background-color') === 'important' ||
+        !['flex', 'inline-flex', 'inline-block'].includes(style.display) ||
+        element.clientHeight < 24 || parseFloat(style.paddingTop) < 6 || parseFloat(style.paddingLeft) < 8 ||
+        parseFloat(style.borderTopLeftRadius) < 4 || hasPaintedOutline(style)) return null;
+    // A distinct authored edge already communicates the boundary. Matching-fill
+    // borders are not distinct edges; preserve those controls' fill affordance.
+    if (paintedBorderSides(style).some(side => {
+      const ink = chromiumSrgb(style[`border${side}Color`]);
+      return ink && contrastRatio(luminance(compositeColor(ink, source)), luminance(source)) >= 1.5;
+    })) return null;
+    const parent = element.assignedSlot ?? element.parentElement ?? element.getRootNode().host;
+    const originalOutside = authoredSolidBackdrop(parent);
+    if (!originalOutside || contrastRatio(luminance(source), luminance(originalOutside)) < 1.5) return null;
+    const outside = getOutside(parent);
+    if (!outside || luminance(outside) > .16 || luminance(surface) > .18 ||
+        contrastRatio(luminance(surface), luminance(outside)) >= 1.5) return null;
+    // Finer interpolation avoids overshooting a subtle surface step, which
+    // would also leave less contrast headroom for text and optional borders.
+    return readableColor(surface, outside, 1.5, 256);
+  }
+
   function separatedCardPaint(element, style, source, surface) {
+    // A dark source panel can be strongly separated from a light canvas even
+    // though its own fill needs no dark conversion. Preserve that grouping
+    // when the surrounding canvas darkens; do not treat every dark band as a
+    // card, or alter panels that were already subtle on a dark source canvas.
+    if (source?.[3] === 1 && luminance(source) < .18 &&
+        Math.max(...source.slice(0,3))-Math.min(...source.slice(0,3)) <= 20 &&
+        element.matches('div,section,article,aside') && element.textContent.trim() &&
+        element.clientWidth >= 120 && element.clientWidth <= 1200 &&
+        element.clientHeight >= 44 && element.clientHeight <= 600 &&
+        parseFloat(style.paddingTop) >= 12 && parseFloat(style.paddingLeft) >= 12 &&
+        style.backgroundImage === 'none' && style.filter === 'none' && style.opacity === '1' &&
+        style.mixBlendMode === 'normal' && !element.closest(interactive) &&
+        !element.querySelector('img,svg,video,canvas') &&
+        !paintedBorderSides(style).some(side => {
+          const ink = chromiumSrgb(style[`border${side}Color`]);
+          return ink?.[3] && Math.max(...ink.slice(0,3))-Math.min(...ink.slice(0,3)) > 20;
+        }) &&
+        element.style.getPropertyPriority('background-color') !== 'important') {
+      const originalParent = authoredSolidBackdrop(element.parentElement);
+      const palette = palettes[preset];
+      const parent = palette ? palette.surface.slice(1).match(/../g).map(c=>parseInt(c,16)).concat(1) :
+        chromiumTextBackdrop(element.parentElement,new Map());
+      const converted = surface ?? source;
+      if (originalParent && luminance(originalParent) > .6 && parent && luminance(parent) < .18 &&
+          contrastRatio(luminance(source),luminance(originalParent)) >= 3 &&
+          contrastRatio(luminance(converted),luminance(parent)) < 1.2) {
+        return {surface:readableColor(parent,parent,1.25),shadow:null};
+      }
+    }
+    if (!palettes[preset]) {
+      const action = separatedControlSurface(element, style, source, surface ?? source,
+        parent => chromiumTextBackdrop(parent, new Map()));
+      if (action) return { surface: action, shadow: null };
+    }
+    if (semanticNoteSurface(element) && source?.[3] > 0 && source[3] < .2 && luminance(source) < .18 &&
+        Math.max(...source.slice(0, 3)) - Math.min(...source.slice(0, 3)) <= 24 &&
+        style.backgroundImage === 'none' && parseFloat(style.paddingTop) >= 8) {
+      const parent = authoredSolidBackdrop(element.parentElement);
+      const palette = palettes[preset];
+      const base = palette ? palette.surface.slice(1).match(/../g).map(c=>parseInt(c,16)).concat(1) :
+        parent && (chromiumColor(parent,'background') ?? parent);
+      if (base && luminance(base) < .18) return { surface: readableColor(base, base, 1.2), shadow: null };
+    }
+
     if (!source || source[3] !== 1 || !surface || luminance(surface) > .18 || luminance(source) < .75 ||
-        Math.max(...source.slice(0, 3)) - Math.min(...source.slice(0, 3)) > 20 || style.backgroundImage !== 'none' ||
+        Math.max(...source.slice(0, 3)) - Math.min(...source.slice(0, 3)) > 20 ||
         element.style.getPropertyPriority('background-color') === 'important') return null;
+    const canvasPaint = formPanelCanvasPaint(element, style, source);
+    if (canvasPaint) return canvasPaint;
+    if (style.backgroundImage !== 'none') return null;
     const compact = !raisedLink(element, style) && element.matches('a,button,label,span,[role="button"]') &&
       (element.textContent.trim() || element.hasAttribute('aria-label')) &&
-      element.clientWidth <= 360 && element.clientHeight >= 20 && element.clientHeight <= 80;
-    const structural = element.matches('article,aside') && element.querySelector(heading) &&
+      element.clientWidth <= 360 && element.clientHeight >= 20 &&
+      (element.clientHeight <= 80 || element.clientWidth <= 80 && element.clientHeight <= 120);
+    const formShadow = formPanelShadow(element, style);
+    const structural = formShadow || element.matches('article,aside') && element.querySelector(heading) &&
       (paintedBorderSides(style).length || style.boxShadow !== 'none');
     if (!compact && (!(structural || raisedLink(element, style)) || element.clientWidth < 120 || element.clientHeight < 44)) return null;
-    const originalParent = authoredSolidBackdrop(element.parentElement);
+    // A decorative picture on an outer canvas prevents a solid text-backdrop
+    // measurement. For this opaque form panel, its canvas color still supplies
+    // a conservative tonal baseline, not a claim about picture-pixel contrast.
+    let originalParent = authoredSolidBackdrop(element.parentElement);
+    if (!originalParent && formShadow) {
+      for (let node = element.parentElement, depth = 0; node && depth < 8; node = node.parentElement, depth++) {
+        const ink = chromiumSrgb(authoredBackdropStyle(node).backgroundColor);
+        if (ink?.[3] === 1) { originalParent = ink; break; }
+      }
+    }
     if (!originalParent) return null;
+    // A matching light fill is not a visible control surface on its own.
+    // Navigation items often author white resting fills and reserve their
+    // separate fill for hover. Do not manufacture that hovered appearance.
+    if (compact && contrastRatio(luminance(source), luminance(originalParent)) <= 1.12 &&
+        style.boxShadow === 'none' && !hasPaintedOutline(style) &&
+        !borderEdges.every(side => {
+          const ink = chromiumSrgb(style[`border${side}Color`]);
+          return parseFloat(style[`border${side}Width`]) > 0 &&
+            !['none','hidden'].includes(style[`border${side}Style`]) && ink?.[3] &&
+            contrastRatio(luminance(compositeColor(ink, source)), luminance(source)) > 1.12;
+        })) return null;
     const palette = palettes[preset];
     const paletteColor = value => value.slice(1).match(/../g).map(channel => parseInt(channel, 16)).concat(1);
+    // An outlined action already has its own boundary. Raising a white source
+    // fill again makes that secondary action unnecessarily pale in dark mode.
+    const edge = chromiumSrgb(style.borderTopColor);
+    if (compact && edge?.[3] && Math.max(...edge.slice(0, 3)) - Math.min(...edge.slice(0, 3)) >= 45 &&
+        borderEdges.every(side => style[`border${side}Style`] === 'solid' &&
+          parseFloat(style[`border${side}Width`]) > 0 && parseFloat(style[`border${side}Width`]) <= 2 &&
+          style[`border${side}Color`] === style.borderTopColor)) {
+      return { surface: palette ? paletteColor(palette.surface) : surface, shadow: null };
+    }
     const parent = palette ? paletteColor(palette.surface) : chromiumColor(originalParent, 'background') ?? originalParent;
+    // Elevation needs a tonal step when both light fills collapse to one dark
+    // tone. The owning canvas is lifted separately; keep the panel dark and
+    // retain its authored shadow rather than manufacturing a luminous halo.
+    if (formShadow && contrastRatio(luminance(source), luminance(originalParent)) <= 1.12) {
+      return { surface: palette ? paletteColor(palette.surface) : surface, shadow: null, filter: style.filter };
+    }
     let separated = surface;
     const minimum = compact ? 1.12 : 1.2, target = compact ? 1.15 : 1.25;
     const sameSourceLevel = contrastRatio(luminance(source), luminance(originalParent)) <= 1.12;
@@ -2013,7 +3220,7 @@
       return ink?.[3] > 0 && luminance(ink) < .05 && Math.max(...ink.slice(0, 3)) - Math.min(...ink.slice(0, 3)) < 16 ?
         rgba([255, 255, 255, Math.min(.14, ink[3] * .45)]) : value;
     });
-    return { surface: separated ?? surface, shadow: shadow !== style.boxShadow ? shadow : null };
+    return { surface: separated ?? surface, shadow: shadow !== style.boxShadow ? shadow : null, filter: formShadow };
   }
 
   function trackRaisedLink(element, style) {
@@ -2045,34 +3252,73 @@
     return box.width > 0 && box.width <= 320 && box.height > 0 && box.height <= 80;
   }
 
+  function fileActivationFrame(element) {
+    if(!element.matches('div,span,label')||element.closest('[aria-disabled="true"]')||
+        !element.textContent.trim()||element.textContent.trim().length>100||
+        element.clientWidth<=0||element.clientWidth>720||element.clientHeight<20||element.clientHeight>80)return false;
+    const inputs=element.querySelectorAll(':scope > input[type="file"]');
+    if(inputs.length!==1||inputs[0].disabled||authoredBackdropStyle(inputs[0]).opacity!=='0')return false;
+    const source=authoredBackdropStyle(element),box=element.getBoundingClientRect(),input=inputs[0].getBoundingClientRect();
+    return source.position==='relative'&&source.opacity==='1'&&source.filter==='none'&&
+      input.width>0&&input.height>0&&input.right>box.left&&input.left<box.right&&input.bottom>box.top&&input.top<box.bottom;
+  }
+
+  function overlayActivationFrame(element, includeSelf = false) {
+    for (let frame=includeSelf?element:element.parentElement,depth=0;frame&&depth<3;frame=frame.parentElement,depth++) {
+      if (!frame.matches('span,div,label') || frame.clientWidth <= 0 || frame.clientWidth > 720 || frame.clientHeight > 80) continue;
+      const inputs=frame.querySelectorAll('input[type="submit"],input[type="button"],select:not([multiple])');
+      if (inputs.length !== 1 || inputs[0].disabled) continue;
+      const input=inputs[0],style=authoredBackdropStyle(input),box=frame.getBoundingClientRect(),target=input.getBoundingClientRect();
+      if (input instanceof HTMLSelectElement && input.size > 1) continue;
+      const alpha=Number(style.opacity);
+      if (alpha>=0 && alpha<=.02 && style.position === 'absolute' && target.width >= box.width*.8 && target.height >= box.height*.8 &&
+          target.left <= box.left+2 && target.top <= box.top+2 && target.right >= box.right-2 && target.bottom >= box.bottom-2) return frame;
+    }
+    return null;
+  }
+
+  function translucentActionFrame(element, style) {
+    const fill=chromiumSrgb(style.backgroundColor),ink=chromiumSrgb(style.borderTopColor);
+    if (!compactTextControl(element) || !fill || !(fill[3]>0&&fill[3]<.5) ||
+        !ink || !(ink[3]>0&&ink[3]<1) || luminance(ink)<.6 ||
+        Math.max(...ink.slice(0,3))-Math.min(...ink.slice(0,3))>24 || style.borderImageSource!=='none' ||
+        !borderEdges.every(side=>style[`border${side}Style`]==='solid'&&style[`border${side}Color`]===style.borderTopColor&&
+          parseFloat(style[`border${side}Width`])>0&&parseFloat(style[`border${side}Width`])<=2)) return '';
+    const alpha=emphasizeSeparators ? ink[3]+(1-ink[3])*separatorLevels[emphasizeSeparators].opacity : ink[3];
+    return `border-color: ${rgba([...ink.slice(0,3),alpha])} !important;`;
+  }
+
   function coloredControlBorder(element, style, getBackdrop) {
     if (element.matches(':disabled,[aria-disabled="true"]') ||
         style.borderImageSource !== 'none') return '';
-    const control = element.matches(interactive) &&
-      !element.matches('[aria-pressed],[aria-selected],[aria-current],[role="tab"]');
+    const compoundControl=fileActivationFrame(element)||selectProxyFrame(element);
+    const control = compoundControl || element.matches(interactive) &&
+      !element.matches('[aria-selected],[aria-current],[role="tab"]') &&
+      (!element.hasAttribute('aria-pressed') || element.matches('button'));
     if (!control && !paintedBorderSides(style).length) return '';
     const source = authoredBackdropStyle(element);
     if (!control || chromiumSrgb(source.backgroundColor)?.[3] > .2) {
       // A selected card can paint its meaningful edge on a noninteractive
       // container around heading links. Do not recolor matching button fills
       // or arbitrary colored decoration as though they were such a boundary.
-      const ink = chromiumSrgb(source.borderTopColor), backing = authoredSolidBackdrop(element);
+      const ink = chromiumSrgb(source.borderTopColor), backing = compoundControl?chromiumSrgb(source.backgroundColor):authoredSolidBackdrop(element);
       const width = parseFloat(source.borderTopWidth);
       if (!ink?.[3] || !(width > 0 && width <= 2) || !backing ||
           Math.max(...backing.slice(0, 3)) - Math.min(...backing.slice(0, 3)) > 24 ||
           contrastRatio(luminance(compositeColor(ink, backing)), luminance(backing)) < 3 ||
           !borderEdges.every(side => source[`border${side}Style`] === 'solid' &&
             source[`border${side}Color`] === source.borderTopColor && parseFloat(source[`border${side}Width`]) === width) ||
-          !(element.matches('article,aside,[role="option"],[role="tab"],[aria-selected="true"],[aria-current="true"]') ||
+          !(control && (compactTextControl(element)||compoundControl) ||
+            element.matches('article,aside,[role="option"],[role="tab"],[aria-selected="true"],[aria-current="true"]') ||
             element.querySelector('h1 a[href],h2 a[href],h3 a[href],h4 a[href],h5 a[href],h6 a[href]'))) return '';
     }
-    const backdrop = getBackdrop(element);
+    const backdrop = compoundControl?solidControlBackdrop(element,source,getBackdrop):getBackdrop(element);
     if (!backdrop || luminance(backdrop) >= .18) return '';
     const colors = [];
     const declarations = borderEdges.map(side => {
       const width = parseFloat(source[`border${side}Width`]);
       const ink = chromiumSrgb(source[`border${side}Color`]);
-      if (!(width > 0 && width <= 2) || source[`border${side}Style`] !== 'solid' || !ink?.[3] ||
+      if (!(width > 0 && width <= 2) || !['solid','dashed','dotted'].includes(source[`border${side}Style`]) || !ink?.[3] ||
           Math.max(...ink.slice(0, 3)) - Math.min(...ink.slice(0, 3)) < 45) return '';
       const color = contrastingGlyphInk(ink, backdrop, 4.5, true) ?? ink;
       colors.push(rgba(color));
@@ -2090,6 +3336,60 @@
     return declarations + `box-shadow: inset 0 0 0 ${spread}px ${colors[0]}${shadow} !important;`;
   }
 
+  function navigationIndicatorPaint(element, style, getBackdrop) {
+    style = authoredBackdropStyle(element);
+    if (!element.closest('nav,[role="navigation"]') || element.closest(':disabled,[aria-disabled="true"]') ||
+        style.backgroundImage !== 'none' || style.borderImageSource !== 'none' ||
+        style.transform !== 'none' || style.filter !== 'none') return '';
+    const control = element.matches(interactive) ? element :
+      element.matches('div,li') && element.childElementCount === 1 && element.firstElementChild.matches(interactive) ? element.firstElementChild : null;
+    if (!control || element.clientWidth > 400 || element.clientHeight > 140 ||
+        paintedBorderSides(style).join(',') !== 'Bottom' || style.borderBottomStyle !== 'solid') return '';
+    const width = parseFloat(style.borderBottomWidth), source = chromiumSrgb(style.borderBottomColor), backdrop = getBackdrop(element);
+    if (!(width > 0 && width <= 4) || !source || source[3] !== 1 ||
+        Math.max(...source.slice(0,3))-Math.min(...source.slice(0,3)) < 45 || !backdrop || luminance(backdrop) > .18) return '';
+    const ink = contrastingGlyphInk(source,backdrop,4.5,true) ?? source;
+    const paint = `border-bottom-color: ${rgba(ink)} !important;`;
+    if (!emphasizeSeparators) return paint;
+    const level = separatorLevels[emphasizeSeparators], spread = Math.round(level.opacity*level.edgeWidth*100)/100;
+    const shadow = style.boxShadow === 'none' ? '' : `, ${style.boxShadow}`;
+    // Extend only the already-visible semantic underline, in its repaired Off
+    // ink. The transparent resting reservation and layout remain untouched.
+    return paint + `box-shadow: inset 0 -${spread}px 0 0 ${rgba(ink)}${shadow} !important;`;
+  }
+
+  function compositeFieldFrame(element, style, framePaint) {
+    if (!emphasizeSeparators || !framePaint || !element.closest('form') ||
+        !element.matches('form,div,fieldset,section') || hasPaintedOutline(style) ||
+        parseFloat(style.borderTopLeftRadius)<4 || style.position!=='relative' ||
+        style.overflowX!=='visible' || style.overflowY!=='visible' || getComputedStyle(element,'::after').content!=='none') return '';
+    const inputs=element.querySelectorAll(textInput),width=parseFloat(style.borderTopWidth);
+    const ink=chromiumSrgb(style.borderTopColor),match=/border-color:\s*([^;]+);/.exec(framePaint);
+    if(inputs.length<2||inputs.length>4||!match||!ink||ink[3]!==1||
+        Math.max(...ink.slice(0,3))-Math.min(...ink.slice(0,3))>24||!(width>0&&width<=2)||
+        !borderEdges.every(side=>style[`border${side}Style`]==='solid'&&
+          style[`border${side}Width`]===style.borderTopWidth&&style[`border${side}Color`]===style.borderTopColor))return '';
+    const box=element.getBoundingClientRect();
+    let touching=0;
+    for(const input of inputs){
+      for(let host=input.parentElement,depth=0;host&&host!==element&&depth<3;depth++,host=host.parentElement){
+        const source=authoredBackdropStyle(host),rect=host.getBoundingClientRect();
+        if(chromiumSrgb(source.backgroundColor)?.[3]===1&&parseFloat(source.borderTopLeftRadius)>=4&&
+            !paintedBorderSides(source).length&&rect.top<=box.top+width+1&&rect.bottom>=box.bottom-width-1){touching++;break;}
+      }
+    }
+    if(touching<2)return '';
+    const level=separatorLevels[emphasizeSeparators],extent=width+level.opacity*level.edgeWidth;
+    // Inset shadows and the element's outline paint below positioned children.
+    // Retrace the existing frame on an unused, pointer-transparent upper layer;
+    // keep overflow and layout intact rather than clipping autocomplete menus.
+    const color = match[1].replace(/\s*!important\s*$/,'');
+    return `content: "" !important; display: block !important; position: absolute !important;
+      inset: -${width}px !important; margin: 0 !important; padding: 0 !important; border: 0 !important;
+      border-radius: inherit !important; background: none !important; pointer-events: none !important;
+      box-shadow: inset 0 0 0 ${extent}px ${color} !important; z-index: 1 !important; transition: none !important;`;
+  }
+
   function authoredFrameBorder(element, style, backdrop, sourceBackground) {
     const compact = compactTextControl(element);
     if (!backdrop || luminance(backdrop) > .18 ||
@@ -2104,12 +3404,97 @@
         !['Top', 'Right', 'Bottom', 'Left'].every(side => style[`border${side}Style`] === 'solid' &&
           style[`border${side}Color`] === style.borderTopColor && parseFloat(style[`border${side}Width`]) === width)) return '';
     const originalContrast = contrastRatio(luminance(color), luminance(background));
-    if (originalContrast > 3) return '';
+    if (originalContrast > 3) {
+      const ink = overlayActivationFrame(element,true) === element ?
+        readableColor(backdrop,backdrop,Math.max(1.5,originalContrast),256) ?? color :
+        contrastingGlyphInk(color, backdrop, 3, true) ?? color;
+      const level = emphasizeSeparators && separatorLevels[emphasizeSeparators];
+      const shadow = style.boxShadow === 'none' ? '' : `, ${style.boxShadow}`;
+      return `border-color: ${rgba(ink)} !important;` + (level ?
+        `box-shadow: inset 0 0 0 ${level.opacity * level.edgeWidth}px ${rgba(ink)}${shadow} !important;` : '');
+    }
     // Off follows the authored visual weight; the preference supplies a graduated target.
     const baseline = Math.max(1.05, originalContrast * 1.08);
     const target = emphasizeSeparators ? baseline + separatorLevels[emphasizeSeparators].minimum - 1 : baseline;
     const edge = readableColor(backdrop, backdrop, target);
     return `border-color: ${rgba(edge)} !important;`;
+  }
+
+  function smallLabelFramePaint(element, backdrop) {
+    if (!element.matches('span') || !backdrop || luminance(backdrop) > .18 ||
+        element.matches(interactive) || element.closest(':disabled,[aria-disabled="true"]') ||
+        !element.textContent.trim() || element.textContent.trim().length>160 || element.querySelector('img,svg,input,button')) return '';
+    const style=authoredBackdropStyle(element),width=parseFloat(style.borderTopWidth),ink=chromiumSrgb(style.borderTopColor);
+    if (!['inline-flex','inline-block','flex'].includes(style.display) || element.clientWidth>420 ||
+        !(element.clientHeight>0&&element.clientHeight<=40)||parseFloat(style.borderTopLeftRadius)<element.clientHeight*.25||
+        style.backgroundImage!=='none'||chromiumSrgb(style.backgroundColor)?.[3]!==0||style.opacity!=='1'||
+        style.borderImageSource!=='none'||hasPaintedOutline(style)||!ink||ink[3]!==1||!(width>0&&width<=2)||
+        Math.max(...ink.slice(0,3))-Math.min(...ink.slice(0,3))>24||
+        !borderEdges.every(side=>style[`border${side}Style`]==='solid'&&style[`border${side}Color`]===style.borderTopColor&&style[`border${side}Width`]===style.borderTopWidth)||
+        authoredFrameBorder(element,style,backdrop))return '';
+    // Transparent inline capsules can rely on the browser canvas rather than
+    // an authored white ancestor. Their existing opaque frame still needs a
+    // readable edge on the measured dark backing; no new sides are invented.
+    const palette=palettes[preset],base=palette?palette.border.slice(1).match(/../g).map(c=>parseInt(c,16)).concat(1):ink;
+    const baseline=readableColor(base,backdrop,3)??base;
+    const target=contrastRatio(luminance(baseline),luminance(backdrop))+(emphasizeSeparators?separatorLevels[emphasizeSeparators].minimum-1:0);
+    return `border-color: ${rgba(readableColor(base,backdrop,target)??baseline)} !important;`;
+  }
+
+  function subtleBoundaryPaint(element, backdrop) {
+    if (!(element instanceof HTMLElement) || !backdrop || luminance(backdrop) > .18 ||
+        element.matches('input,select,textarea,:disabled,[aria-disabled="true"]') ||
+        element.closest('[role="tablist"]')) return '';
+    const style = authoredBackdropStyle(element);
+    if (style.borderImageSource !== 'none' || hasPaintedOutline(style) || style.transform !== 'none' ||
+        style.clipPath !== 'none' || !paintedBorderSides(style).length) return '';
+    const background = authoredSolidBackdrop(element);
+    if (!background || luminance(background) < .6) return '';
+    // A pale divider inside a linked card or an image-only control still needs
+    // its authored weight. Text/link foreground policy must not brighten it.
+    return paintedBorderSides(style).map(side => {
+      const ink = chromiumSrgb(style[`border${side}Color`]);
+      const width = parseFloat(style[`border${side}Width`]);
+      if (!(width > 0 && width <= 2) || style[`border${side}Style`] !== 'solid' || !ink?.[3] ||
+          Math.max(...ink.slice(0, 3)) - Math.min(...ink.slice(0, 3)) > 24) return '';
+      const ratio = contrastRatio(luminance(compositeColor(ink, background)), luminance(background));
+      if (ratio > 3) return '';
+      const baseline = Math.max(1.05, ratio * 1.08);
+      const target = emphasizeSeparators ? baseline + separatorLevels[emphasizeSeparators].minimum - 1 : baseline;
+      return `border-${side.toLowerCase()}-color: ${rgba(readableColor(backdrop, backdrop, target))} !important;`;
+    }).join('');
+  }
+
+  function gradientSectionBoundary(element) {
+    const source = authoredBackdropStyle(element), sides = paintedBorderSides(source);
+    if (element.clientWidth < 360 || element.matches(interactive) || source.transform !== 'none' ||
+        source.borderImageSource !== 'none' || chromiumSrgb(source.backgroundColor)?.[3] !== 0 ||
+        sides.length !== 1 || !['Top','Bottom'].includes(sides[0])) return '';
+    const side = sides[0], ink = chromiumSrgb(source[`border${side}Color`]);
+    if (source[`border${side}Style`] !== 'solid' || parseFloat(source[`border${side}Width`]) > 2 ||
+        !ink || ink[3] !== 1 || luminance(ink) < .6 || Math.max(...ink.slice(0,3))-Math.min(...ink.slice(0,3)) > 24) return '';
+    for (let node=element.parentElement, depth=0;node&&depth<3;node=node.parentElement,depth++) {
+      const layer=authoredBackdropStyle(node);
+      const gradients=layer.backgroundImage.match(/(?:linear|radial)-gradient\([^;]+/g);
+      if (gradients) {
+        const stops=[...gradients.join('').matchAll(/rgba?\([^)]+\)/g)].map(m=>chromiumSrgb(m[0]));
+        if(stops.length<2||stops.some(c=>!c||c[3]!==1||luminance(c)>.08))return '';
+        const base=stops.reduce((a,b)=>luminance(a)>luminance(b)?a:b);
+        const minimum=1.5+(emphasizeSeparators?separatorLevels[emphasizeSeparators].minimum-1:0);
+        // The source frame is neutral/cool gray. Scale that ink rather than
+        // blending the backdrop toward white, which invents a blue frame.
+        const target=Math.min(minimum,contrastRatio(luminance(ink),luminance(base)));
+        let low=0,high=1;
+        for(let step=0;step<10;step++) {
+          const factor=(low+high)/2,candidate=ink.map((v,i)=>i===3?1:Math.round(v*factor));
+          if(luminance(candidate)<luminance(base)||contrastRatio(luminance(candidate),luminance(base))<target)low=factor;
+          else high=factor;
+        }
+        return `border-${side.toLowerCase()}-color: ${rgba(ink.map((v,i)=>i===3?1:Math.round(v*high)))} !important;`;
+      }
+      if(chromiumSrgb(layer.backgroundColor)?.[3]||layer.backgroundImage!=='none')return '';
+    }
+    return '';
   }
 
   function listItemFramePaint(element, getBackdrop) {
@@ -2144,6 +3529,87 @@
       if (!ink || style[`border${side}Style`] !== 'solid' || parseFloat(style[`border${side}Width`]) > 2 ||
           luminance(ink) < .45 || Math.max(...ink.slice(0, 3)) - Math.min(...ink.slice(0, 3)) > 24) return '';
       return `border-${side.toLowerCase()}-color: ${rgba([...ink.slice(0, 3), ink[3] * .34])} !important;`;
+    }).join('');
+  }
+
+  function readableFieldBorder(element, backdrop) {
+    const proxy = selectProxyFrame(element);
+    if (!(element.matches(`${textInput},input[type="password"],input[type="email"],input[type="url"],input[type="tel"],input[type="number"]`) || proxy)) return '';
+    const style = authoredBackdropStyle(element), fill = chromiumSrgb(style.backgroundColor);
+    if (!fill || style.borderImageSource !== 'none') return '';
+    // The border is outside the background image. Its opaque solid backing
+    // remains measurable even when an inset field glyph cannot be decoded.
+    if (!backdrop && fill[3] === 1) backdrop = palettes[preset] ?
+      chromiumSrgb(getComputedStyle(element).backgroundColor) : chromiumSurfaceColor(element, style, fill) ?? fill;
+    if (!backdrop || backdrop[3] !== 1 || luminance(backdrop) > .18) return '';
+    // color-scheme can darken a browser-supplied input fill before our next
+    // sample. Measure that existing dark fill, not an earlier white-to-dark
+    // projection; otherwise resampling drops the repair or targets stale ink.
+    const currentFill = chromiumSrgb(getComputedStyle(element).backgroundColor);
+    if (!palettes[preset] && element.getAttribute(sampleMarker) === 'native-control' && luminance(fill) <= .18) {
+      // The scheme probe may itself start a UA fill transition. Its cached
+      // destination is stable; an intermediate gray would over-brighten the
+      // frame and then leave that accidental strength after sampling ends.
+      backdrop = fill;
+    } else if (!palettes[preset] && currentFill?.[3] === 1 && luminance(currentFill) <= .18) backdrop = currentFill;
+    const minimum = preset === 'contrast' ? 3 : 2.5;
+    return paintedBorderSides(style).map(side => {
+      const ink = chromiumSrgb(style[`border${side}Color`]), width = parseFloat(style[`border${side}Width`]);
+      // Native bevel shading can darken an inset/outset side to one third of
+      // its computed ink. When that fails on the dark fill, use a flat frame
+      // of the same width/radius instead of compensating invisible CSS ink.
+      // Pale native frames retain their separate weight policy. A select
+      // replacement owns its visible frame rather than the hidden select's.
+      // Saturated status inks and transparent reservations stay separate.
+      if (!ink || ink[3] !== 1 || (!proxy && luminance(ink) >= .45) || !(width > 0 && width <= 2) ||
+          !['solid', 'inset', 'outset'].includes(style[`border${side}Style`]) ||
+          Math.max(...ink.slice(0, 3)) - Math.min(...ink.slice(0, 3)) > 64) return '';
+      const palette = palettes[preset];
+      const applied = palette ? palette.border.slice(1).match(/../g).map(c => parseInt(c, 16)).concat(1) :
+        proxy && luminance(ink) >= .45 ? [...ink.slice(0,3),.34] : ink;
+      const opaque = compositeColor(applied, backdrop);
+      const baseline = readableColor(opaque,backdrop,minimum) ?? opaque;
+      const target = emphasizeSeparators ? contrastRatio(luminance(baseline),luminance(backdrop)) + separatorLevels[emphasizeSeparators].minimum - 1 : minimum;
+      const repaired = readableColor(opaque, backdrop, target);
+      const bevel = ['inset', 'outset'].includes(style[`border${side}Style`]) &&
+        contrastRatio(luminance((repaired ?? applied).map((c, i) => i === 3 ? 1 : c / 3)), luminance(backdrop)) < minimum;
+      return repaired || bevel || proxy ? `border-${side.toLowerCase()}-color: ${rgba(repaired ?? opaque)} !important;` +
+        (bevel ? `border-${side.toLowerCase()}-style: solid !important;` : '') : '';
+    }).join('');
+  }
+
+  function progressIndicatorPaint(element, style, getBackdrop) {
+    const track = element.matches('[role="progressbar"]') ? element : element.parentElement;
+    if (!track?.matches('[role="progressbar"]') || track.childElementCount !== 1 ||
+        track.closest('[aria-disabled="true"]')) return '';
+    const fill = track.firstElementChild;
+    if (fill.childElementCount || fill.textContent.trim() || !(fill instanceof HTMLElement)) return '';
+    const frame = authoredBackdropStyle(track), paint = authoredBackdropStyle(fill);
+    if (frame.transform !== 'none') return '';
+    if (paint.transform !== 'none') {
+      const transform = new DOMMatrixReadOnly(paint.transform);
+      if (!transform.is2D || transform.b !== 0 || transform.c !== 0 || transform.d !== 1 ||
+          transform.a < 0 || transform.a > 1 || transform.e > 0 || transform.f !== 0) return '';
+    }
+    const box = track.getBoundingClientRect(), filled = fill.getBoundingClientRect();
+    if (box.height <= 0 || box.height > 24 || box.width < 24 || filled.width <= 0 ||
+        filled.width > box.width || filled.height <= 0 || filled.height > box.height ||
+        [frame,paint].some(s=>s.backgroundImage !== 'none' || s.filter !== 'none' || s.opacity !== '1' ||
+          s.mixBlendMode !== 'normal')) return '';
+    const source = chromiumSrgb(paint.backgroundColor), backing = getBackdrop(track);
+    if (!source || source[3] !== 1 || !backing || luminance(backing) > .18) return '';
+    const applied = palettes[preset] ? chromiumSrgb(getComputedStyle(fill).backgroundColor) :
+      chromiumSurfaceColor(fill, paint, source) ?? source;
+    if (!applied || contrastRatio(luminance(compositeColor(applied,backing)),luminance(backing)) >= 4.5) return '';
+    const ink = contrastingGlyphInk(source,backing,4.5,true) ?? readableColor(applied,backing,4.5);
+    if (!ink) return '';
+    if (element === fill) return `background-color: ${rgba(ink)} !important;`;
+    // A matching authored frame belongs to the same indicator ink. Preserve
+    // its width/radius; unrelated track/status borders retain their policy.
+    return paintedBorderSides(frame).map(side=>{
+      const edge=chromiumSrgb(frame[`border${side}Color`]);
+      return edge?.[3] === 1 && edge.slice(0,3).every((c,i)=>Math.abs(c-source[i])<=8) ?
+        `border-${side.toLowerCase()}-color: ${rgba(ink)} !important;` : '';
     }).join('');
   }
 
@@ -2211,7 +3677,8 @@
     }
     const stickyTransition = hasStickyBackgroundTransition(element, style);
     const raised = trackRaisedLink(element, style);
-    const original = switchingRenderer || stickyTransition || raised ? originalTransitionColors(element, style) : style;
+    const original = switchingRenderer || stickyTransition || raised || element.getAttribute(sampleMarker) === 'native-control' ?
+      originalTransitionColors(element, style) : style;
     const foreground = chromiumSrgb(original.color ?? style.color);
     const background = chromiumSrgb(original.backgroundColor ?? style.backgroundColor);
     const blend = ['multiply', 'darken', 'color-burn'].includes(style.mixBlendMode);
@@ -2227,7 +3694,9 @@
       // Generated separator lines can use currentColor even when the element has no visible text.
       color = foreground;
     }
-    if (imageLabel || (color && hasImageBackdrop(element, style, backdrops.images))) {
+    const changedActionFill = compactTextControl(element) && background?.[3] > 0 && style.backgroundImage === 'none' &&
+      Boolean(chromiumSurfaceColor(element,style,background)) && (background[3]>=.75||darkGradientUnderlay(element));
+    if (imageLabel || (!changedActionFill && color && hasImageBackdrop(element, style, backdrops.images, backdrops.solid))) {
       // Keep the author's text color over backgrounds whose image pixels stay unchanged.
       color = foreground;
     }
@@ -2248,13 +3717,19 @@
     const cardPaint = separatedCardPaint(element, style, background, surface);
     if (cardPaint) { surface = cardPaint.surface; shadow = cardPaint.shadow ?? shadow; }
     const backdropFor = node => chromiumTextBackdrop(node, backdrops.solid);
+    const authoredBacking = foreground?.[3] && !element.matches('input,select,textarea') &&
+      Math.max(...foreground.slice(0,3))-Math.min(...foreground.slice(0,3)) > 24 && authoredSolidBackdrop(element);
+    if (authoredBacking && luminance(authoredBacking) < .18 && foreground &&
+        contrastRatio(luminance(foreground), luminance(authoredBacking)) >= 4.5 &&
+        backdropFor(element) && contrastRatio(luminance(foreground), luminance(backdropFor(element))) >= 4.5)
+      color = foreground;
     const artwork = artworkRepair(element, style, background, surface);
     surface = artwork.backing ?? surface;
-    const artworkFilter = artwork.filter ??
+    const artworkFilter = cardPaint?.filter ?? artwork.filter ??
       (element instanceof HTMLImageElement ? linkedGlyphFilter(element, style, backdropFor) :
-        compactBackgroundFilter(element, style, backdropFor(element.parentElement ?? element.getRootNode().host)));
-    const artworkContent = smallLabeledSvgPaint(element, style, backdropFor);
-    if (element === document.documentElement && background?.[3] === 0 && style.backgroundImage === 'none') {
+        contentSpriteFilter(element,style,backdropFor) || compactBackgroundFilter(element, style, backdropFor(element.parentElement ?? element.getRootNode().host)));
+    const artworkContent = artworkContrast.get(element)?.svgPaint ?? smallLabeledSvgPaint(element, style, backdropFor);
+    if (element === document.documentElement && window === window.top && background?.[3] === 0 && style.backgroundImage === 'none') {
       const body = document.body && getComputedStyle(document.body);
       if (!body || (chromiumSrgb(body.backgroundColor)?.[3] === 0 && body.backgroundImage === 'none')) {
         // Supply a dark canvas when neither element paints the viewport.
@@ -2327,6 +3802,29 @@
       raisedSurfaceEdge(style, backdropFor(element), backdropFor(element.parentElement ?? element.getRootNode().host),
         shadow ?? style.boxShadow);
     if (linkEdge) pseudoStyles.push([':not(:focus-visible)', linkEdge]);
+    const panelEdge = formPanelEdge(element, backdropFor(element));
+    if (panelEdge) pseudoStyles.push([':not(:focus-visible)', panelEdge]);
+    const semanticEdge=semanticSurfaceEdge(element,backdropFor(element));
+    if(semanticEdge)pseudoStyles.push([':not(:focus-visible)',semanticEdge]);
+    const clippedEdge = clippedPanelEdge(element, backdropFor(element));
+    if (clippedEdge) pseudoStyles.push([':not(:focus-visible)', clippedEdge]);
+    const embeddedWordmark=embeddedControlWordmarkPaint(element,backdropFor);
+    if(embeddedWordmark)pseudoStyles.push(['',embeddedWordmark]);else pseudoStyles.push(...backgroundArtworkPaint(element, style, backdropFor));
+    const maskedInk=clippedMaskInk(element,backdropFor);if(maskedInk)pseudoStyles.push(['',maskedInk]);
+    const toolbarText=toolbarControlText(element,backdropFor);if(toolbarText)pseudoStyles.push(['',toolbarText]);
+    const compactLabel=compactControlLabel(element,backdropFor);if(compactLabel)pseudoStyles.push(['',compactLabel]);
+    const embeddedCanvas=embeddedCanvasPaint(element);if(embeddedCanvas)pseudoStyles.push(['',embeddedCanvas]);
+    if(embeddedCanvas&&element===document.documentElement)pseudoStyles.push([' > body',embeddedCanvas]);
+    const glassFrame=translucentActionFrame(element,style);if(glassFrame)pseudoStyles.push([':not(:focus-visible)',glassFrame]);
+    const fieldGlyphPaint=fieldBackgroundPaint(element,style,backdropFor);
+    if(fieldGlyphPaint)pseudoStyles.push(['',fieldGlyphPaint]);
+    const proxyLabel = proxyLabelPaint(element,style,backdropFor);
+    if (proxyLabel) pseudoStyles.push(['',proxyLabel]);
+    pseudoStyles.push(...semanticSelectArrow(element,backdropFor));
+    const camouflaged = camouflagedInputPaint(element,style);
+    if (camouflaged) pseudoStyles.push([':not(:focus)',camouflaged]);
+    const glyphText = glyphLabelTextPaint(element,style,backdropFor(element),color ?? foreground);
+    if(glyphText)pseudoStyles.push(['',glyphText]);
     pseudoStyles.push(...iconControlEdges(element, style, backdropFor(element)));
     pseudoStyles.push(...listItemFramePaint(element, backdropFor));
     pseudoStyles.push(...decorativeSolidPaint(element, style));
@@ -2354,16 +3852,34 @@
     if (chipBorder) pseudoStyles.push([':not(:focus-visible)', chipBorder]);
     const boxBorder = authoredFrameBorder(element, style, backdropFor(element));
     if (boxBorder) pseudoStyles.push([':not(:focus-visible)', boxBorder]);
+    const labelFrame = smallLabelFramePaint(element,backdropFor(element));
+    if (labelFrame) pseudoStyles.push([':not(:focus-visible)',labelFrame]);
+    const compositeFrame = compositeFieldFrame(element,style,boxBorder);
+    if (compositeFrame) pseudoStyles.push([':not(:focus-within)::after',compositeFrame]);
     const fieldBorder = subduedFieldBorder(element, style, background, surface);
     if (fieldBorder) pseudoStyles.push([':not(:focus,:user-invalid,:disabled,[aria-invalid="true"])', fieldBorder]);
+    const fieldContrast = readableFieldBorder(element, backdropFor(element));
+    if (fieldContrast) pseudoStyles.push([':not(:focus,:user-invalid,:disabled,[aria-invalid="true"])', fieldContrast]);
+    const progress = progressIndicatorPaint(element,style,backdropFor);
+    if (progress) pseudoStyles.push(['',progress]);
+    const subtleEdge = subtleBoundaryPaint(element, backdropFor(element));
+    if (subtleEdge) pseudoStyles.push(['', subtleEdge]);
+    const gradientEdge = gradientSectionBoundary(element);
+    if (gradientEdge) pseudoStyles.push(['', gradientEdge]);
     const coloredEdge = coloredControlBorder(element, style, backdropFor);
     if (coloredEdge) pseudoStyles.push([':not(:focus-visible)', coloredEdge]);
+      const colorIndicator=toolbarColorIndicator(element);if(colorIndicator)pseudoStyles.push(['',colorIndicator]);
+    const navigationEdge = navigationIndicatorPaint(element,style,backdropFor);
+    if (navigationEdge) pseudoStyles.push([':not(:focus-within)',navigationEdge]);
     for (const pseudo of decorativePseudos(element, style)) {
       if (!pseudoStyles.some(([selector]) => selector === pseudo)) {
         pseudoStyles.push([pseudo, 'filter: brightness(.18) !important;']);
       }
     }
     pseudoStyles.push(...placeholderPaint(element, backdropFor));
+    pseudoStyles.push(...fontGlyphPaint(element, backdropFor));
+    const actionInk = solidActionInk(element, style, surface ?? background);
+    if (actionInk) pseudoStyles.push(['', actionInk]);
     pseudoStyles.push(...selectPopupPaint(element, style, backdropFor));
     const fallbackControlIcon = pseudoStyles.some(([, declarations]) => declarations.includes('translate(-50%'));
     if (!color && !surface && !artworkFilter && !artworkContent && !preservePhoto && !gradient && !shadow && !textFill && !isolateLabel &&
@@ -2387,8 +3903,13 @@
       imageLabel
     ].filter(Boolean);
     const properties = new Set(['color', ...declarations.map(value => value.split(':', 1)[0])]);
+    if (fieldGlyphPaint) properties.add('background-image');
+    if (progress) properties.add('background-color');
+    if (navigationEdge) properties.add('box-shadow');
+    if (panelEdge || semanticEdge) properties.add('box-shadow');
+    if (clippedEdge) properties.add('outline-color');
     if (stickyTransition || raised) properties.add('background-color');
-    if (chipBorder || fieldBorder) {
+    if (chipBorder || fieldBorder || fieldContrast || boxBorder || labelFrame || subtleEdge || gradientEdge || coloredEdge || navigationEdge || progress) {
       for (const side of ['top', 'right', 'bottom', 'left']) properties.add(`border-${side}-color`);
     }
     const transition = paintTransition(element, style, [...properties]);
@@ -2406,7 +3927,9 @@
       const view = element.viewBox.baseVal;
       const compact = box.width > 0 && box.height > 0 && Math.max(box.width, box.height) <= 48 &&
         Math.min(box.width, box.height) / Math.max(box.width, box.height) >= .5 &&
-        view.width > 0 && view.height > 0 && Math.max(view.width, view.height) <= 64;
+        // ViewBox units describe drawing coordinates, not displayed size.
+        // Common compact metadata glyphs use 512/576-unit viewports.
+        view.width > 0 && view.height > 0 && Math.max(view.width, view.height) <= 4096;
       if (compact) {
         for (let node = parent, depth = 0; node && depth < 4; node = node.parentElement, depth++) {
           const style = getComputedStyle(node);
@@ -2414,8 +3937,12 @@
             control = node;
             break;
           }
-          if (node.matches(`${heading},dt,label,span,p`) && node.textContent.trim().length <= 160 &&
-              Array.prototype.some.call(node.childNodes, textNode)) {
+          const pairedLabel = node === parent && node.matches('div,span') && node.childElementCount <= 3 &&
+            node.querySelectorAll('svg').length === 1 && !node.querySelector('img,video,canvas') &&
+            node.clientWidth <= 360 && node.clientHeight <= 80 && Array.prototype.some.call(node.children, child =>
+              child.matches('span,a[href]') && Array.prototype.some.call(child.childNodes, textNode));
+          if ((node.matches(`${heading},dt,label,span,p`) && Array.prototype.some.call(node.childNodes, textNode) || pairedLabel) &&
+              node.textContent.trim().length <= 160) {
             labeledIcon = true;
             break;
           }
@@ -2426,7 +3953,7 @@
     const labeledHost = host?.parentElement && getComputedStyle(host).cursor === 'pointer' &&
       Array.prototype.some.call(host.parentElement.childNodes, node =>
         node.nodeType === Node.TEXT_NODE && node.textContent.trim());
-    if (!(control || labeledIcon || hiddenIcon || host?.closest(interactive) || labeledHost) ||
+    if (!(control || labeledIcon || hiddenIcon || wideStaticMark(element) || host?.closest(interactive) || labeledHost) ||
         element.closest(':disabled,[aria-disabled="true"]') || host?.closest(':disabled,[aria-disabled="true"]')) return null;
     return { parent, host, control };
   }
@@ -2622,16 +4149,21 @@
   }
 
   function placeholderPaint(element, getBackdrop, minimum = 4.5) {
-    if (!element.matches('input[placeholder],textarea[placeholder]') ||
-        element.matches(':disabled,[aria-disabled="true"]')) return [];
+    if (!element.matches('input[placeholder],textarea[placeholder]')) return [];
+    const selector = ':is(input,textarea):not(:disabled)::placeholder';
+    if (Number(placeholderSources.get(element)?.opacity) === 0) return [[selector,'opacity: 0 !important;']];
+    if (element.matches(':disabled,[aria-disabled="true"]')) return [];
     const backdrop = getBackdrop(element);
     const placeholder = getComputedStyle(element, '::placeholder');
     const ink = chromiumSrgb(placeholder.webkitTextFillColor);
     if (!backdrop || !ink?.[3]) return [];
     const opacity = Number(placeholder.opacity);
+    if (!(opacity > 0)) return [];
     const search = element.matches('input[type="search"]') || element.closest('[role="search"],search');
-    const readable = readableColor([...ink.slice(0, 3), ink[3] * opacity], backdrop, search ? 10 : minimum);
-    return readable ? [['::placeholder',
+    const visible = compositeColor([...ink.slice(0, 3), ink[3] * opacity], backdrop);
+    const autocomplete = element.matches('input[role="combobox"][aria-autocomplete="list"],input[role="combobox"][aria-autocomplete="both"]');
+    const readable = readableColor(visible, backdrop, search ? 10 : Math.max(autocomplete ? 8.5 : 6,minimum));
+    return readable ? [[selector,
       `color: ${rgba(readable)} !important; -webkit-text-fill-color: ${rgba(readable)} !important; opacity: 1 !important;`]] : [];
   }
 
@@ -2709,6 +4241,59 @@
     return paint;
   }
 
+  function fontGlyphPaint(element, getBackdrop) {
+    if (!element.matches('i,span') || element.childElementCount || element.textContent.trim() ||
+        element.closest(':disabled,[aria-disabled="true"]')) return [];
+    const source = authoredBackdropStyle(element), box = element.getBoundingClientRect();
+    if (!(box.width > 0 && box.height > 0 && Math.max(box.width, box.height) <= 48)) return [];
+    if (!(element.closest(interactive) || element.hasAttribute('title'))) {
+      const ink=chromiumSrgb(source.color);
+      if (!ink || ink[3]!==1 || Math.max(...ink.slice(0,3))-Math.min(...ink.slice(0,3))>24 ||
+          source.opacity!=='1' || source.filter!=='none' || element.getAnimations().length) return [];
+    }
+    const backdrop = getBackdrop(element);
+    const paints = [];
+    for (const pseudo of ['::before','::after']) {
+      const layer = getComputedStyle(element, pseudo);
+      if (!/^"[\uE000-\uF8FF]"$/.test(layer.content) || layer.backgroundImage !== 'none') continue;
+      const original = chromiumSrgb(source.color);
+      if (!original?.[3]) continue;
+      const control = element.closest(interactive);
+      if (control === element.parentElement && control.matches(actionButton) &&
+          authoredBackdropStyle(control).color === source.color) {
+        // Keep an originally inherited action glyph attached to its label's
+        // live hover/focus ink, rather than freezing an independently sampled
+        // color from the previous backing.
+        paints.push(['', 'color: inherit !important; -webkit-text-fill-color: inherit !important;']);
+        paints.push([pseudo, 'color: inherit !important; -webkit-text-fill-color: inherit !important;']);
+        continue;
+      }
+      if (!backdrop) continue;
+      const labelInk = control && chromiumSrgb(getComputedStyle(control).color);
+      const ink = labelInk && contrastRatio(luminance(labelInk), luminance(backdrop)) >= 7 ? labelInk :
+        contrastingGlyphInk(original, backdrop, 7, true) ?? original;
+      let opacity = Number(source.opacity ?? getComputedStyle(element).opacity);
+      // A titled status glyph is information, even when the site dims it.
+      // Explicit disabled semantics above retain the site's disabled paint.
+      if (opacity > 0 && opacity < 1 && element.hasAttribute('title')) {
+        while (opacity < 1 && contrastRatio(luminance(compositeColor([...ink.slice(0,3),opacity], backdrop)), luminance(backdrop)) < 3)
+          opacity = Math.min(1, opacity + .05);
+        paints.push(['', `opacity: ${opacity} !important;`]);
+      }
+      paints.push([pseudo, `color: ${rgba(ink)} !important; -webkit-text-fill-color: ${rgba(ink)} !important;`]);
+    }
+    return paints;
+  }
+
+  function solidActionInk(element, style, backing) {
+    if (!element.matches(actionButton) || element.matches(':disabled,[aria-disabled="true"]') ||
+        !element.textContent.trim() || style.backgroundImage !== 'none' || backing?.[3] !== 1 ||
+        Math.max(...backing.slice(0,3))-Math.min(...backing.slice(0,3)) < 45) return '';
+    const minimum = parseFloat(style.fontSize) < 18 ? 7 : 4.5;
+    const ink = chromiumSrgb(style.color), repair = ink && readableColor(ink, backing, minimum);
+    return repair ? `color: ${rgba(repair)} !important; -webkit-text-fill-color: ${rgba(repair)} !important;` : '';
+  }
+
   function paintTransition(element, style, properties) {
     let original = (elementColorRules.get(element)?.transition ?? paletteTransitions.get(element))?.original;
     if (!original) {
@@ -2760,7 +4345,14 @@
           entry = { token, selector, rule: sheet.cssRules[index], pseudoRules: new Map(), users: 0 };
         }
         entry.rule.style.cssText = paint.declarations;
+        // Several independent repairs can target the same layer (for example
+        // a background glyph and its boundary). Keep their declarations in
+        // order rather than overwriting the previous repair's whole rule.
+        const layers = new Map();
         for (const [pseudo, declarations] of paint.pseudoStyles) {
+          layers.set(pseudo,(layers.get(pseudo) ?? '') + ';' + declarations);
+        }
+        for (const [pseudo, declarations] of layers) {
           if (!entry.pseudoRules.has(pseudo)) {
             const index = sheet.cssRules.length;
             sheet.insertRule(`${entry.selector}${pseudo} {}`, index);
@@ -2810,6 +4402,14 @@
   }
 
   function inspectLocal(elements, switchingRenderer = false) {
+    // User-agent colors (for example -webkit-link) depend on color-scheme.
+    // Full sampling disables the paint sheet, including its root dark scheme.
+    // Local sampling must expose the same authored scheme without clearing the
+    // ancestors' repaired paint. Restore synchronously before browser paint.
+    const rootPaint = preset === 'chromium' && sheet.cssRules[0]?.style;
+    const scheme = rootPaint && rootPaint.getPropertyValue('color-scheme');
+    const schemePriority = scheme && rootPaint.getPropertyPriority('color-scheme');
+    if (scheme) rootPaint.removeProperty('color-scheme');
     const batch = new Set(elements);
     for (const element of elements) {
       if (!element.matches('li > button') || !/^\d+$/.test(element.textContent.trim())) continue;
@@ -2838,6 +4438,7 @@
     } finally {
       for (const [element, paint] of previous) element.setAttribute(marker, paint);
       for (const element of headings) element.removeAttribute(sampleMarker);
+      if (scheme) rootPaint.setProperty('color-scheme', scheme, schemePriority);
     }
   }
 
@@ -2896,17 +4497,30 @@
         }, 80);
         return;
       }
+      if(target!==document.documentElement&&target!==document.body&&target.scrollHeight>target.clientHeight){
+        // Independent vertical panes do not move the rest of the document.
+        // Inspect only newly exposed descendants, retaining the full viewport
+        // path for window scrolling and separate mutation/state resampling.
+        scrollingSurfaces.add(target);requestViewportFrame();return;
+      }
     }
     scheduleViewport(true);
   }
 
   function refreshHoverPaint(event) {
+    const editRoot = camouflagedInputs.get(event.target);
+    if (editRoot && ['focusin','focusout'].includes(event.type)) {
+      for (const node of [editRoot,...editRoot.querySelectorAll('*')]) hoverTargets.add(node);
+    }
     const path = event.composedPath();
     const crossed = element => !(event.relatedTarget instanceof Node && element.contains(event.relatedTarget));
     const control = path.find(node => node instanceof HTMLElement && node.matches(interactive));
     if (control && crossed(control) && (raisedLinks.has(control) || control.closest('nav,[role="navigation"]') ||
         control.querySelector('svg') || compactTextControl(control) || flowImageLinkLabels(control))) {
       hoverTargets.add(control);
+      const parent = control.parentElement;
+      if (parent?.closest('nav,[role="navigation"]') && parent.childElementCount === 1 &&
+          parseFloat(getComputedStyle(parent).borderBottomWidth) > 0) hoverTargets.add(parent);
     }
     for (const node of path) {
       if (!(node instanceof HTMLElement) || node === control || !node.childElementCount || !crossed(node)) continue;
@@ -2922,10 +4536,11 @@
       hoverTargets.clear();
       // A button's state can change its glyph ink and its backing independently.
       for (const control of [...targets]) {
-        if (!control.matches(interactive) || !(control.querySelector('svg') || flowImageLinkLabels(control))) continue;
+        if (!control.matches(interactive) || !(control.querySelector('svg,i,span') || flowImageLinkLabels(control))) continue;
         const descendants = control.querySelectorAll('*');
         if (descendants.length <= 64) targets.push(...descendants);
       }
+      for(const target of targets)forgetOverlayInk(target);
       applyRoles(inspectLocal(targets, true));
     });
   }
@@ -3085,10 +4700,20 @@
       element.querySelectorAll('path,circle,ellipse,line,polygon,polyline,rect').length <= 64;
   }
 
+  function wideStaticMark(element) {
+    if (!(element instanceof SVGSVGElement)) return false;
+    const {width,height}=element.getBoundingClientRect(),style=getComputedStyle(element);
+    return width>48&&width<=240&&height>=8&&height<=64&&width>=height*2&&
+      style.opacity==='1'&&style.filter==='none'&&style.mixBlendMode==='normal'&&
+      !element.querySelector('svg,text,image,use,foreignObject,animate,animateTransform,animateMotion,set,script')&&
+      element.querySelectorAll('path,circle,ellipse,line,polygon,polyline,rect').length<=64&&
+      !element.getAnimations({subtree:true}).length;
+  }
+
   function monochromeIconColor(element, paints) {
     if (getComputedStyle(element).filter !== 'none' || element.querySelector('use,foreignObject')) return null;
     const { width, height } = element.getBoundingClientRect();
-    if (!width || !height || ((width > 48 || height > 48) && !wideLinkedMark(element))) return null;
+    if (!width || !height || ((width > 48 || height > 48) && !(wideLinkedMark(element)||wideStaticMark(element)))) return null;
     for (const image of element.querySelectorAll('image')) {
       // SVG images load from href (including legacy xlink:href), not src.
       if (image instanceof SVGImageElement && !image.href.animVal.trim()) continue;
@@ -3145,6 +4770,15 @@
     const minimum = preset === 'contrast' ? 7 : 4.5;
     for (const update of updates) {
       const [element, roles] = update;
+      if (roles && element.matches('a[href],button')) {
+        const source = authoredBackdropStyle(element), style = getComputedStyle(element);
+        const surface = separatedControlSurface(element, source, chromiumSrgb(source.backgroundColor),
+          chromiumSrgb(style.backgroundColor), backdrop);
+        if (surface) {
+          update[1] += ` ${palettePaintRole(`background-color: ${rgba(surface)} !important;`, [], rules)}`;
+          fixes.push([element, update[1]]);
+        }
+      }
       if (!roles?.includes(' light-card-label')) continue;
       const background = backdrop(element);
       if (!background) continue;
@@ -3209,20 +4843,59 @@
           !element.childElementCount && !element.textContent.trim()) {
         pseudoStyles.push(...controlGlyphPaint(element, style, backdrop));
       }
+      const embeddedWordmark=embeddedControlWordmarkPaint(element,backdrop);
+      if(embeddedWordmark)pseudoStyles.push(['',embeddedWordmark]);else pseudoStyles.push(...backgroundArtworkPaint(element, style, backdrop));
+      const maskedInk=clippedMaskInk(element,backdrop);if(maskedInk)pseudoStyles.push(['',maskedInk]);
+      const toolbarText=toolbarControlText(element,backdrop);if(toolbarText)pseudoStyles.push(['',toolbarText]);
+      const compactLabel=compactControlLabel(element,backdrop);if(compactLabel)pseudoStyles.push(['',compactLabel]);
+      const embeddedCanvas=embeddedCanvasPaint(element);if(embeddedCanvas)pseudoStyles.push(['',embeddedCanvas]);
+      if(embeddedCanvas&&element===document.documentElement)pseudoStyles.push([' > body',embeddedCanvas]);
+      const glassFrame=translucentActionFrame(element,authoredBackdropStyle(element));if(glassFrame)pseudoStyles.push([':not(:focus-visible)',glassFrame]);
+      const fieldGlyphPaint=fieldBackgroundPaint(element,style,backdrop);
+      if(fieldGlyphPaint)pseudoStyles.push(['',fieldGlyphPaint]);
+      const proxyLabel = proxyLabelPaint(element,style,backdrop);
+      if (proxyLabel) pseudoStyles.push(['',proxyLabel]);
+      pseudoStyles.push(...semanticSelectArrow(element,backdrop));
+        const camouflaged = camouflagedInputPaint(element,style);
+      if (camouflaged) pseudoStyles.push([':not(:focus)',camouflaged]);
+      const glyphText = glyphLabelTextPaint(element,style,backdrop(element),chromiumSrgb(style.color));
+      if(glyphText)pseudoStyles.push(['',glyphText]);
       pseudoStyles.push(...placeholderPaint(element, backdrop, minimum));
+      pseudoStyles.push(...fontGlyphPaint(element, backdrop));
+      const actionInk = solidActionInk(element, style, backdrop(element));
+      if (actionInk) pseudoStyles.push(['', actionInk]);
+      const fieldContrast = readableFieldBorder(element, backdrop(element));
+      if (fieldContrast) pseudoStyles.push([':not(:focus,:user-invalid,:disabled,[aria-invalid="true"])', fieldContrast]);
+      const progress = progressIndicatorPaint(element,style,backdrop);
+      if (progress) pseudoStyles.push(['',progress]);
       pseudoStyles.push(...selectPopupPaint(element, style, backdrop));
       pseudoStyles.push(...iconControlEdges(element, style, backdrop(element)));
       pseudoStyles.push(...listItemFramePaint(element, backdrop));
+      const panelEdge = formPanelEdge(element, backdrop(element));
+      if (panelEdge) pseudoStyles.push([':not(:focus-visible)', panelEdge]);
+      const semanticEdge=semanticSurfaceEdge(element,backdrop(element));
+      if(semanticEdge)pseudoStyles.push([':not(:focus-visible)',semanticEdge]);
+      const clippedEdge = clippedPanelEdge(element, backdrop(element));
+      if (clippedEdge) pseudoStyles.push([':not(:focus-visible)', clippedEdge]);
+      const subtleEdge = subtleBoundaryPaint(element, backdrop(element));
+      if (subtleEdge) pseudoStyles.push(['', subtleEdge]);
+      const labelFrame = smallLabelFramePaint(element,backdrop(element));
+      if (labelFrame) pseudoStyles.push([':not(:focus-visible)',labelFrame]);
+      const gradientEdge = gradientSectionBoundary(element);
+      if (gradientEdge) pseudoStyles.push(['', gradientEdge]);
       const coloredEdge = coloredControlBorder(element, style, backdrop);
       if (coloredEdge) pseudoStyles.push([':not(:focus-visible)', coloredEdge]);
+      const colorIndicator=toolbarColorIndicator(element);if(colorIndicator)pseudoStyles.push(['',colorIndicator]);
+      const navigationEdge = navigationIndicatorPaint(element,style,backdrop);
+      if (navigationEdge) pseudoStyles.push([':not(:focus-within)',navigationEdge]);
       if (roles.includes(' raised-link')) {
         const parent = element.parentElement ?? element.getRootNode().host;
         const edge = raisedSurfaceEdge(style, backdrop(element), backdrop(parent), style.boxShadow);
         if (edge) pseudoStyles.push([':not(:focus-visible)', edge]);
       }
       const filter = element instanceof HTMLImageElement ? linkedGlyphFilter(element, style, backdrop) :
-        compactBackgroundFilter(element, style, backdrop(element.parentElement ?? element.getRootNode().host));
-      const artworkContent = smallLabeledSvgPaint(element, style, backdrop);
+        contentSpriteFilter(element,style,backdrop) || compactBackgroundFilter(element, style, backdrop(element.parentElement ?? element.getRootNode().host));
+      const artworkContent = artworkContrast.get(element)?.svgPaint ?? smallLabeledSvgPaint(element, style, backdrop);
       const expander = !icon && expanderPaint(element, style, backdrop);
       if (filter || artworkContent || expander || pseudoStyles.length) {
         repaired += ` ${palettePaintRole((filter ? `filter: ${filter} !important;` : '') + artworkContent + (expander || ''), pseudoStyles, rules)}`;
@@ -3235,7 +4908,6 @@
         const parent = backdrop(element.assignedSlot ?? element.parentElement ?? element.getRootNode().host);
         if (color && parent) {
           if (contrastRatio(luminance(color), luminance(parent)) < 1.5) {
-            if (roles.includes(' card-outline')) repaired += ' card-edge';
             repaired += roles.includes(' raised') ? ' card-recessed' : ' card-raised';
           }
         }
@@ -3252,11 +4924,18 @@
         continue;
       }
       if (!background) {
-        // An image can vary behind each letter. Give real headings a solid backing.
-        if (element.closest('h1, h2, h3, h4, h5, h6, [role="heading"]') &&
-            getComputedStyle(element).backgroundImage === 'none') {
-          fixes.push([element, `${repaired} heading-backdrop readable-light`]);
-        }
+        // Unknown image paint is not evidence that a transparent heading needs
+        // a full-width solid strip. Measured image-text repair is separate;
+        // without samples, retain the heading's authored background geometry.
+        continue;
+      }
+      const originalInk = chromiumSrgb(authoredBackdropStyle(element).color);
+      const originalBacking = authoredSolidBackdrop(element);
+      if (originalInk && originalBacking && luminance(originalBacking) < .18 && luminance(background) < .18 &&
+          Math.max(...originalInk.slice(0,3))-Math.min(...originalInk.slice(0,3)) > 24 &&
+          contrastRatio(luminance(originalInk), luminance(originalBacking)) >= minimum &&
+          contrastRatio(luminance(originalInk), luminance(background)) >= minimum) {
+        fixes.push([element, `${repaired} ${palettePaintRole(`color: ${rgba(originalInk)} !important; -webkit-text-fill-color: ${rgba(originalInk)} !important;`, [], rules)}`]);
         continue;
       }
       const foreground = compositeColor(color, background);
@@ -3271,6 +4950,7 @@
   function stylesLoaded(event) {
     if (event.target instanceof HTMLImageElement) {
       artworkContrast.delete(event.target);
+      neutralImageProbes.delete(event.target);
       const wrapper = event.target.parentElement;
       if (preset === 'chromium' && wrapper?.childElementCount === 1 && sampledElements.has(wrapper)) schedule(wrapper);
       else if (wrapper?.matches(`${heading},a[href]`) && sampledElements.has(event.target)) schedule(event.target);
@@ -3294,6 +4974,12 @@
   }
 
   function scheduleDirtySurface(root) {
+    // Mutation batches often contain both a popup/card and several descendants.
+    // Keep one enclosing root rather than inspecting overlapping subtrees again.
+    for (let parent = root.parentElement; parent; parent = parent.parentElement) {
+      if (dirtySurfaces.has(parent)) return;
+    }
+    for (const queued of dirtySurfaces) if (root.contains(queued)) dirtySurfaces.delete(queued);
     dirtySurfaces.add(root);
     sampledElements.delete(root);
     requestViewportFrame();
@@ -3309,8 +4995,12 @@
 
   function requestViewportFrame() {
     if (viewportFrame !== undefined || horizontalScrollTimer !== undefined) return;
-    viewportFrame = requestAnimationFrame(() => {
+    viewportFrame = requestAnimationFrame(flushViewport);
+  }
+
+  function flushViewport() {
       viewportFrame = undefined;
+      if (!preset) return;
       if (horizontalScrollTimer !== undefined) return;
       // Apply the viewport together before paint. Offscreen elements stay in the time-sliced scan.
       const onlyUnpainted = !viewportNeedsResample;
@@ -3323,16 +5013,36 @@
         dirtySurfaces.clear();
         if (!repaintViewport || onlyUnpainted) paintVisibleSurfaces(false, false, false, roots);
       }
+      if(scrollingSurfaces.size){
+        const roots=new Set([...scrollingSurfaces].filter(root=>root.isConnected));scrollingSurfaces.clear();
+        if(!repaintViewport)paintVisibleSurfaces(true,true,false,roots);
+      }
       if (repaintViewport) paintVisibleSurfaces(onlyUnpainted, includeLookahead);
       if (preload) scheduleViewport(true);
+  }
+
+  function paintStateBeforeFrame() {
+    if (statePaintQueued) return;
+    statePaintQueued = true;
+    queueMicrotask(() => {
+      statePaintQueued = false;
+      if (!preset) return;
+      // A page can reveal a menu/fixed panel inside its own animation-frame
+      // callback. Waiting for our next rAF exposes the authored light paint
+      // for one frame. Coalesce the state batch in this pre-paint microtask;
+      // keep ordinary mutations, scrolling and offscreen work on their queues.
+      cancelAnimationFrame(viewportFrame);
+      flushViewport();
     });
   }
 
   function refreshChromium() {
+    // Root state classes can expose a new fixed surface in this frame. Only
+    // the offscreen scan may wait for the document-wide debounce.
+    scheduleViewport();
     if (chromiumRefreshTimer === undefined) {
       chromiumRefreshTimer = setTimeout(() => {
         chromiumRefreshTimer = undefined;
-        scheduleViewport();
         scheduleDocument();
       }, 80);
     }
@@ -3357,8 +5067,8 @@
       scheduleDocument();
       return;
     }
-    scheduleViewport();
-    refreshChromium();
+    paintVisibleSurfaces();
+    scheduleDocument();
   }
 
   function setPreset(next, immediate = false, separators = false) {
@@ -3384,6 +5094,8 @@
       document.removeEventListener('scroll', scheduleVisibleSurfaces, true);
       document.removeEventListener('pointerover', refreshHoverPaint, true);
       document.removeEventListener('pointerout', refreshHoverPaint, true);
+      document.removeEventListener('focusin', refreshHoverPaint, true);
+      document.removeEventListener('focusout', refreshHoverPaint, true);
       window.removeEventListener('resize', refreshChromium);
       cancelIdleCallback(idleBatch);
       clearTimeout(chromiumRefreshTimer);
@@ -3393,6 +5105,9 @@
       hoverFrame = undefined;
       hoverTargets.clear();
       dirtySurfaces.clear();
+      compactBackgroundWaiters.clear();
+      scrollingSurfaces.clear();
+      overlayInkLabels.clear();overlayAuthoredInk=new WeakMap();
       viewportFrame = chromiumRefreshTimer = horizontalScrollTimer = undefined;
       viewportRequested = viewportNeedsResample = viewportLookahead = viewportPreloadAfter = false;
       idleBatch = elements = undefined;
@@ -3433,7 +5148,8 @@
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
     // Keep transition overrides active while the paint sheet is disabled for sampling.
     transitionSheet = new CSSStyleSheet();
-    transitionSheet.replaceSync(`:root { ${transitionProbe}: yes; }`);
+    transitionSheet.replaceSync(`:root { ${transitionProbe}: yes; }
+      :is(input,select,textarea)[${sampleMarker}="native-control"] { color-scheme: dark !important; }`);
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, transitionSheet];
     observer = new MutationObserver(records => {
       if (preset === 'chromium') {
@@ -3448,16 +5164,25 @@
                 (attribute === 'style' && movementStyle(record.oldValue) === movementStyle(value))) continue;
             if (!['class', 'style', 'hidden', 'id', 'dir', 'disabled', 'open', 'href'].includes(attribute) &&
                 !attribute.startsWith('aria-') && !/^data-(?:theme|state|open|active|disabled|selected|expanded|current)$/.test(attribute)) continue;
+            forgetOverlayInk(target);
             if (target === document.documentElement || target === document.body || target.matches('style,link[rel~="stylesheet"]')) {
               refreshChromium();
+              paintStateBeforeFrame();
               continue;
             }
-            if (['class', 'style', 'hidden', 'data-theme', 'open', 'aria-hidden', 'aria-expanded'].includes(attribute) && sampledElements.delete(target)) {
-              scheduleDirtySurface(target);
+            if (['class', 'style', 'hidden', 'data-theme', 'open', 'aria-hidden', 'aria-expanded'].includes(attribute)) {
+              const sampled = sampledElements.delete(target);
+              // Hidden menus can be opened before the idle scan ever visited
+              // them. Paint the newly visible popup together, not on hover of
+              // each item. Ordinary unsampled class changes stay time-sliced.
+              const popup = target.closest('[role="menu"],[role="listbox"],[role="dialog"],[popover]');
+              if (sampled || popup) scheduleDirtySurface(target);
+              if (popup) paintStateBeforeFrame();
             }
             schedule(target);
             continue;
           }
+          forgetOverlayInk(target);
           if (target?.closest('style') || target === document.head) {
             refreshChromium();
           } else if (record.type === 'characterData') {
@@ -3493,6 +5218,7 @@
       }
       for (const record of records) {
         const target = record.target.nodeType === Node.ELEMENT_NODE ? record.target : record.target.parentElement;
+        forgetOverlayInk(target);
         if (target?.closest('style')) {
           const root = target.getRootNode();
           schedule(root === document ? document.documentElement : root);
@@ -3502,7 +5228,10 @@
           if (record.oldValue !== value &&
               !(record.attributeName === 'style' && movementStyle(record.oldValue) === movementStyle(value))) {
             schedule(target);
-            if (sampledElements.has(target)) scheduleDirtySurface(target);
+            const popup=target.closest('[role="menu"],[role="listbox"],[role="dialog"],[popover]');
+            if (sampledElements.has(target) || popup) scheduleDirtySurface(target);
+            if (target===document.documentElement || target===document.body) scheduleViewport();
+            if (popup || target===document.documentElement || target===document.body) paintStateBeforeFrame();
           }
         }
         for (const node of record.addedNodes) {
@@ -3528,6 +5257,8 @@
     document.addEventListener('scroll', scheduleVisibleSurfaces, { capture: true, passive: true });
     document.addEventListener('pointerover', refreshHoverPaint, { capture: true, passive: true });
     document.addEventListener('pointerout', refreshHoverPaint, { capture: true, passive: true });
+    document.addEventListener('focusin', refreshHoverPaint, { capture: true, passive: true });
+    document.addEventListener('focusout', refreshHoverPaint, { capture: true, passive: true });
     if (next === 'chromium') {
       window.addEventListener('resize', refreshChromium);
       if (document.readyState === 'loading') {
@@ -3566,7 +5297,7 @@
     const style = root && getComputedStyle(root);
     const applied = !preset || Boolean(style && (preset === 'chromium'
       ? style.getPropertyValue(chromiumProbe).trim() === 'yes'
-      : style.backgroundColor === sheet.cssRules[0].style.backgroundColor));
+      : style.getPropertyValue(paletteProbe).trim() === palettes[preset]?.base));
     if (!applied) setPreset(previous, false, previousSeparators);
     reply(applied);
   };

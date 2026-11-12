@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Resting navigation versus hovered surfaces</title>
+<style>
+*{box-sizing:border-box}body{margin:24px;background:#fff;color:#222;font:16px/1.5 Arial}nav{display:flex;align-items:center;gap:16px;background:white;padding:8px;flex-wrap:wrap}nav>div{display:flex;background:transparent}a,button{font:inherit}nav a,nav button{display:inline-flex;align-items:center;justify-content:center;background:white;color:#222;border:0;border-bottom:2px solid transparent;border-radius:12px;padding:16px 0;text-decoration:none;min-height:56px;cursor:pointer}nav .icon{width:48px;height:88px;padding:16px}nav .transparent{background:transparent}nav a:hover,nav button:hover{background:#e4e2e0}nav .selected{border-bottom-color:#004fcb}nav :focus-visible{outline:2px solid #004fcb;outline-offset:2px}.action{display:inline-flex;background:#19191c;color:white;border:0;border-radius:24px;padding:12px 24px;margin:24px}
+</style>
+<h1>Navigation should not look permanently hovered</h1>
+<p>Reported structure: navigation, transparent wrappers, ordinary links, icon links and an account button. White resting fill and transparent reserved underline are modeled because the supplied fragment omits stylesheet declarations. The exact live CSS and authenticated state are not reproduced.</p>
+<nav aria-label="Primary navigation">
+ <div><a href="#home" data-audit-id="home">Home</a></div>
+ <div><a href="#reviews" data-audit-id="reviews">Company reviews</a></div>
+ <div><a href="#salary" class="selected" data-audit-id="selected">Salaries</a></div>
+ <div><a href="#saved" class="icon" aria-label="Saved" data-audit-id="icon"><svg width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M4 2h12v16l-6-4-6 4z"/></svg></a></div>
+ <div><button class="icon" aria-label="Account" data-audit-id="account"><svg width="20" height="20" viewBox="0 0 20 20"><circle fill="currentColor" cx="10" cy="5" r="4"/><path fill="currentColor" d="M2 19v-5q8-8 16 0v5z"/></svg></button></div>
+ <div><a href="#transparent" class="transparent" data-audit-id="transparent">Transparent resting link</a></div>
+</nav>
+<h2>Independent filled action: preservation control</h2>
+<a href="#action" class="action" data-audit-id="action">Filled action on white</a>
+<script>document.documentElement.dataset.fixtureReady='yes'</script></html>

@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Verified opacity-only image animation</title><style>
+body{margin:24px;background:white;color:#111;font:16px/1.5 Arial}.images{display:flex;flex-wrap:wrap;gap:24px}.images>div{width:200px}.images a{display:block}img{display:block;width:160px;height:56px}h1{font-size:24px}#negatives{display:grid;grid-template-columns:repeat(auto-fit,200px)}
+</style><h1>Same source ink, static and opacity-only animation</h1><p>The first two external SVGs use #02303a. The pulse changes only opacity, 100% → 80% → 100% every 2s. Preserve its animation, geometry and transparency while repairing ink; assess contrast at the 80% extreme too. The third mark is static multicolor: retain its inks and recover a light backing only where source readability is lost.</p>
+<div class="images"><a href="#static"><img src="../solid-artwork.svg" alt="Static mark" data-audit-id="static"></a><a href="#pulse"><img src="../animated-artwork.svg" alt="Opacity-only mark" data-audit-id="pulse"></a><a href="#static-mixed"><img src="../multicolor-artwork.svg" alt="Static mixed mark" data-audit-id="static-mixed"></a></div>
+<h2>Synthetic preservation controls</h2><p>Color/geometry changes, mixed paint, CSS animation, scripts, additive composition and disappearing states remain outside this deliberately limited proof.</p><div class="images" id="negatives"></div>
+<script>
+const shape="<path fill='#02303a' d='M8 8h40v40H8zM60 12h90v8H60z'>ANIMATION</path>";
+const pulse="<animate attributeName='opacity' values='1;.8;1' dur='2s' repeatCount='indefinite'/>";
+const controls={
+ color:shape.replace('ANIMATION',"<animate attributeName='fill' values='#02303a;#cf2040;#02303a' dur='2s' repeatCount='indefinite'/>"),
+ geometry:shape.replace('ANIMATION',"<animate attributeName='d' values='M0 0h20v20z;M0 0h40v40z' dur='2s' repeatCount='indefinite'/>"),
+ mixed:shape.replace('ANIMATION',pulse)+"<path fill='#cf2040' d='M100 40h20v12h-20z'/>",
+ css:"<style>@keyframes pulse{to{opacity:.8}}path{animation:pulse 1s infinite}</style>"+shape.replace('ANIMATION',''),
+ script:shape.replace('ANIMATION',pulse)+"<script>/* Unsupported active document */<"+"/script>",
+ additive:shape.replace('ANIMATION',pulse.replace("attributeName='opacity'","attributeName='opacity' additive='sum'")),
+ disappearing:shape.replace('ANIMATION',pulse.replace('1;.8;1','1;0;1')),
+ readable:shape.replace('#02303a','#eeeeee').replace('ANIMATION',pulse)
+};
+for(const[id,content]of Object.entries(controls)){const wrapper=document.createElement('div'),a=document.createElement('a'),img=document.createElement('img'),caption=document.createElement('p');a.href='#'+id;img.src='data:image/svg+xml,'+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='160' height='56' viewBox='0 0 160 56'>"+content+'</svg>');img.alt=id;img.dataset.auditId=id;caption.textContent=id;a.append(img);wrapper.append(a,caption);document.querySelector('#negatives').append(wrapper)}
+Promise.all([...document.images].map(i=>i.decode())).then(()=>document.documentElement.dataset.fixtureReady='yes');
+</script></html>
