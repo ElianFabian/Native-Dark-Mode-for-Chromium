@@ -459,7 +459,7 @@
       roles.push('breadcrumb');
     }
     if (element.matches('span, div, small, strong, b, mark, label, [role="status"]') &&
-        element.textContent.length <= 80 && element.textContent.trim() &&
+        textLengthWithin(element, 80) && hasAnyText(element) &&
         !element.closest('[disabled], [aria-disabled="true"]') &&
         !element.querySelector('img, svg, video, canvas')) {
       const badge = isRedAccent(backgroundColor);
@@ -468,11 +468,11 @@
     }
     // Blending affects the entire rendered group, including nested labels.
     if (['multiply', 'darken', 'color-burn'].includes(style.mixBlendMode) &&
-        element.textContent.trim() && !element.closest('[disabled], [aria-disabled="true"]')) {
+        hasAnyText(element) && !element.closest('[disabled], [aria-disabled="true"]')) {
       roles.push('isolated-label');
     }
     const brightness = /^brightness\(([\d.]+)\)$/.exec(style.filter);
-    if (brightness && Number(brightness[1]) < .8 && element.textContent.trim() &&
+    if (brightness && Number(brightness[1]) < .8 && hasAnyText(element) &&
         !element.closest('[disabled], [aria-disabled="true"]') &&
         !element.querySelector('img, svg, video, canvas') && image === 'none') {
       roles.push('undimmed-label');
@@ -769,7 +769,7 @@
     if (glyph) return glyph;
     // A short label can accompany a small simple drawing or a repeated glyph
     // tile. Recolor each verified SVG ink; never filter the whole container.
-    if (!element.matches('[role="img"]') && element.textContent.trim().length <= 160 &&
+    if (!element.matches('[role="img"]') && trimmedText(element, 160) !== null &&
         (Array.prototype.some.call(element.childNodes, textNode) || wrappedBackgroundGlyphLabel(element, style))) {
       const labeled = backgroundSvgGlyph(style, false, element.closest(interactive) ? 2 : 4, true);
       if (labeled) return { ...labeled, paletteGlyph: true, repeated: style.backgroundRepeat !== 'no-repeat' };
@@ -1000,8 +1000,8 @@
   function glyphLabelTextPaint(element, style, backdrop, ink) {
     if (!backdrop || luminance(backdrop) > .18 || !ink || ink[3] !== 1 ||
         Math.max(...ink.slice(0,3))-Math.min(...ink.slice(0,3)) > 12 ||
-        parseFloat(style.fontSize) > 20 || element.textContent.trim().length > 160 ||
-        !Array.prototype.some.call(element.childNodes,textNode) ||
+        parseFloat(style.fontSize) > 20 || !Array.prototype.some.call(element.childNodes,textNode) ||
+        trimmedText(element, 160) === null ||
         element.closest(':disabled,[aria-disabled="true"]')) return '';
     const parent = element.parentElement;
     const glyph = elementBackgroundGlyph(element,authoredBackdropStyle(element)) ||
@@ -1536,7 +1536,7 @@
 
   function labelPseudoSurfaces(element, background, surface) {
     if (!background || !surface || !element.matches('span,small,label,[role="status"]') ||
-        !element.textContent.trim() || element.textContent.length > 80 ||
+        !hasAnyText(element) || !textLengthWithin(element, 80) ||
         element.querySelector('img,svg,video,canvas')) return [];
     const matchesBackground = value => {
       const color = chromiumSrgb(value);
@@ -1634,6 +1634,36 @@
 
   function textNode(node) {
     return node.nodeType === Node.TEXT_NODE && node.textContent.trim();
+  }
+
+  // Bounded equivalents of textContent probes. A page wrapper's textContent
+  // concatenates the whole page; these walk text nodes and stop at the limit.
+  // trimmedText(element, max) is element.textContent.trim() when that is at
+  // most max characters, otherwise null. hasAnyText(element) is
+  // Boolean(element.textContent.trim()). textLengthWithin(element, max) is
+  // element.textContent.length <= max.
+  function trimmedText(element, max) {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    let text = '';
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      text = (text + node.data).trimStart();
+      if (text.trimEnd().length > max) return null;
+    }
+    return text.trimEnd();
+  }
+  function hasAnyText(element) {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) if (node.data.trim()) return true;
+    return false;
+  }
+  function textLengthWithin(element, max) {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    let length = 0;
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      length += node.data.length;
+      if (length > max) return false;
+    }
+    return true;
   }
 
   async function overlayThumbnail(image, width, height) {
@@ -2011,7 +2041,7 @@
     if (separated) return separated.surface;
     if (!surface || color[3] !== 1 || style.backgroundImage !== 'none' ||
         !element.matches('div,span,small,strong,b,label,[role="status"]') ||
-        element.textContent.length > 80 || !element.textContent.trim() ||
+        !textLengthWithin(element, 80) || !hasAnyText(element) ||
         element.clientWidth > 360 ||
         (element.matches('div') && !element.closest(interactive) && !element.matches('[role="status"]')) ||
         element.querySelector('img,svg,video,canvas')) return surface;
@@ -3004,8 +3034,7 @@
     if (!element.matches('div,section,article,aside') || element.closest(interactive) ||
         style.backgroundImage !== 'none' || parseFloat(style.paddingTop) < 12 ||
         parseFloat(style.borderTopLeftRadius) < 4 || element.clientWidth < 160 || element.clientWidth > 960 ||
-        element.clientHeight < 64 || element.clientHeight > 320 || !element.textContent.trim() ||
-        element.textContent.trim().length > 600 ||
+        element.clientHeight < 64 || element.clientHeight > 320 || !trimmedText(element, 600) ||
         element.querySelector('img,video,canvas')) return false;
     const fill = chromiumSrgb(style.backgroundColor);
     if (fill?.[3] !== 1 || Math.max(...fill.slice(0, 3)) - Math.min(...fill.slice(0, 3)) > 24) return false;
@@ -3167,7 +3196,7 @@
     // card, or alter panels that were already subtle on a dark source canvas.
     if (source?.[3] === 1 && luminance(source) < .18 &&
         Math.max(...source.slice(0,3))-Math.min(...source.slice(0,3)) <= 20 &&
-        element.matches('div,section,article,aside') && element.textContent.trim() &&
+        element.matches('div,section,article,aside') && hasAnyText(element) &&
         element.clientWidth >= 120 && element.clientWidth <= 1200 &&
         element.clientHeight >= 44 && element.clientHeight <= 600 &&
         parseFloat(style.paddingTop) >= 12 && parseFloat(style.paddingLeft) >= 12 &&
@@ -3212,7 +3241,7 @@
     if (canvasPaint) return canvasPaint;
     if (style.backgroundImage !== 'none') return null;
     const compact = !raisedLink(element, style) && element.matches('a,button,label,span,[role="button"]') &&
-      (element.textContent.trim() || element.hasAttribute('aria-label')) &&
+      (hasAnyText(element) || element.hasAttribute('aria-label')) &&
       element.clientWidth <= 360 && element.clientHeight >= 20 &&
       (element.clientHeight <= 80 || element.clientWidth <= 80 && element.clientHeight <= 120);
     const formShadow = formPanelShadow(element, style);
@@ -3298,15 +3327,15 @@
 
   function compactTextControl(element) {
     if (!element.matches('a[href],button') || element.matches(':disabled,[aria-disabled="true"],[aria-pressed],[aria-selected],[aria-current]') ||
-        !element.textContent.trim() || element.textContent.trim().length > 100) return false;
+        !trimmedText(element, 100)) return false;
     const box = element.getBoundingClientRect();
     return box.width > 0 && box.width <= 320 && box.height > 0 && box.height <= 80;
   }
 
   function fileActivationFrame(element) {
     if(!element.matches('div,span,label')||element.closest('[aria-disabled="true"]')||
-        !element.textContent.trim()||element.textContent.trim().length>100||
-        element.clientWidth<=0||element.clientWidth>720||element.clientHeight<20||element.clientHeight>80)return false;
+        element.clientWidth<=0||element.clientWidth>720||element.clientHeight<20||element.clientHeight>80||
+        !trimmedText(element,100))return false;
     const inputs=element.querySelectorAll(':scope > input[type="file"]');
     if(inputs.length!==1||inputs[0].disabled||authoredBackdropStyle(inputs[0]).opacity!=='0')return false;
     const source=authoredBackdropStyle(element),box=element.getBoundingClientRect(),input=inputs[0].getBoundingClientRect();
@@ -3474,7 +3503,7 @@
   function smallLabelFramePaint(element, backdrop) {
     if (!element.matches('span') || !backdrop || luminance(backdrop) > .18 ||
         element.matches(interactive) || element.closest(':disabled,[aria-disabled="true"]') ||
-        !element.textContent.trim() || element.textContent.trim().length>160 || element.querySelector('img,svg,input,button')) return '';
+        !trimmedText(element, 160) || element.querySelector('img,svg,input,button')) return '';
     const style=authoredBackdropStyle(element),width=parseFloat(style.borderTopWidth),ink=chromiumSrgb(style.borderTopColor);
     if (!['inline-flex','inline-block','flex'].includes(style.display) || element.clientWidth>420 ||
         !(element.clientHeight>0&&element.clientHeight<=40)||parseFloat(style.borderTopLeftRadius)<element.clientHeight*.25||
@@ -3734,7 +3763,7 @@
     const background = chromiumSrgb(original.backgroundColor ?? style.backgroundColor);
     const blend = ['multiply', 'darken', 'color-burn'].includes(style.mixBlendMode);
     const preservePhoto = blend && (element.matches('img') ||
-      (!element.textContent.trim() && element.querySelector('img')));
+      (!hasAnyText(element) && element.querySelector('img')));
     const hasText = Array.prototype.some.call(element.childNodes, textNode) ||
       (element instanceof HTMLInputElement && element.matches(actionButton) && element.value.trim());
     const imageLabel = (hasText && imageLabelPaint(element, style, 4.5)) || flowImageLinkPaint(element, style);
@@ -3816,7 +3845,7 @@
         const size = parseFloat(style.fontSize);
         const weight = Number(style.fontWeight);
         const largeHeading = element.closest(heading) ? size >= 16 && weight >= 600 :
-          size >= 56 / 3 && weight >= 700 && element.textContent.trim().length <= 120;
+          size >= 56 / 3 && weight >= 700 && trimmedText(element, 120) !== null;
         const readable = largeHeading ? perceptualHeadingColor(ink, backdrop) :
           lightInkOnColor ? null : readableColor(ink, backdrop, brightAction ? 7 : 4.5);
         if (readable) {
@@ -3828,9 +3857,9 @@
       }
     }
     const brightness = /^brightness\(([\d.]+)\)$/.exec(style.filter);
-    const dim = Boolean(brightness && Number(brightness[1]) < .8 && element.textContent.length <= 80);
+    const dim = Boolean(brightness && Number(brightness[1]) < .8 && textLengthWithin(element, 80));
     // Product metadata can include a long accessible title in addition to the visible labels.
-    if ((blend || dim) && element.textContent.trim() &&
+    if ((blend || dim) && hasAnyText(element) &&
         !element.querySelector('img,svg,video,canvas') && !element.closest(':disabled, [aria-disabled="true"]') &&
         chromiumTextBackdrop(element, backdrops.solid)) {
       isolateLabel = blend;
@@ -4338,7 +4367,7 @@
 
   function solidActionInk(element, style, backing) {
     if (!element.matches(actionButton) || element.matches(':disabled,[aria-disabled="true"]') ||
-        !element.textContent.trim() || style.backgroundImage !== 'none' || backing?.[3] !== 1 ||
+        !hasAnyText(element) || style.backgroundImage !== 'none' || backing?.[3] !== 1 ||
         Math.max(...backing.slice(0,3))-Math.min(...backing.slice(0,3)) < 45) return '';
     const minimum = parseFloat(style.fontSize) < 18 ? 7 : 4.5;
     const ink = chromiumSrgb(style.color), repair = ink && readableColor(ink, backing, minimum);
