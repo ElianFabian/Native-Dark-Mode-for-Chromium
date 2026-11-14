@@ -2,29 +2,88 @@
 // and assert computed geometry instead of trusting renderer classification tokens.
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { createMetrics, sourceHashes } from './metrics.mjs';
+import { assertEvidence, writeFailureEvidence, failureSignature } from './failure.mjs';
+import { expectedRendererIdentity, compareRendererIdentity } from './identity.mjs';
 import { startServer } from './server.mjs';
-import { launchBrowser, root, until } from './browser.mjs';
+import { launchBrowser, closeBrowser, root, until } from './browser.mjs';
 import { color, contrast, composite } from '../../../tools/diagnostics/analysis.mjs';
-const groups = ['icons','borders','images','surfaces','states','contact','cards'];
+import { selectRenderingCases, expectedCaseVariants, resultVariants, caseListing } from './case-selection.mjs';
 const args = process.argv.slice(2);
-if (args.length && (args.length !== 2 || args[0] !== '--groups')) throw Error('Use --groups icons,borders,images,surfaces,states,contact,cards');
-const selected = args.length ? args[1].split(',') : groups;
-if (!selected.length || selected.some(g=>!groups.includes(g)) || new Set(selected).size!==selected.length) throw Error('Invalid rendering groups');
-const wanted = group => selected.includes(group);
+if (args.length === 1 && args[0] === '--list-cases') { console.table(caseListing()); process.exit(0); }
+if (args.length && (args.length !== 2 || !['--groups','--cases'].includes(args[0]))) throw Error('Use --groups GROUPS, --cases IDS or --list-cases');
+const selection = selectRenderingCases(args.length ? { [args[0].slice(2)]: args[1] } : {});
+const selected = selection.mode === 'groups' ? selection.requestedGroups : selection.groups;
+let server, browser, page, primaryError, outcome = 'failed', evidenceContext = { caseId: 'unscoped' }, abortRequested = false, abortReason, abortDeadline;
+function checkAborted() { if (abortRequested) { const error = Error('Shared run aborted: ' + abortReason); error.name = 'AbortError'; throw error; } }
+function requestAbort(reason) {
+  if (abortRequested) return;
+  abortRequested = true; abortReason = reason;
+  // Leave time for the parent's 45-second grace, including startup and failure evidence.
+  abortDeadline = setTimeout(() => { console.error('Cooperative cleanup exceeded 40 seconds; cleanup remains unconfirmed.'); process.exit(1); }, 40000);
+  abortDeadline.unref();
+  void browser?.close().catch(() => {});
+}
+const abortMessage = message => {
+  if (message?.type !== 'abort-shared-run') return;
+  requestAbort('parent-cancelled');
+};
+const parentDisconnected = () => requestAbort('parent-disconnected');
+if (process.send) { process.on('message', abortMessage); process.once('disconnect', parentDisconnected); }
 const started = performance.now();
-const server = await startServer(), browser = await launchBrowser(), results = [];
+const results = [];
 const directory = path.join(root, 'research-artifacts', 'diagnostics'); await mkdir(directory, { recursive: true });
+const runDirectory = path.join(directory, 'shared-' + Date.now() + '-' + randomUUID().slice(0, 8));
+await mkdir(runDirectory, { recursive: true });
+if(process.connected)process.send({type:'shared-run-started',directory:path.relative(root,runDirectory).replaceAll('\\','/')},()=>{});
+const environment = { platform: process.platform, node: process.version, groups: selected, selection, ...await sourceHashes(), expectedRendererIdentity: await expectedRendererIdentity() };
+const metrics = createMetrics({ category: 'shared', sessionId: process.env.NDM_METRICS_SESSION, hashes: environment, scope: [selection.mode,...(selection.mode==='cases'?selection.requestedCases:selected)] });
+environment.sessionId = metrics.sessionId; environment.runId = metrics.runId;
+const finishRun = metrics.start('run', { artifact: path.relative(root, runDirectory).replaceAll('\\', '/') });
 try {
-  const page = await browser.open('about:blank');
+  checkAborted();
+  server = await startServer();
+  browser = await metrics.measure('browser-startup', () => launchBrowser());
+  checkAborted();
+  environment.browser = browser.version.product;
+  environment.browserIsolation = browser.isolation;
+  await writeFile(path.join(runDirectory, 'run.json'), JSON.stringify({ status: 'running', environment }, null, 2));
+  page = await browser.open('about:blank');
   await page.send('Emulation.setDeviceMetricsOverride', { width: 1000, height: 1000, deviceScaleFactor: 1, mobile: false });
+  const caseExecutions = [];
+  async function runCase(id, action) {
+    checkAborted();
+    if (!selection.units.includes(id)) return;
+    evidenceContext = { caseId: id };
+    const first = results.length, started = performance.now();
+    await metrics.measure('case', async () => {
+      await action();
+      checkAborted();
+      const expected = expectedCaseVariants(id), actual = resultVariants(results.slice(first));
+      assertEvidence(JSON.stringify(actual) === JSON.stringify(expected), 'case-result-inventory', { variants: expected }, { variants: actual }, {caseId:id});
+    }, {caseId:id});
+    caseExecutions.push({id,results:results.length-first,durationMs:performance.now()-started});
+  }
+  console.log(`Rendering scope: ${selection.mode}; requested cases: ${selection.requestedCases.join(',') || '(none)'}; included cases: ${selection.includedCases.join(',')}; companions: ${selection.companions.join(',') || '(none)'}. Expected combinations: ${selection.expectedResults}.`);
   async function settled(read, accepts, label) {
     let previous, since=0;
     return until(async()=>{
+      checkAborted();
       const facts=await read(),key=JSON.stringify(facts),now=performance.now();
       if(!accepts(facts)){previous=undefined;since=0;return false;}
       if(key!==previous){previous=key;since=now;return false;}
       return now-since>=200&&facts;
     },label);
+  }
+  async function sourcePaint(read, label) {
+    // A source snapshot must follow the actual Off handoff in this document,
+    // not merely DOM readiness. Keep pending controller/frame replies explicit.
+    const sample = await settled(async () => {
+      const identity = compareRendererIdentity(environment.expectedRendererIdentity, await browser.rendererIdentity(page));
+      return { ready: identity.status === 'match' && identity.observed.preset === null, paint: await read() };
+    }, sample => sample.ready, label + ' source handoff');
+    return sample.paint;
   }
   async function open(group) {
     const url = `${server.base}/fixtures/diagnostics/specimens.html?group=${group}`;
@@ -32,7 +91,7 @@ try {
     await until(() => page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"), 'fixture ' + group);
     await page.evaluate('Promise.all([...document.images].map(i=>i.decode()))'); return url;
   }
-  if(wanted('icons')||wanted('images')||wanted('states')){
+  await runCase('embedded-vector-caption', async () => {
     const url=server.base+'/fixtures/diagnostics/embedded-svg-wordmark.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'embedded vector caption source');
     const read=()=>page.evaluate("(()=>({body:getComputedStyle(document.body).backgroundColor,items:Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e);return[e.dataset.auditId,{image:s.backgroundImage,display:s.display,bg:s.backgroundColor,opacity:s.opacity,parentOpacity:getComputedStyle(e.parentElement).opacity,box:[e.clientWidth,e.clientHeight],size:s.backgroundSize,position:s.backgroundPosition}]}))}))()");const source=await read();
     for(const theme of ['chromium','soft','contrast'])for(const level of ['off','maximum']){
@@ -49,8 +108,8 @@ try {
       if(level==='off')await writeFile(path.join(directory,'embedded-svg-caption-'+theme+'.png'),Buffer.from((await page.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})).data,'base64'));
       results.push({case:'embedded-vector-caption',theme,level,pixels,passed:true});
     }
-  }
-  if(wanted('icons')||wanted('states')){
+  });
+  await runCase('background-crop-capacity-retry', async () => {
     const url=server.base+'/fixtures/diagnostics/background-crop-burst.html';
     for(const theme of ['chromium','soft','contrast']){
       await browser.rule(url,'source');await page.send('Network.enable');await page.send('Network.emulateNetworkConditions',{offline:false,latency:120,downloadThroughput:-1,uploadThroughput:-1});
@@ -64,8 +123,8 @@ try {
         results.push({case:'background-crop-capacity-retry',theme,elapsed:performance.now()-start,passed:true});
       }finally{await page.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1})}
     }
-  }
-  if(wanted('icons')||wanted('borders')||wanted('states')){
+  });
+  await runCase('compact-action-followup', async () => {
     const url=server.base+'/fixtures/diagnostics/compact-action-paint.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'compact action source');
     const read=()=>page.evaluate("(()=>({body:getComputedStyle(document.body).backgroundColor,items:Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return[e.dataset.auditId,{ink:s.color,fill:s.webkitTextFillColor,bg:s.backgroundColor,edge:s.borderTopColor,width:s.borderTopWidth,shadow:s.boxShadow,filter:s.filter,image:s.backgroundImage,size:s.backgroundSize,position:s.backgroundPosition,opacity:s.opacity,glyph:getComputedStyle(e,'::before').color,box:[r.width,r.height],xy:[r.x,r.y],parent:getComputedStyle(e.parentElement).backgroundColor}]}))}))()");
     const source=await read();
@@ -91,8 +150,8 @@ try {
         results.push({case:'compact-action-followup',theme,level,passed:true});
       }
     }
-  }
-  if(wanted('images')||wanted('icons')){
+  });
+  await runCase('static-internal-mask', async () => {
     const url=server.base+'/fixtures/diagnostics/static-masked-logo.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'static masked logo');
     const read=()=>page.evaluate("(()=>({body:getComputedStyle(document.body).backgroundColor,items:Object.fromEntries([...document.images].map(e=>{const r=e.getBoundingClientRect();return[e.dataset.auditId,{src:e.currentSrc,filter:getComputedStyle(e).filter,box:[r.width,r.height]}]}))}))()");const source=await read();
     for(const theme of ['chromium','soft','contrast'])for(const level of ['off','maximum']){
@@ -102,8 +161,8 @@ try {
       const pixel=await page.evaluate("(async()=>{const e=document.querySelector('[data-audit-id=logo]'),c=document.createElement('canvas');c.width=e.naturalWidth;c.height=e.naturalHeight;const x=c.getContext('2d');x.filter=getComputedStyle(e).filter;x.drawImage(e,0,0);const p=x.getImageData(0,0,c.width,c.height).data;const n=p.findIndex((v,i)=>i%4===3&&v===255)-3;return [...p.slice(n,n+3),1]})()");
       if(contrast(pixel,color(f.body))<7)throw Error('Displayed masked logo remains dark');results.push({case:'static-internal-mask',theme,level,passed:true});
     }
-  }
-  if(wanted('states')||wanted('surfaces')){
+  });
+  await runCase('transparent-embedded-canvas', async () => {
     const url=server.base+'/fixtures/diagnostics/embedded-count.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});await until(()=>page.evaluate("document.querySelectorAll('iframe').length===2&&[...document.querySelectorAll('iframe')].every(f=>f.contentDocument?.documentElement?.dataset.fixtureReady==='yes')"),'embedded source canvases');
     const read=()=>page.evaluate("(()=>({body:getComputedStyle(document.body).backgroundColor,frames:[...document.querySelectorAll('iframe')].map(f=>{const d=f.contentDocument;return{root:getComputedStyle(d.documentElement).backgroundColor,body:getComputedStyle(d.body).backgroundColor,count:getComputedStyle(d.querySelector('.gh-count')).backgroundColor,box:[d.querySelector('.gh-count').getBoundingClientRect().width,d.querySelector('.gh-count').getBoundingClientRect().height],rect:f.getBoundingClientRect().toJSON()}})}))()");const source=await read();
     for(const theme of ['chromium','soft','contrast']){
@@ -113,8 +172,8 @@ try {
       const [r]=f.frames.map(f=>f.rect),pixel=await page.evaluate(`(async()=>{const i=new Image();i.src='data:image/png;base64,${data}';await i.decode();const c=document.createElement('canvas');c.width=i.width;c.height=i.height;const x=c.getContext('2d');x.drawImage(i,0,0);return [...x.getImageData(${Math.floor(r.x+180)},${Math.floor(r.y+35)},1,1).data]})()`);
       if(pixel.slice(0,3).some((v,i)=>Math.abs(v-color(f.body)[i])>1))throw Error('Transparent iframe still has a rectangular pixel backing '+theme+'/'+pixel);results.push({case:'transparent-embedded-canvas',theme,passed:true});
     }
-  }
-  if(wanted('states')){
+  });
+  await runCase('popup-first-paint', async () => {
     const url=server.base+'/fixtures/diagnostics/popup-opening.html';
     for(const theme of ['chromium','soft','contrast']){
       await browser.rule(url,'source');await page.send('Page.navigate',{url});await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'popup source');
@@ -126,12 +185,32 @@ try {
       if(await page.evaluate("getComputedStyle(document.querySelector('.decorative')).backgroundColor")!==source.color||!await page.evaluate("document.querySelector('[aria-disabled=true]').matches('[aria-disabled=true]')"))throw Error('Popup repair changed preservation controls');
       await page.evaluate("document.querySelector('.menu').style.display='none'");await until(()=>page.evaluate("getComputedStyle(document.querySelector('.menu')).display==='none'"),'popup closed');await page.evaluate("document.querySelector('.menu').style.display='block'");await until(()=>page.evaluate("getComputedStyle(document.querySelector('.menu')).backgroundColor!=='rgb(255, 255, 255)'"),'popup reopened');results.push({case:'popup-first-paint',theme,trace,passed:true});
     }
-    const workload=server.base+'/fixtures/diagnostics/dynamic-catalogue.html';await browser.rule(workload,'source');await page.send('Page.navigate',{url:workload});await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'catalogue workload');
+    for(const colors of ['shared','varied']){
+    const workload=server.base+'/fixtures/diagnostics/dynamic-catalogue.html?colors='+colors;await browser.rule(workload,'source');await page.send('Page.navigate',{url:workload});await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'catalogue workload');
+    const catalogueReadSource=()=>page.evaluate("(()=>{const e=[...document.querySelectorAll('.card')].at(-1),s=getComputedStyle(e),r=e.getBoundingClientRect();return{box:[r.width,r.height],background:s.backgroundColor,border:s.borderTopColor,borderWidth:s.borderTopWidth,japanese:document.querySelector('.card h2').textContent.startsWith('作品')}})()");
+    const catalogueSource=await sourcePaint(catalogueReadSource,'catalogue '+colors+' source');
+    if(!catalogueSource.japanese)throw Error('Catalogue source labels lost their UTF-8 encoding');
+    if(colors==='varied'&&(catalogueSource.background!=='rgb(231, 229, 240)'||catalogueSource.border!=='rgb(103, 140, 130)'||catalogueSource.borderWidth!=='1px'))throw Error('Varied catalogue source colors/border do not match the declared synthetic input');
     for(const theme of ['chromium','soft','contrast']){
-      await page.send('Performance.enable');const before=(await page.send('Performance.getMetrics')).metrics;await browser.rule(workload,theme);await until(()=>page.evaluate("getComputedStyle(document.querySelector('.card h2')).color!=='rgb(37, 47, 61)'"),'catalogue initial paint');await page.evaluate("document.querySelector('#batch').click()");await until(()=>page.evaluate("getComputedStyle(document.querySelector('.grid a')).color!=='rgb(49, 93, 138)'"),'nested catalogue insertion');const after=(await page.send('Performance.getMetrics')).metrics;results.push({case:'dynamic-catalogue-workload',theme,before,after,passed:true});
+      await page.evaluate(`(()=>{const record=window.catalogueSchemeFrames={frames:0,wrong:0,active:true};function frame(){if(!record.active)return;const s=getComputedStyle(document.documentElement);const active=${JSON.stringify(theme)}==='chromium'?s.getPropertyValue('--native-dark-mode-chromium-active').trim()==='yes':s.getPropertyValue('--native-dark-mode-palette-active').trim()===${JSON.stringify(theme==='soft'?'#252a34':'#080a0e')};if(active){record.frames++;if(!s.colorScheme.startsWith('dark'))record.wrong++;if(document.querySelector('[data-native-dark-mode-sampling~="source-scheme"]'))record.wrong++;}requestAnimationFrame(frame);}requestAnimationFrame(frame);})()`);
+      try {
+        await page.send('Performance.enable');const before=(await page.send('Performance.getMetrics')).metrics;
+        await browser.rule(workload,theme);
+        await until(()=>page.evaluate("getComputedStyle(document.querySelector('.card h2')).color!=='rgb(37, 47, 61)'"),'catalogue initial paint');
+        await page.evaluate("document.querySelector('#batch').click()");
+        await until(()=>page.evaluate("getComputedStyle(document.querySelector('.grid a')).color!=='rgb(49, 93, 138)'"),'nested catalogue insertion');
+        const last=await settled(()=>page.evaluate("(()=>{const e=[...document.querySelectorAll('.card')].at(-1),r=e.getBoundingClientRect();return{ink:getComputedStyle(e.querySelector('h2')).color,background:getComputedStyle(e).backgroundColor,box:[r.width,r.height]}})()"),facts=>facts.background!==catalogueSource.background&&facts.ink!=='rgb(37, 47, 61)',theme+' '+colors+' catalogue offscreen tail painted');
+        const frames=await page.evaluate("({frames:catalogueSchemeFrames.frames,wrong:catalogueSchemeFrames.wrong})");
+        if(!frames.frames||frames.wrong)throw Error('Sampling exposed an authored color scheme across a browser frame: '+theme);
+        if(JSON.stringify(last.box)!==JSON.stringify(catalogueSource.box))throw Error('Catalogue sampling changed source geometry: '+theme+'/'+colors);
+        const after=(await page.send('Performance.getMetrics')).metrics;
+        if(colors==='shared')results.push({case:'dynamic-catalogue-workload',theme,colors,source:catalogueSource,before,after,frames,last,passed:true});
+        else results.push({case:'dynamic-catalogue-varied-workload',theme,colors,source:catalogueSource,before,after,frames,last,passed:true});
+      } finally { await page.evaluate('if(window.catalogueSchemeFrames)catalogueSchemeFrames.active=false'); }
     }
-  }
-  if(wanted('images')||wanted('surfaces')){
+    }
+  });
+  await runCase('accepted-large-image-label', async () => {
     const url=server.base+'/fixtures/diagnostics/large-image-label.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'large image label');
     const read=()=>page.evaluate("(()=>({body:getComputedStyle(document.body).backgroundColor,items:Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return[e.dataset.auditId,{ink:s.color,background:s.backgroundColor,font:s.font,box:[r.width,r.height]}]})),images:[...document.images].map(e=>({src:e.currentSrc,filter:getComputedStyle(e).filter}))}))()");const source=await read();
     for(const theme of ['chromium','soft','contrast'])for(const level of ['off','maximum']){
@@ -142,8 +221,8 @@ try {
       if(level==='off')await writeFile(path.join(directory,'large-image-label-'+theme+'.png'),Buffer.from((await page.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})).data,'base64'));
       results.push({case:'accepted-large-image-label',theme,level,passed:true});
     }
-  }
-  if(wanted('icons')||wanted('states')){
+  });
+  await runCase('toolbar-control-families', async () => {
     const url=server.base+'/fixtures/diagnostics/document-toolbar-controls.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'toolbar follow-up controls');
     const read=()=>page.evaluate("(()=>({background:getComputedStyle(document.querySelector('.toolbar')).backgroundColor,items:Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),p=getComputedStyle(e.parentElement),r=e.getBoundingClientRect();return[e.dataset.auditId,{ink:s.webkitTextFillColor,background:s.backgroundColor,content:s.content,mask:s.maskImage,filter:p.filter,left:s.left,top:s.top,opacity:s.opacity,edge:s.borderBottomColor,box:[r.width,r.height]}]}))}))()");
     const source=await read(),glyphs=['zoom-arrow','style-arrow','font-arrow','minus','color'];
@@ -162,8 +241,8 @@ try {
       if(level==='off')await writeFile(path.join(directory,'toolbar-controls-'+theme+'.png'),Buffer.from((await page.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})).data,'base64'));
       results.push({case:'toolbar-control-families',theme,level,passed:true});
     }
-  }
-  if(wanted('surfaces')||wanted('states')){
+  });
+  await runCase('field-surface-policy-preservation', async () => {
     const url=server.base+'/fixtures/diagnostics/field-surfaces.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'field surface');
     const read=()=>page.evaluate("(()=>({body:getComputedStyle(document.body).backgroundColor,items:Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return[e.dataset.auditId,{background:s.backgroundColor,image:s.backgroundImage,ink:s.webkitTextFillColor,opacity:s.opacity,box:[r.width,r.height],disabled:e.disabled,readonly:e.readOnly}]}))}))()");
     const source=await read();
@@ -174,8 +253,8 @@ try {
       if(['text','email','notes'].some(id=>contrast(color(f.items[id].ink),color(f.items[id].background))<4.49))throw Error('Raised field lost text contrast');
       results.push({case:'field-surface-policy-preservation',theme,level,passed:true});
     }
-  }
-  if(wanted('states')){
+  });
+  await runCase('nested-job-pane-scroll', async () => {
     const url=server.base+'/fixtures/diagnostics/nested-job-pane.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'nested job pane');
     for(const theme of ['chromium','soft','contrast']){
       await browser.rule(url,theme);await until(()=>page.evaluate("parseInt(getComputedStyle(document.body).backgroundColor.slice(4))<128"),theme+' nested pane theme');
@@ -189,8 +268,8 @@ try {
       const metrics=Object.fromEntries(['ScriptDuration','LayoutDuration','RecalcStyleDuration'].map(name=>[name,after.find(m=>m.name===name).value-before.find(m=>m.name===name).value]));
       results.push({case:'nested-job-pane-scroll',theme,trace,metrics,passed:true});
     }
-  }
-  if(wanted('states')){
+  });
+  await runCase('grouped-sprite-publication', async () => {
     const url=server.base+'/fixtures/diagnostics/sprite-batch.html';
     for(const theme of ['chromium','soft','contrast']){
       await browser.rule(url,'source');await page.send('Page.navigate',{url});
@@ -204,8 +283,8 @@ try {
       if(JSON.stringify(geometry)!==JSON.stringify(facts.geometry))throw Error('Sprite cohort changed crop offsets');
       results.push({case:'grouped-sprite-publication',theme,...facts,passed:true});
     }
-  }
-  if(wanted('borders')){
+  });
+  await runCase('file-activation-frame', async () => {
     const url=server.base+'/fixtures/diagnostics/file-activation-frame.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'file activation frame');await page.evaluate("document.body.style.zoom='1.25'");
     const read=()=>page.evaluate("(()=>({body:getComputedStyle(document.body).backgroundColor,items:Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return[e.dataset.auditId,{ink:s.borderTopColor,width:s.borderTopWidth,shadow:s.boxShadow,opacity:s.opacity,box:[r.width,r.height],after:getComputedStyle(e,'::after').content}]}))}))()");
@@ -222,8 +301,8 @@ try {
         results.push({case:'file-activation-frame',theme,level,passed:true});
       }
     }
-  }
-  if(wanted('borders')){
+  });
+  await runCase('transparent-inline-label-frame', async () => {
     const url=server.base+'/fixtures/diagnostics/inline-label-frames.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'actual inline label frame');await page.evaluate("document.body.style.zoom='1.25'");
     const read=()=>page.evaluate("(()=>({background:getComputedStyle(document.documentElement).backgroundColor,items:Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return[e.dataset.auditId,{ink:s.borderTopColor,width:s.borderTopWidth,box:[r.width,r.height]}]}))}))()");
@@ -240,8 +319,8 @@ try {
         results.push({case:'transparent-inline-label-frame',theme,level,ratio,passed:true});
       }
     }
-  }
-  if(wanted('states')){
+  });
+  await runCase('toolbar-placeholder-readability', async () => {
     const url=server.base+'/fixtures/diagnostics/document-toolbar-fields.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'toolbar placeholder');
     const read=()=>page.evaluate("(()=>{const e=document.querySelector('[data-audit-id=hint]'),s=getComputedStyle(e,'::placeholder'),r=e.getBoundingClientRect();return {background:getComputedStyle(document.querySelector('.goog-toolbar')).backgroundColor,ink:s.webkitTextFillColor,opacity:Number(s.opacity),hidden:Number(getComputedStyle(document.querySelector('[data-audit-id=hidden]'),'::placeholder').opacity),box:[r.width,r.height]}})()");
@@ -252,8 +331,8 @@ try {
       if(level==='off')await writeFile(path.join(directory,'toolbar-hint-'+theme+'.png'),Buffer.from((await page.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})).data,'base64'));
       results.push({case:'toolbar-placeholder-readability',theme,level,ink:f.ink,ratio:contrast(composite([...color(f.ink).slice(0,3),color(f.ink)[3]*f.opacity],color(f.background)),color(f.background)),passed:true});
     }
-  }
-  if(wanted('icons')||wanted('images')){
+  });
+  await runCase('verified-css-content-sprite-crop', async () => {
     const url=server.base+'/fixtures/diagnostics/document-content-sprite.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'CSS content sprite crop');
     const read=()=>page.evaluate("(()=>({background:getComputedStyle(document.querySelector('.bar')).backgroundColor,items:Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),p=getComputedStyle(e.parentElement),r=e.getBoundingClientRect(),q=e.parentElement.getBoundingClientRect();return[e.dataset.auditId,{content:s.content,filter:p.filter,ownFilter:s.filter,left:s.left,top:s.top,box:[r.width,r.height,q.width,q.height]}]}))}))()");
@@ -278,8 +357,8 @@ try {
       if(level==='off')await writeFile(path.join(directory,'content-sprite-'+theme+'.png'),Buffer.from((await page.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})).data,'base64'));
       results.push({case:'verified-css-content-sprite-crop',theme,level,passed:true});
     }
-  }
-  if(wanted('states')){
+  });
+  await runCase('camouflaged-editable-title', async () => {
     const url=server.base+'/fixtures/diagnostics/document-title.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'camouflaged editable title');
     const read=()=>page.evaluate("(()=>({background:getComputedStyle(document.querySelector('.bar')).backgroundColor,items:Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return[e.dataset.auditId,{ink:s.webkitTextFillColor,visibility:s.visibility,shadow:s.textShadow,stroke:s.webkitTextStrokeWidth,font:s.font,box:[r.width,r.height]}]}))}))()");
@@ -296,8 +375,8 @@ try {
       if(level==='off')await writeFile(path.join(directory,'title-'+theme+'.png'),Buffer.from((await page.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})).data,'base64'));
       results.push({case:'camouflaged-editable-title',theme,level,passed:true});
     }
-  }
-  if(wanted('borders')||wanted('states')){
+  });
+  await runCase('composite-rounded-field-frame', async () => {
     const url=server.base+'/fixtures/diagnostics/composite-search.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'composite search frame');await page.evaluate("document.body.style.zoom='1.25'");
     const read=()=>page.evaluate("(()=>({body:getComputedStyle(document.body).backgroundColor,items:Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return[e.dataset.auditId,{edge:s.borderTopColor,width:s.borderTopWidth,shadow:s.boxShadow,outline:s.outlineStyle,layer:(()=>{const a=getComputedStyle(e,'::after');return {content:a.content,shadow:a.boxShadow,top:a.top,pointer:a.pointerEvents}})(),overflow:s.overflow,display:s.display,rect:[r.x,r.y,r.width,r.height]}]}))}))()");
@@ -319,14 +398,15 @@ try {
       await page.evaluate('document.activeElement.blur()');
       results.push({case:'composite-rounded-field-frame',theme,level,passed:true});
     }
-  }
-  if(wanted('borders')||wanted('icons')){
+  });
+  await runCase('select-proxy-and-field-frames', async () => {
+    evidenceContext = { caseId: 'select-proxy-and-field-frames', state: 'source' };
     const url=server.base+'/fixtures/diagnostics/select-proxy-fields.html';
     await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'select replacement fields');
     await page.evaluate("document.body.style.zoom='1.25';document.querySelector('[data-audit-id=proxy]').classList.add('chosen-with-drop')");
     const read=()=>page.evaluate("(()=>({body:getComputedStyle(document.body).backgroundColor,items:Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return[e.dataset.auditId,{ink:s.webkitTextFillColor,background:s.backgroundColor,image:s.backgroundImage,filter:s.filter,position:s.backgroundPosition,size:s.backgroundSize,repeat:s.backgroundRepeat,edge:s.borderTopColor,width:s.borderTopWidth,shadow:s.boxShadow,box:[r.width,r.height],outline:s.outlineStyle,opacity:Number(s.opacity),disabled:e.previousElementSibling?.matches('select')?e.previousElementSibling.disabled:null}]}))}))()");
-    const source=await read(),ids=['proxy','search','text','email','number','denied','denied-search','transparent-search'];
+    const source=await sourcePaint(read,'select replacement fields'),ids=['proxy','search','text','email','number','denied','denied-search','transparent-search'];
     for(const theme of ['chromium','soft','contrast']){
       const strengths=[];let off;
       for(const level of ['off','very-low','low','medium','high','maximum']){
@@ -347,7 +427,7 @@ try {
           if(f.items[id].width!==source.items[id].width||JSON.stringify(f.items[id].box)!==JSON.stringify(source.items[id].box))throw Error('Field frame changed geometry '+id);
         }
         for(const id of ['proxy','search'])for(const prop of ['filter','position','size','repeat'])if(f.items[id][prop]!==source.items[id][prop])throw Error('Field glyph host/crop changed '+id+'/'+prop);
-        for(const id of ['multicolor','picture','overlap','denied-search','transparent-search'])if(f.items[id].image!==source.items[id].image)throw Error('Unsupported field image recolored');
+        for(const id of ['multicolor','picture','overlap','denied-search','transparent-search'])if(f.items[id].image!==source.items[id].image)throw Error('Unsupported field image recolored: '+JSON.stringify({theme,level,id,expected:source.items[id].image,actual:f.items[id].image}));
         if(theme==='chromium'&&f.items['overlap-label'].ink!==source.items['overlap-label'].ink)throw Error('Unverified overlapping image region treated as solid label backing');
         strengths.push(ids.map(id=>contrast(color(f.items[id].edge),composite(color(f.items[id].background),color(f.body)))));
         if(level==='off'){
@@ -366,9 +446,26 @@ try {
         results.push({case:'select-proxy-and-field-frames',theme,level,passed:true});
       }
       for(const state of ['chosen-container-active','active-current'])for(const level of ['off','maximum']){
+        evidenceContext = { caseId: 'select-proxy-and-field-frames', theme, level, state };
         await browser.rule(url,theme,level);await page.evaluate(`for(const id of ['proxy','denied'])document.querySelector('[data-audit-id='+id+']').classList.add('${state}','chosen-with-drop')`);
-        const active=await settled(read,f=>['proxy','denied'].every(id=>contrast(color(f.items[id].edge),color(f.items[id].background))>=4.49),theme+' active selector edge '+state+'/'+level);
-        for(const id of ['proxy','denied']){const ink=color(active.items[id].edge);if(ink[2]<=ink[0]||JSON.stringify(active.items[id].box)!==JSON.stringify(source.items[id].box))throw Error('Active selector edge lost blue/geometry');if(level==='maximum'&&!active.items[id].shadow?.includes('inset'))throw Error('Active selector did not strengthen inward')}
+        // This includes an offscreen control at 125% zoom. Neutral paint from
+        // the preceding state can already meet contrast while its queued
+        // source resampling is pending; wait for the requested state as well.
+        const active=await settled(read,f=>['proxy','denied'].every(id=>{
+          const ink=color(f.items[id].edge);
+          return ink[2]>ink[0]&&contrast(ink,color(f.items[id].background))>=4.49&&
+            (level!=='maximum'||f.items[id].shadow?.includes('inset'));
+        }),theme+' active selector edge '+state+'/'+level).catch(async error=>{
+          const paint=await read(),viewport=await page.evaluate("({height:innerHeight,scrollY,items:Object.fromEntries(['proxy','denied'].map(id=>{const e=document.querySelector('[data-audit-id='+id+']'),r=e.getBoundingClientRect();return[id,{classes:[...e.classList],rect:[r.x,r.y,r.width,r.height]}]}))})");
+          assertEvidence(false,'active-selector-state-ready',{blueGreaterThanRed:true,contrast:4.49,inset:level==='maximum'},
+            {reason:error.message,paint,viewport},evidenceContext);
+        });
+        for(const id of ['proxy','denied']){
+          const ink=color(active.items[id].edge), context={...evidenceContext,element:id};
+          assertEvidence(ink[2]>ink[0], 'active-selector-blue-ink', {blueGreaterThanRed:true}, {edge:active.items[id].edge,ink}, context);
+          assertEvidence(JSON.stringify(active.items[id].box)===JSON.stringify(source.items[id].box), 'active-selector-geometry', {box:source.items[id].box}, {box:active.items[id].box}, context);
+          if(level==='maximum')assertEvidence(active.items[id].shadow?.includes('inset'), 'active-selector-inward-emphasis', {inset:true}, {shadow:active.items[id].shadow}, context);
+        }
         await page.evaluate(`for(const id of ['proxy','denied'])document.querySelector('[data-audit-id='+id+']').classList.remove('${state}')`);
       }
       if(strengths.some((values,i)=>i&&values.some((v,j)=>v<strengths[i-1][j]-.01))||strengths[5].some((v,j)=>v<=strengths[0][j]+.1))throw Error('Field emphasis does not increase from repaired Off');
@@ -378,8 +475,8 @@ try {
       await settled(read,f=>f.items.proxy.image.startsWith('url("data:image/svg+xml,'),theme+' closed select resampling');
       await page.evaluate("document.querySelector('[data-audit-id=proxy]').classList.add('chosen-with-drop')");
     }
-  }
-  if(wanted('borders')||wanted('surfaces')){
+  });
+  await runCase('thin-semantic-progress', async () => {
     const url=server.base+'/fixtures/diagnostics/progress-indicator.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'semantic progress indicator');
     await page.evaluate("document.body.style.zoom='1.25'");
@@ -397,8 +494,8 @@ try {
       await settled(read,g=>g.items.partial.ink===f.items.partial.ink,theme+' progress resampling');
       results.push({case:'thin-semantic-progress',theme,level,passed:true});
     }
-  }
-  if(wanted('surfaces')||wanted('cards')){
+  });
+  await runCase('translucent-validation-gradient', async () => {
     const url=server.base+'/fixtures/diagnostics/infojobs-validation.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'translucent validation gradient');
     const read=()=>page.evaluate("(()=>({body:getComputedStyle(document.body).backgroundColor,items:Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return[e.dataset.auditId,{ink:s.color,fill:s.webkitTextFillColor,background:s.backgroundColor,image:s.backgroundImage,width:s.borderTopWidth,edge:s.borderTopColor,edgeStyle:s.borderTopStyle,box:[r.width,r.height],text:e.querySelector('p')&&getComputedStyle(e.querySelector('p')).webkitTextFillColor}]})),close:getComputedStyle(document.querySelector('.ij-CloseButton path')).fill}))()");
@@ -423,8 +520,8 @@ try {
       await settled(read,g=>JSON.stringify([g.items.title.fill,g.items.description.fill,g.items['action-label'].fill])===stable,theme+' gradient resampling');
       results.push({case:'translucent-validation-gradient',theme,level,textContrast:Math.min(...bgs.map(bg=>contrast(color(f.items.description.fill),bg))),passed:true});
     }
-  }
-  if(wanted('states')){
+  });
+  await runCase('navigation-hover-selection-underline', async () => {
     const url=server.base+'/fixtures/diagnostics/navigation-underlines.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'navigation wrapper underline');
     await page.evaluate("document.body.style.zoom='1.25'");
@@ -449,8 +546,8 @@ try {
         results.push({case:'navigation-hover-selection-underline',theme,level,passed:true});
       }
     }
-  }
-  if(wanted('states')){
+  });
+  await runCase('navigation-rest-hover-separation', async () => {
     const url=server.base+'/fixtures/diagnostics/navigation-surfaces.html';
     await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'navigation surfaces');
@@ -472,8 +569,8 @@ try {
       await settled(read,f=>ids.every(id=>f.items[id].fill===rest.items[id].fill),theme+' navigation after focus/scroll');
       results.push({case:'navigation-rest-hover-separation',theme,level,passed:true});
     }
-  }
-  if(wanted('icons')){
+  });
+  await runCase('unlinked-inline-loading-wordmark', async () => {
     const url=server.base+'/fixtures/diagnostics/loading-wordmark.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'loading wordmark');
     const read=()=>page.evaluate("(()=>{const e=document.querySelector('[data-audit-id=wordmark]'),r=e.getBoundingClientRect(),p=e.querySelector('path'),bar=document.querySelector('#preloader');return{ink:getComputedStyle(p).fill,path:p.getAttribute('d'),box:[r.width,r.height],background:getComputedStyle(document.body).backgroundColor,progress:[bar.outerHTML,getComputedStyle(bar.querySelector('#loading-line-main')).animationName],animated:[...document.querySelectorAll('[data-audit-id=animated],[data-audit-id=css-animated]')].map(e=>e.outerHTML),mixed:[...document.querySelector('[data-audit-id=mixed]').querySelectorAll('path')].map(p=>getComputedStyle(p).fill)}})()");const source=await read();
     for(const theme of ['chromium','soft','contrast'])for(const level of ['off','maximum']){
@@ -481,18 +578,18 @@ try {
       if(f.path!==source.path||JSON.stringify(f.box)!==JSON.stringify(source.box)||JSON.stringify(f.progress)!==JSON.stringify(source.progress)||JSON.stringify(f.animated)!==JSON.stringify(source.animated)||JSON.stringify(f.mixed)!==JSON.stringify(source.mixed))throw Error('Loading vector geometry, progress animation or palette changed');
       results.push({case:'unlinked-inline-loading-wordmark',theme,level,ratio:contrast(color(f.ink),color(f.background)),passed:true});
     }
-  }
-  if (['icons','images'].some(wanted)) {
+  });
+  await runCase('verified-opacity-only-artwork', async () => {
     const url=server.base+'/fixtures/diagnostics/opacity-artwork.html';
     await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'opacity artwork');
     const read=()=>page.evaluate("(()=>Object.fromEntries([...document.images].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return[e.dataset.auditId,{src:e.getAttribute('src'),filter:s.filter,content:s.content,box:[r.width,r.height],own:s.backgroundColor,background:getComputedStyle(document.body).backgroundColor}]})))()");
-    const source=await read();
+    const source=await sourcePaint(read,'opacity artwork');
     for(const theme of ['chromium','soft','contrast'])for(const level of ['off','maximum']){
       await browser.rule(url,theme,level);
       const f=await settled(read,f=>f.pulse.filter!=='none'&&f.static.filter!=='none'&&f['static-mixed'].own==='rgb(255, 255, 255)'&&f.pulse.background===({chromium:'rgb(18, 18, 18)',soft:'rgb(48, 55, 69)',contrast:'rgb(17, 21, 29)'})[theme],theme+' opacity-only glyph tint and static mixed backing');
       if(f['static-mixed'].filter!=='none'||f['static-mixed'].own!=='rgb(255, 255, 255)'||color(f.pulse.own)?.[3]!==0||color(f.static.own)?.[3]!==0)throw Error('Mixed artwork backing leaked into uniform glyph tint: '+JSON.stringify({theme,level,f}));
-      if(f.static.filter!==f.pulse.filter)throw Error('Equivalent static/opacity source inks received different opaque tints');
+      if(f.static.filter!==f.pulse.filter)throw Error('Equivalent static/opacity source inks received different opaque tints: '+JSON.stringify({theme,level,static:f.static.filter,pulse:f.pulse.filter}));
       for(const[id,paint]of Object.entries(f)){
         if(paint.src!==source[id].src||JSON.stringify(paint.box)!==JSON.stringify(source[id].box)||paint.content!=='normal')throw Error('Opacity image resource/geometry/animation replaced: '+id);
         if(!['static','pulse'].includes(id)&&paint.filter!=='none')throw Error('Unsupported animation or readable ink tinted: '+id);
@@ -516,8 +613,8 @@ try {
       }
       results.push({case:'verified-opacity-only-artwork',theme,level,passed:true});
     }
-  }
-  if (wanted('cards')) {
+  });
+  await runCase('source-separated-dark-panel', async () => {
     const url=server.base+'/fixtures/diagnostics/dark-source-panel.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'dark source panel');
     const read=()=>page.evaluate("(()=>Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();let p=e.parentElement,bg;while(p){bg=getComputedStyle(p).backgroundColor;if(bg.startsWith('rgb('))break;p=p.parentElement}return[e.dataset.auditId,{background:s.backgroundColor,parent:bg,box:[r.width,r.height],border:s.borderBottomWidth,outline:s.outlineStyle,shadow:s.boxShadow}]})))()");
     const source=await read();
@@ -529,8 +626,8 @@ try {
       if(theme==='chromium'&&f.flat.background!==source.flat.background)throw Error('Unpadded band lifted');
       results.push({case:'source-separated-dark-panel',theme,level,ratio:contrast(color(f.positive.background),color(f.positive.parent)),passed:true});
     }
-  }
-  if (wanted('states')) {
+  });
+  await runCase('scroll-default-link-stability', async () => {
     const url=server.base+'/fixtures/scroll-banner.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.querySelectorAll('article').length===240"),'scroll link case');
     await page.evaluate("document.querySelector('article').insertAdjacentHTML('beforeend','<a data-audit-id=authored-link href=\"#content\" style=\"color:#236abe\">Authored blue link</a><span style=\"color-scheme:dark\"><a data-audit-id=authored-scheme href=\"#content\">Authored dark scheme</a></span>')");
@@ -547,11 +644,12 @@ try {
       if(theme==='chromium'&&frames.some(f=>f[2].scheme!=='dark'))throw Error('Authored dark color-scheme was not retained');
       results.push({case:'scroll-default-link-stability',theme,level,frames:frames.length,passed:true});
     }
-  }
-  if (['icons','images'].some(wanted)) {
+  });
+  await runCase('nested-card-image-glyph', async () => {
     const url=server.base+'/fixtures/diagnostics/kotlin-community.html';
     await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'nested card image');
+    await page.evaluate('Promise.all([...document.images].map(image=>image.decode()))');
     const read=()=>page.evaluate(`(async()=>{const out={};for(const e of document.querySelectorAll('img')){
       const s=getComputedStyle(e),r=e.getBoundingClientRect();let n=e,bg;
       while(n){const c=getComputedStyle(n).backgroundColor;if(/^rgb\\(/.test(c)){bg=c;break;}n=n.parentElement;}
@@ -559,16 +657,15 @@ try {
       const a=x.getImageData(0,0,c.width,c.height).data,inks=[];for(let i=0;i<a.length;i+=4)if(a[i+3]>=224)inks.push([...a.slice(i,i+3),1]);
       out[e.dataset.auditId]={src:e.getAttribute('src'),box:[r.width,r.height],filter:s.filter,content:s.content,background:bg,own:s.backgroundColor,inks};
     }return out})()`);
-    const source=await read();
+    const source=await sourcePaint(read,'nested card image source');
     for(const theme of ['chromium','soft','contrast'])for(const level of ['off','maximum']){
       await browser.rule(url,theme,level);
-      await until(async()=>{const f=await read();return f.reported.filter!=='none'&&f.reported.inks.length&&f.reported.inks.every(i=>i.slice(0,3).every(v=>v>=248)&&contrast(i,color(f.reported.background))>=6.9);},theme+' nested neutral card glyph brightness/contrast');
-      const f=await read();
+      const f=await settled(read,f=>f.reported.filter!=='none'&&f.reported.inks.length&&f.reported.inks.every(i=>i.slice(0,3).every(v=>v>=248)&&contrast(i,color(f.reported.background))>=6.9)&&['white','large','unlabeled','unlinked','deep'].every(id=>f[id].filter!=='none'&&f[id].inks.length),theme+' '+level+' all neutral glyphs adapted');
       for(const id of Object.keys(source)){
         if(f[id].src!==source[id].src||JSON.stringify(f[id].box)!==JSON.stringify(source[id].box)||f[id].content!=='normal'||color(f[id].own)?.[3]!==0)throw Error('Nested glyph resource, geometry or backing changed: '+id);
         if(!['reported','white','large','unlabeled','unlinked','deep'].includes(id)&&f[id].filter!==source[id].filter)throw Error('Nested glyph tint leaked to preservation control: '+id);
       }
-      for(const id of ['large','unlabeled','unlinked','deep'])if(f[id].filter==='none'||f[id].inks.some(i=>contrast(i,color(f[id].background))<6.9))throw Error('Verified neutral silhouette stayed dark: '+id);
+      for(const id of ['large','unlabeled','unlinked','deep'])if(f[id].filter==='none'||f[id].inks.some(i=>contrast(i,color(f[id].background))<6.9))throw Error('Verified neutral silhouette stayed dark: '+theme+'/'+level+'/'+id+' '+JSON.stringify({filter:f[id].filter,background:f[id].background,inks:[...new Set(f[id].inks.map(ink=>ink.join(',')))]}));
       if(f.white.filter==='none'||f.white.inks.some(i=>contrast(i,color(f.white.background))<6.9))throw Error('Originally white image wrapper lost glyph contrast');
       if(f.multicolor.inks.some((ink,i)=>JSON.stringify(ink)!==JSON.stringify(source.multicolor.inks[i])))throw Error('Nested multicolor palette changed');
       await page.evaluate("document.querySelector('[data-audit-id=card]').classList.toggle('resample');scrollTo(0,100);scrollTo(0,0)");
@@ -583,8 +680,8 @@ try {
     }
     await browser.rule(url,'source');
     await until(async()=>{const f=await read();return f.reported.filter==='none'&&f.reported.background===source.reported.background;},'nested image source restored');
-  }
-  if(wanted('images')){
+  });
+  await runCase('background-wordmarks', async () => {
     const url=server.base+'/fixtures/diagnostics/background-wordmarks.html';
     await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'CSS wordmarks');
@@ -624,8 +721,8 @@ try {
       if(level==='off'||level==='maximum')await until(async()=>{const a=await pixels();return a.every((v,i)=>Math.abs(v-baseline[i])<=3);},theme+' unchanged mixed-artwork pixels').catch(async e=>{const a=await pixels();await writeFile(path.join(directory,'wordmark-pixel-debug.json'),JSON.stringify({baseline,actual:a,facts:await read()}));throw e;});
       results.push({case:'background-wordmarks',theme,level,passed:true});
     }
-  }
-  if (['icons','images'].some(wanted)) {
+  });
+  await runCase('headed-compact-image-glyph', async () => {
     const url=server.base+'/fixtures/diagnostics/spring-card-glyph.html';
     await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'headed card glyph');
@@ -641,9 +738,10 @@ try {
     const source=await read();
     for(const theme of ['chromium','soft','contrast']) for(const level of ['off','maximum']) {
       await browser.rule(url,theme,level);
-      await until(async()=>{const f=await read();return f.headset.content.startsWith('url(');},theme+' headed image ink');
-      const facts=await read(),glyph=facts.headset;
-      if(JSON.stringify(facts['plain-label'].inks)!==JSON.stringify(glyph.inks))throw Error('Equivalent heading/plain label glyph inks differ: '+theme);
+      // Each image completes its own verification/adaptation. The first
+      // positive becoming ready is not readiness of the equivalent second one.
+      const facts=await settled(read,f=>['headset','plain-label'].every(id=>f[id].content.startsWith('url(')),theme+' '+level+' equivalent image glyphs stable'),glyph=facts.headset;
+      if(JSON.stringify(facts['plain-label'].inks)!==JSON.stringify(glyph.inks))throw Error('Equivalent heading/plain label glyph inks differ: '+theme+'/'+level+' '+JSON.stringify(Object.fromEntries(['headset','plain-label'].map(id=>[id,{filter:facts[id].filter,background:facts[id].background,adapted:facts[id].content.startsWith('url('),inks:[...new Set(facts[id].inks.map(ink=>ink.join(',')))]}]))));
       if(!glyph.inks.length||glyph.inks.some(ink=>contrast(ink,color(glyph.background))<7||ink[2]-ink[0]<80)) throw Error('Card glyph lost contrast or blue chroma: '+theme);
       if(theme==='chromium'&&glyph.inks.some(ink=>ink.slice(0,3).some((v,i)=>Math.abs(v-[127,188,240][i])>1))) throw Error('Simple blue SVG lost its native-derived ink');
       for(const id of Object.keys(facts)) {
@@ -661,8 +759,8 @@ try {
       }
       results.push({case:'headed-compact-image-glyph',theme,level,contrast:Math.min(...glyph.inks.map(ink=>contrast(ink,color(glyph.background)))),passed:true});
     }
-  }
-  if (['borders','images','icons'].some(wanted)) {
+  });
+  await runCase('linked-course-boundary-and-mixed-logo', async () => {
     const url = server.base + '/fixtures/diagnostics/spring-controls.html';
     await browser.rule(url, 'source'); await page.send('Page.navigate', { url });
     await until(() => page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"), 'reported course controls');
@@ -753,8 +851,8 @@ try {
         throw Error('Native handoff reintroduced a bright filter border: '+theme+' '+JSON.stringify(frames));
       results.push({case:'native-return-boundary',theme,cycle,frames,passed:true});
     }
-  }
-  if (wanted('icons')) {
+  });
+  await runCase('sprite-and-background-glyphs', async () => {
   const readIcons = () => page.evaluate(`(async()=>{
     async function ink(selector,pseudo='',spriteX=0){
       const e=document.querySelector(selector),s=getComputedStyle(e,pseudo),image=new Image();
@@ -796,8 +894,8 @@ try {
     }
     results.push({ case: 'sprite-and-background-glyphs', theme, passed: true });
   }
-  }
-  if(wanted('borders')){
+  });
+  await runCase('strong-generated-frame', async () => {
     const url=server.base+'/fixtures/generated-frames.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});await until(()=>page.evaluate("document.querySelectorAll('li').length===5"),'generated strong frame');
     const read=()=>page.evaluate("(()=>{let e=document.querySelector('li.strong'),s=getComputedStyle(e,'::before'),r=e.getBoundingClientRect();return{ink:s.borderTopColor,width:s.borderTopWidth,shadow:s.boxShadow,box:[r.width,r.height],background:getComputedStyle(document.body).backgroundColor,reserved:getComputedStyle(document.querySelector('li.reserved'),'::before').borderTopColor,transform:getComputedStyle(document.querySelector('li.arrow'),'::before').transform}})()");const original=await read();
     for(const theme of ['chromium','soft','contrast'])for(const level of ['off','maximum']){
@@ -805,8 +903,8 @@ try {
       if(f.width!==original.width||JSON.stringify(f.box)!==JSON.stringify(original.box)||color(f.reserved)[3]!==0||f.transform!==original.transform)throw Error('Generated frame geometry or transparency changed');
       results.push({case:'strong-generated-frame',theme,level,passed:true});
     }
-  }
-  if (wanted('borders')) {
+  });
+  await runCase('neutral-border-levels-and-glyph-control', async () => {
   const bordersUrl = await open('borders');
   const readBorders = () => page.evaluate("(()=>{const out={};for(const id of ['matching-chip','fractional-edge','transparent-edge','generated-edge','compact-social','shadow-card','near-white-card','authored-dark-frame','authored-strong-frame','selected-card','linked-heading-card','matching-blue-fill']){const e=document.querySelector('[data-audit-id='+id+']'),s=getComputedStyle(e),p=getComputedStyle(e,'::after'),r=e.getBoundingClientRect();let n=e,bg;while(n){const t=getComputedStyle(n);if(/^rgb\\(/.test(t.backgroundColor)){bg=t.backgroundColor;break;}n=n.parentElement;}out[id]={box:[r.width,r.height],width:s.borderTopWidth,edge:s.borderTopColor,background:bg,shadow:s.boxShadow,outline:s.outlineStyle,afterWidth:p.borderTopWidth,after:p.borderTopColor};}return out})()");
   const sourceBorders = await readBorders();
@@ -870,8 +968,8 @@ try {
     }
     results.push({case:'neutral-border-levels-and-glyph-control',theme,passed:true});
   }
-  }
-  if (wanted('images')) {
+  });
+  await runCase('static-versus-animated-artwork', async () => {
   const imagesUrl = await open('images');
   for (const theme of ['chromium', 'soft', 'contrast']) {
     await browser.rule(imagesUrl, theme, 'off');
@@ -890,8 +988,8 @@ try {
     if (bare.filter !== 'none' || bare.background !== 'rgb(255, 255, 255)') throw Error('Captioned animated artwork lost its original backing or was tinted');
     results.push({ case: 'static-versus-animated-artwork', theme, passed: true });
   }
-  }
-  if (wanted('surfaces')) {
+  });
+  await runCase('gradient-and-picture-labels', async () => {
   const surfacesUrl = await open('surfaces');
   const readLabels = () => page.evaluate(`(()=>{
     return [...document.querySelectorAll('.photo-card>strong,.photo-card>span')].map(e=>{
@@ -954,8 +1052,8 @@ try {
     await writeFile(path.join(directory,'flow-text-'+theme+'.png'),Buffer.from((await page.send('Page.captureScreenshot',{format:'png'})).data,'base64'));
     results.push({ case: 'gradient-and-picture-labels', theme, passed: true });
   }
-  }
-  if (wanted('states')) {
+  });
+  await runCase('verified-svg-scroll-state-stability', async () => {
   const statesUrl = await open('states');
   for(const theme of ['chromium','soft','contrast']) {
     await browser.rule(statesUrl,theme,'off');
@@ -998,8 +1096,8 @@ try {
     if (shadows[0] === shadows[1]) throw Error('Card border levels have no effect');
     results.push({ case: 'short-shadow-card-emphasis', theme, passed: true });
   }
-  }
-  if (wanted('contact')) {
+  });
+  await runCase('contact-positives-and-conservative-negatives', async () => {
   const contactUrl = server.base + '/fixtures/contact-glyphs.html';
   await browser.rule(contactUrl, 'source'); await page.send('Page.navigate', { url: contactUrl });
   await until(() => page.evaluate("document.readyState==='complete'&&!!document.querySelector('#media')"), 'contact controls');
@@ -1048,8 +1146,8 @@ try {
     if (theme === 'chromium') await writeFile(path.join(directory, 'contact-glyphs-corrected.png'),
       Buffer.from((await page.send('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
   }
-  }
-  if (wanted('contact')) {
+  });
+  await runCase('jitpack-paint', async () => {
     const url=server.base+'/fixtures/diagnostics/jitpack-paint.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'JitPack font fixture');
     const read=()=>page.evaluate("(()=>Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),p=getComputedStyle(e,'::before'),r=e.getBoundingClientRect();let n=e,b;while(n){b=getComputedStyle(n).backgroundColor;if(b!=='rgba(0, 0, 0, 0)')break;n=n.parentElement}return[e.dataset.auditId,{color:s.color,background:b,pseudo:p.color,opacity:+s.opacity,edge:s.borderBottomColor,width:s.borderBottomWidth,box:[r.width,r.height]}]})))()");
@@ -1087,8 +1185,8 @@ try {
       if(contrast([140,146,157,1],row)<contrast([140,146,157,1],color(source.partners.background)))throw Error('Original GitLab wordmark lost contrast compared with its light backing');
       results.push({case:'jitpack-paint',theme,level,logos,passed:true});
     }
-  }
-  if(wanted('cards')){
+  });
+  await runCase('kotlin-feedback', async () => {
     const url=server.base+'/fixtures/diagnostics/kotlin-feedback.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'feedback panel');
     const read=()=>page.evaluate("(()=>Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return[e.dataset.auditId,{background:s.backgroundColor,color:s.color,shadow:s.boxShadow,widths:['Top','Right','Bottom','Left'].map(p=>s['border'+p+'Width']),outline:s.outlineStyle,outlineWidth:s.outlineWidth,outlineColor:s.outlineColor,box:[r.width,r.height],radius:s.borderRadius,canvas:getComputedStyle(document.body).backgroundColor}]})))()");
@@ -1119,8 +1217,8 @@ try {
         results.push({case:'kotlin-feedback',theme,level,passed:true});
       }
     }
-  }
-  if(wanted('cards')){
+  });
+  await runCase('neutral-action-surfaces', async () => {
     const url=server.base+'/fixtures/diagnostics/neutral-action-surfaces.html';
     await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'neutral action surfaces');
@@ -1152,16 +1250,17 @@ try {
         results.push({case:'neutral-action-surfaces',theme,level,contrasts:['filled','button'].map(id=>contrast(color(f[id].fill),color(f[id].outside))),passed:true});
       }
     }
-  }
-  if(wanted('cards')){
+  });
+  await runCase('kotlin-article', async () => {
     const url=server.base+'/fixtures/diagnostics/kotlin-article.html';await browser.rule(url,'source');await page.send('Page.navigate',{url});
     await until(()=>page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"),'Kotlin article');
+    await page.evaluate('Promise.all([...document.images].map(image=>image.decode()))');
     const read=()=>page.evaluate("(()=>Object.fromEntries([...document.querySelectorAll('[data-audit-id]')].map(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return[e.dataset.auditId,{background:s.backgroundColor,shadow:s.boxShadow,filter:s.filter,box:[r.width,r.height],radius:s.borderRadius,outside:getComputedStyle(e.closest('.api-panel')??document.body).backgroundColor,canvas:getComputedStyle(document.body).backgroundColor,src:e.getAttribute('src'),shapes:[...e.querySelectorAll('path,circle')].map(n=>n.outerHTML),path:e.querySelector('path')&&getComputedStyle(e.querySelector('path')).fill}]})))()");
-    const source=await read();
+    const source=await sourcePaint(read,'Kotlin article source');
     for(const theme of ['chromium','soft','contrast']){let previous=[1,1];for(const level of ['off','very-low','low','medium','high','maximum']){
       await browser.rule(url,theme,level);
-      await until(async()=>{const f=await read(),glyph=f['edit-icon'];return f['inline-icon'].filter!=='none'&&contrast(glyph.filter==='brightness(0) invert(1)'?[255,255,255,1]:color(glyph.path),color(f.note.background))>=4.5&&['note','button'].every((id,i)=>level==='off'?f[id].shadow==='none':f[id].shadow.includes('inset')&&contrast(color(f[id].shadow.match(/rgba?\([^)]+\)/)[0]),color(f[id].background))>previous[i]+.05);},theme+'/'+level+' sibling glyphs').catch(async e=>{throw Error(e.message+' '+JSON.stringify(await read()));});
-      const f=await read(),canvas=await page.evaluate("getComputedStyle(document.body).backgroundColor");
+      const f=await settled(read,f=>{const glyph=f['edit-icon'];return ['inline-icon','unpaired','isolated-image'].every(id=>f[id].filter!=='none')&&contrast(glyph.filter==='brightness(0) invert(1)'?[255,255,255,1]:color(glyph.path),color(f.note.background))>=4.5&&['note','button'].every((id,i)=>level==='off'?f[id].shadow==='none':f[id].shadow.includes('inset')&&contrast(color(f[id].shadow.match(/rgba?\([^)]+\)/)[0]),color(f[id].background))>previous[i]+.05);},theme+'/'+level+' all Kotlin glyphs and surfaces stable').catch(async e=>{throw Error(e.message+' '+JSON.stringify(await read()));});
+      const canvas=await page.evaluate("getComputedStyle(document.body).backgroundColor");
       if(contrast(color(f.button.background),composite(color(f.button.outside),color(f.button.canvas)))<1.5)throw Error('Kotlin filled action merges with canvas');
       if(contrast(color(f.note.background),color(canvas))<1.1)throw Error('Semantic note merges with canvas');
       for(const [i,id]of ['note','button'].entries()){
@@ -1174,7 +1273,8 @@ try {
         }
       }
       for(const id of ['edit-icon','inline-icon','button'])if(JSON.stringify(f[id].box)!==JSON.stringify(source[id].box)||f[id].src!==source[id].src||JSON.stringify(f[id].shapes)!==JSON.stringify(source[id].shapes))throw Error('Kotlin glyph resource or geometry changed: '+id);
-      if(f.unpaired.filter==='none'||f['isolated-image'].filter==='none'||f.ordinary.shadow!=='none')throw Error('Kotlin contextual repair leaked into negative');
+      for(const id of ['unpaired','isolated-image'])if(f[id].filter==='none')throw Error('Verified standalone Kotlin glyph not adapted: '+theme+'/'+level+'/'+id+' '+JSON.stringify(f[id]));
+      if(f.ordinary.shadow!=='none')throw Error('Kotlin contextual repair leaked into ordinary negative: '+theme+'/'+level+' '+JSON.stringify(f.ordinary));
       if(level==='off'||level==='maximum'){
         for(const id of ['edit-icon','inline-icon','unpaired']){
           const clip=await page.evaluate(`(()=>{const r=document.querySelector('[data-audit-id=${id}]').getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()`);
@@ -1187,8 +1287,8 @@ try {
       }
       results.push({case:'kotlin-article',theme,level,passed:true});
     }}
-  }
-  if (wanted('cards')) {
+  });
+  await runCase('clipped-heading-panel', async () => {
   const bannerUrl=server.base+'/fixtures/diagnostics/clipped-heading-panel.html';
   await page.send('Emulation.setDeviceMetricsOverride',{width:1600,height:1000,deviceScaleFactor:1,mobile:false});
   await browser.rule(bannerUrl,'source');await page.send('Page.navigate',{url:bannerUrl});
@@ -1273,7 +1373,49 @@ try {
     if (contrast(color(facts.card), color(facts.page)) < 1.2 || facts.size.some((v,i)=>Math.abs(v-dimensions[i])>.05)) throw Error('Card/page surfaces are indistinct or geometry changed: ' + theme);
     results.push({ case: 'article-page-surface-separation', theme, passed: true, ...facts });
   }
+  });
+  assertEvidence(results.length === selection.expectedResults && caseExecutions.length === selection.units.length, 'selection-result-inventory', {results:selection.expectedResults,units:selection.units.length}, {results:results.length,units:caseExecutions.length}, {caseId:'selection'});
+  const summary = {selection,caseExecutions,groups:selected,elapsedMs:Math.round(performance.now()-started),results,environment};
+  await writeFile(path.join(runDirectory, 'results.json'), JSON.stringify(summary, null, 2));
+  await writeFile(path.join(directory, 'shared-rendering-checks'+(selection.mode==='full'?'':selection.mode==='cases'?'-cases':'-'+selected.join('-'))+'.json'), JSON.stringify(summary, null, 2));
+  outcome = 'passed';
+  console.log(`Shared rendering checks passed: ${results.length} theme/case combinations; scope: ${selection.mode}; groups: ${selected.join(", ")}. See the JSON report for exact cases.`);
+} catch (error) {
+  primaryError = error;
+  try {
+    if (page) {
+      try { environment.failureRendererIdentity = compareRendererIdentity(environment.expectedRendererIdentity, await browser.rendererIdentity(page)); }
+      catch { environment.failureRendererIdentity = {status:'unavailable',reason:'browser-unavailable'}; }
+    }
+    await metrics.measure('failure-evidence', () => writeFailureEvidence({ directory: runDirectory, page, base: server?.base, error,
+      context: evidenceContext, results, environment }));
+    console.error('Failure evidence: ' + runDirectory);
+  } catch { console.error('Failure evidence could not be completed: ' + runDirectory); }
+  throw error;
+
+} finally {
+  const cleanupDetails = primaryError?.cleanup ? { browser: primaryError.cleanup } : {};
+  let cleanupError = primaryError?.cleanup?.status === 'incomplete' ? Error('Browser startup cleanup incomplete') : undefined;
+  for (const [phase, resource] of [['browser-cleanup', browser], ['server-cleanup', server]]) {
+    if (!resource) continue;
+    try {
+      const result = await metrics.measure(phase, () => resource === browser ? closeBrowser(browser) : resource.close());
+      cleanupDetails[resource === browser ? 'browser' : 'server'] = result ?? { status: 'complete' };
+    } catch (error) {
+      cleanupDetails[resource === browser ? 'browser' : 'server'] = error.cleanup ?? { status: 'incomplete', error: error.message };
+      cleanupError ??= error; outcome = 'failed';
+    }
   }
-  await writeFile(path.join(directory, 'shared-rendering-checks'+(args.length?'-'+selected.join('-'):'')+'.json'), JSON.stringify({groups:selected,elapsedMs:Math.round(performance.now()-started),results}, null, 2));
-  console.log(`Shared rendering checks passed: ${results.length} theme/case combinations; groups: ${selected.join(", ")}. See the JSON report for exact cases.`);
-} finally { await browser.close(); await server.close(); }
+  if(abortRequested)outcome='aborted';
+  try { await writeFile(path.join(runDirectory, 'run.json'), JSON.stringify({status:outcome,environment,completedResults:results.length,cleanup:cleanupError?'incomplete':'complete',cleanupDetails,abortReason,failureSignature:failureSignature(primaryError,evidenceContext.caseId)},null,2)); }
+  catch (error) { cleanupError ??= error; outcome = 'failed'; }
+  if(abortRequested)outcome='aborted';
+  finishRun(outcome);
+  if(process.connected){
+    process.removeListener('disconnect',parentDisconnected);
+    await new Promise(resolve=>{process.send({type:'shared-run-finished',status:outcome,cleanup:cleanupError?'incomplete':'complete'},()=>{if(process.connected)process.disconnect();resolve();});});
+  }
+  clearTimeout(abortDeadline);
+  process.removeListener('message',abortMessage); process.removeListener('disconnect',parentDisconnected);
+  if (cleanupError && !primaryError) throw cleanupError;
+}

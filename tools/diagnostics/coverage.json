@@ -17,7 +17,7 @@
       "residual-rendering-review",
       "compact-action-paint"
     ],
-    "evidence": "Reporter reopened the quantity arrow and suspects the wishlist main text frame rather than the arrow frame. Prior context was Simulated Native / Off; latest screenshots do not independently reconfirm settings. The local native-overlay and standalone split-arrow checks pass but omit the complete joined pair and current live variant CSS. Full source/applied frame and glyph layers remain required; do not compensate with a new site-specific rule."
+    "evidence": "Reporter reopened the quantity arrow and suspects the wishlist main text frame rather than the arrow frame. Prior context was Simulated Native / Off; latest screenshots do not independently reconfirm settings. The local native-overlay and standalone split-arrow checks pass but omit the complete joined pair and current live variant CSS. Full source/applied frame and glyph layers remain required; do not compensate with a new site-specific rule. Reporter explicitly deferred Amazon visual adjustments on 13 November 2026; retain the evidence gap while prioritizing performance."
   },
   {
     "id": "embedded-counter-startup-followup",
@@ -36,7 +36,7 @@
     "cases": [
       "extension-context-reload"
     ],
-    "evidence": "Personal DevTools displayed Extension context invalidated errors. This does not prove those callbacks are the currently active renderer or the cause of the reported paint. Browser control was stopped with Escape. A local manual post-reload mutation/recovery scenario records this gap; the automated suite does not reload an unpacked extension or assert stale-context cleanup."
+    "evidence": "Personal DevTools displayed Extension context invalidated errors. This does not prove those callbacks are the currently active renderer or the cause of the reported paint. Browser control was stopped with Escape. A local manual post-reload mutation/recovery scenario retains the gap. The separate identity tooling test now requests real runtime.reload on an owned extension copy: the tested Brave session invalidates the context, queries remain unavailable, and a separate fresh process matches current source. Extensions-page reload recovery and stale observer cleanup remain pending."
   },
   {
     "id": "embedded-vector-caption",
@@ -101,7 +101,7 @@
     "cases": [
       "dynamic-catalogue"
     ],
-    "evidence": "Public BOOTH initial isolated baseline is about 163ms to the active response in one run (about 84ms script and 57ms style); this does not reproduce all user conditions. Nested dirty roots are coalesced and nonglyph nodes reject before activation-wrapper queries. Raw workload/live traces distinguish renderer work from network loading. Broader live smoothness remains pending. Reporter follow-up prioritizes Amazon for the next optimization session: initial application and scrolling during dynamic loading. BOOTH startup, Indeed nested-pane scrolling and visibly sequential control updates remain in scope. Gather comparable cold/warm frame and style/layout/queue/decode traces; do not treat active-response timings or synthetic workload completion as live smoothness acceptance."
+    "evidence": "Public BOOTH initial isolated baseline is about 163ms to the active response in one run (about 84ms script and 57ms style); this does not reproduce all user conditions. Nested dirty roots are coalesced and nonglyph nodes reject before activation-wrapper queries. Raw workload/live traces distinguish renderer work from network loading. Broader live smoothness remains pending. Reporter follow-up prioritizes Amazon for the next optimization session: initial application and scrolling during dynamic loading. BOOTH startup, Indeed nested-pane scrolling and visibly sequential control updates remain in scope. Gather comparable cold/warm frame and style/layout/queue/decode traces; do not treat active-response timings or synthetic workload completion as live smoothness acceptance. Performance investigation on 13 November found substantial style-recalculation work in anonymous public Amazon.es sampling; navigation and first lazy-loading cycles are separate from steady observations. Hoisting the authored-scheme sampling context over each bounded idle callback reduced complete-scan median from 2737ms to 2296ms in six baseline/candidate samples of the existing 1511-node synthetic catalogue, with identical 1440x1000 local PNG pixels. Production Chromium groups are now 16, palette groups four, with the soft 6ms check. Both public-page variants still had queued work after a 45s observation on different content, so live smoothness and completion are not passed. Automated catalogue checks now observe dark scheme at frame boundaries, effective paint of the offscreen tail and unchanged geometry in all custom themes. The retained colors=varied query gives the existing synthetic cards distinct authored fills/borders, with the shared-color default as a control. It changes source colors and adds a 1px border intentionally; compare each variant with its own source geometry. A specificity-preserving indexed-selector research copy retained all final facts/pixels and reduced median style work by 19.85% and completed work by 12.12% in six local pairs with 293 paint entries/499 CSS rules. It missed its prospective 20% style/15% complete-work gates and is not promoted. Shared-color controls have seven entries/13 rules; live acceptance remains pending, and the latest public attempt did not reach the normal page. Timings are descriptive local evidence, not an automated pass."
   },
   {
     "id": "toolbar-control-families",
@@ -158,7 +158,7 @@
       "sprite-batch",
       "document-content-sprite"
     ],
-    "evidence": "A cold synthetic 32-crop run reproduced about 20 visible steps over 263ms. Two independent source reads and four concurrent tiny crop decodes, with resource-cohort publication, produced one visible update at about 117ms in an isolated run. Cached static/CORS proof and original source/crop bounds remain. A 200ms ready-work publication bound avoids indefinite holding by a slow crop. All-theme cold frame traces and source offsets are asserted; this is not a general live-page performance certification."
+    "evidence": "A cold synthetic 32-crop run reproduced about 20 visible steps over 263ms. Two independent source reads and four concurrent tiny crop decodes, with resource-cohort publication, produced one visible update at about 117ms in an isolated run. Cached static/CORS proof and original source/crop bounds remain. A 200ms ready-work publication bound avoids indefinite holding by a slow crop. All-theme cold frame traces and source offsets are asserted; this is not a general live-page performance certification. Before the current coordination fix, complete and isolated controls both observed Soft dark counts 0/1/32; both failed reports remain retained. Instrumented copies then showed all 32 crops ready in one non-bounded publication with no timer fire, followed by an idle paint batch while the visible cohort pass was still queued. Publication now requests the existing pre-paint microtask flush, completing visible users before idle work. The unchanged zero/all assertion passes all three themes, and the fixed attribution copy records 0/32 in all three. Source colors, offsets, static/CORS proof, concurrency, cache limits and the 200ms bound are unchanged. Live page and general monitor-presentation acceptance remain separate."
   },
   {
     "id": "transparent-inline-label-frame",
@@ -282,7 +282,8 @@
     "status": "partial",
     "cases": [
       "scroll-banner.html"
-    ]
+    ],
+    "evidence": "After source-context measurements, Simulated Native uses at most 16 samples per group to amortize inherited-style invalidation; palette groups retain four. The elapsed-time check is still a soft 6ms limit, not a hard callback bound; timed-out callbacks process at most one bounded group. Matched notice-scroll observations support this granularity; no fixed frame-rate promise is made."
   },
   {
     "id": "c10afa92cff0",
@@ -677,7 +678,7 @@
     "cases": [
       "headed-card-glyph"
     ],
-    "evidence": "Heading and plain-text siblings use equivalent verified compact circular glyph repair. All custom themes/Off/Maximum compare actual ink/backing, geometry, resources and equivalent color; isolated and internally backed multitone images remain negatives."
+    "evidence": "Heading and plain-text siblings use equivalent verified compact circular glyph repair. All custom themes/Off/Maximum compare actual ink/backing, geometry, resources and equivalent color; isolated and internally backed multitone images remain negatives. The final-pixel comparison now waits for both positive images to be adapted and for the complete observation to stabilize, rather than treating the heading image alone as readiness of its plain-label peer. Exact ink equality, contrast/chroma thresholds, offsets/paths/resources and preservation negatives are unchanged. A prior full-run equality failure is retained; its assertion-time colors were not frozen, so its exact historical cause is not established. Future equality failures freeze both unique-ink sets, filters, backings, theme and level."
   },
   {
     "id": "form-filter-panel",
@@ -758,7 +759,7 @@
     "cases": [
       "kotlin-article"
     ],
-    "evidence": "Compact images beside plain short text now share the existing static glyph repair with sibling-link cases; original image resources and layout stay intact, with a genuinely isolated unlabeled image retained as a negative."
+    "evidence": "Compact images beside plain short text now share the existing static glyph repair with sibling-link cases; original image resources and layout stay intact, with a genuinely isolated unlabeled image retained as a negative. The Kotlin article oracle now uses decoded stable Off source and stable readiness of its inline, standalone and isolated positive image filters before its original glyph/surface/geometry/preservation checks. A previous full run used the generic contextual-negative error for both unadapted positives and an ordinary-shadow negative; its values were not frozen. Future errors separate those expectations and record theme/level and observed paint. Requirements and timeouts are unchanged."
   },
   {
     "id": "semantic-translucent-note",
@@ -804,7 +805,7 @@
     "cases": [
       "kotlin-community"
     ],
-    "evidence": "Public external 48px X and Slack SVGs and transparent wrapper/title hierarchy retained. Local all-theme Off/Maximum checks require bright neutral pixels as well as contrast, exact resource/geometry and preserved already-readable, multicolor, static/animated, delivery/backing/ancestor negatives. Source typography and surrounding layout are reduced. Follow-up: verified static neutral silhouettes up to 128px no longer require link/alt/shallow context; large/unlabeled/unlinked/deep probes are now positives. Fading/disabled/general-animation controls retain exclusions."
+    "evidence": "Public external 48px X and Slack SVGs and transparent wrapper/title hierarchy retained. Local all-theme Off/Maximum checks require bright neutral pixels as well as contrast, exact resource/geometry and preserved already-readable, multicolor, static/animated, delivery/backing/ancestor negatives. Source typography and surrounding layout are reduced. Follow-up: verified static neutral silhouettes up to 128px no longer require link/alt/shallow context; large/unlabeled/unlinked/deep probes are now positives. Fading/disabled/general-animation controls retain exclusions. A later complete run stopped at the deep positive after readiness had only been established for the reported image; its assertion-time paint was not frozen. Source capture now requires decoded images and a stable initialized Off state. Final themed comparisons require stable adaptation and nonempty measured ink for all six positives, with every original contrast, geometry, resource, multicolor and preservation assertion retained. Future neutral-positive failures include theme/level and measured filter/backing/ink. No renderer color policy or timeout was changed by this oracle hardening."
   },
   {
     "id": "browser-default-link-scroll-ink",
@@ -833,5 +834,109 @@
       "jitpack-paint"
     ],
     "evidence": "Original local JitPack specimen, all themes Off/Maximum contrast and geometry checks, plus dark-parent, unpadded and picture controls. Source background and surrounding separation are distinct measurements."
+  },
+  {
+    "id": "authored-scheme-sampling-overhead",
+    "symptom": "Large-document sampling repeatedly invalidates inherited styles while exposing the authored color scheme",
+    "status": "partial",
+    "cases": [
+      "dynamic-catalogue",
+      "source-scheme-sampling"
+    ],
+    "evidence": "Promoted 14 November: the root override carries a custom ident and local sampling exposes the authored scheme per element through the sampling token when the authored root scheme is normal, so the root rule is no longer toggled per group; six balanced local pairs measured median style 3012 to 154 ms and complete work 4297 to 1054 ms with identical unique inspections, final facts and pixels; an anonymous Amazon same-document crossover completed the document scan in 23 to 27 s in 3/3 trials where the root-toggle path never completed within 45 s; the source-scheme guard and 21 three-theme A/B states pass (research-artifacts/diagnostics/a1-*). The activation pass and stylesheet refreshes are unchanged. Earlier: the existing synthetic catalogue exposes repeated root color-scheme changes during four-element sampling. Keep the authored scheme for a synchronous idle callback and restore it in finally; nested sampling preserves source context. Keep the soft 6ms budget and original four-element groups. Six complete-scan samples per variant measured median 2737ms versus 2296ms on the checked Windows/Brave machine, with zero changed pixels in the 1440x1000 local PNG pair. All custom themes observe dark scheme at frame boundaries, offscreen tail paint and unchanged geometry. Anonymous Amazon default-page variants had different content and neither drained all queues within 45s; live smoothness/completion remains pending, not a claimed 16% live speedup. A three-trial four-cell matrix (512/1512 actual nodes, 0/128 equivalent CSS rules) keeps total/unique inspections fixed for a given size but increases style cost strongly with CSS complexity. The checked-in catalogue retains ?cards=100|300&css=simple|heavy variants with identical source/themed pixels across CSS conditions. A diagnostic no-scheme ablation reduces style time but changes 2882 native-button pixels; it is not a valid repair. The exact repeatable inspection surplus was 152 per trial, not growth with CSS complexity. Instrumentation exists only in ignored copied extensions; the matrix is not a shipped performance command or threshold test. Controlled responsiveness/preservation trials justify up to 16 Simulated Native samples per source context, while palette groups remain four and the soft 6ms check remains. Six balanced application trials and animated-scroll observations are retained; root-scheme omission, stable-rule and separate-sheet research variants are not promoted. Source-scheme guards compare native inherited/explicit colors, main/shadow/child geometry, important root states, focus/restoration, Off and frame boundaries. The source guard additionally compares exact element paint, fonts, borders, filters and layout-box geometry across main/shadow/child/child-shadow trees. Internal marker counts remain required for activation and zero-marker Off cleanup, but are not treated as visual identity across resampling. An earlier full run differed only in its measured marker count (45/41); previously unmeasured paint is not inferred retrospectively. Coordinates use each owner document and explicitly distinguish nodes without layout boxes. A synthetic red-outline negative fails the expanded comparison as expected; no pixel tolerance or paint field is masked."
+  },
+  {
+    "id": "late-shadow-foreground-collection",
+    "symptom": "A newly inserted shadow tree misses the foreground pass when its host is already selected",
+    "status": "partial",
+    "cases": [
+      "source-scheme-sampling"
+    ],
+    "evidence": "An added first-frame guard exposed a real gap in the initial phased collector: a host already selected by a dirty pass was skipped during document traversal, delaying its new shadow label. The collector now discovers trees of selected hosts and traverses shadow descendants during dirty-only collection too. Synthetic open-plus-scroll and closed-dirty-only roots check adapted ink in the first scheduled post-renderer callback, unchanged readable authored ink, restored root scheme and removal of adopted sheets when detached. This is computed frame evidence, not pixel-complete acceptance for arbitrary shadow content."
+  },
+  {
+    "id": "phased-viewport-paint",
+    "symptom": "Viewport discovery interleaves geometry reads with changes to the source sampling context",
+    "status": "partial",
+    "cases": [
+      "source-scheme-sampling",
+      "dynamic-catalogue",
+      "opacity-artwork",
+      "select-proxy-fields"
+    ],
+    "evidence": "Simulated Native now collects visible targets under current paint, reads/classifies source facts into update records, restores the source context and then applies paint. Dirty/new viewport targets share one deduplicated local batch; full sampling restores the previous sheet state and includes visible new shadow trees. Palettes retain their existing sampling path. Source guards include new static/opacity glyphs during scrolling, native controls, head dependencies, child/shadow state and Off. Three counter pairs retain the same 1605 unique nodes; six plain pairs retain exact final facts/pixels. Frame p95 improves locally but one candidate maximum interval is worse, so universal smoothness is not asserted. Live Amazon/loading/carousel confirmation remains separate."
+  },
+  {
+    "id": "combined-viewport-source-sampling",
+    "symptom": "A viewport flush repeats global source-scheme changes for dirty and newly visible content",
+    "status": "partial",
+    "cases": [
+      "source-scheme-sampling",
+      "dynamic-catalogue"
+    ],
+    "evidence": "Live counters found consecutive dirty-root and viewport-new local passes, with three to four duplicate exposure pairs per observed scroll window. A research candidate retained the authored scheme across those passes. Six local trials/version improved the fixed insertion/scroll sequence with identical final pixels/facts; one baseline trial had one fewer inspection and all samples remain. The source guard covers new controls during scrolling and native source colors. Full candidate verification then found unequal static/opacity image tint factors. The candidate was rolled back; the relation to that failure is not established until the prior initializer is checked. No runtime policy change or live speedup is claimed."
+  },
+  {
+    "id": "field-image-preservation-observation",
+    "symptom": "An unsupported field image changes in a full run but isolated preservation checks pass",
+    "status": "pending",
+    "cases": [
+      "select-proxy-fields"
+    ],
+    "evidence": "The exact pre-experiment renderer failed the existing unsupported-image preservation assertion in a complete control run, before the opacity-image case was reached. Its subsequent isolated two-case control passed all 24 combinations. Full-prefix state/decode/scheduling dependence is unestablished; do not infer a new candidate regression or use the isolated pass to replace the failed full run. Existing multicolor/picture/overlap/denied/transparent controls are retained. Assertion errors now include theme, level, element ID and exact expected/actual image strings. No renderer fix is claimed."
+  },
+  {
+    "id": "static-opacity-tint-mismatch",
+    "symptom": "Equivalent static and opacity-only images can receive different tint factors",
+    "status": "pending",
+    "cases": [
+      "opacity-artwork"
+    ],
+    "evidence": "A full candidate run failed the existing static/pulse equality assertion in Simulated Native Off: factors 0.438735 versus 0.436508 over the same observed dark backing. Existing source resources, animation/extreme-alpha checks and negatives remain in the fixture; no assertion is weakened. Candidate/source-context causality and exact decoded source-ink values remain unestablished. Retain the failure bundle and compare the preceding initializer; final pixels alone and the smaller source-context checks do not close this observation."
+  },
+  {
+    "id": "head-script-source-dependency",
+    "symptom": "Head script mutations trigger broad theme refreshes but can also change authored paint",
+    "status": "partial",
+    "cases": [
+      "source-scheme-sampling"
+    ],
+    "evidence": "Promoted 14 November: script-only head mutations and root inline-style edits now request a deferred refresh coalesced into a 250 ms trailing window capped at 1 s, instead of an immediate full viewport resample per record; stylesheet nodes, stylesheet loads and root class/attribute changes stay immediate. The portable source guard passes with the head-dependent link updating within the deferral; the local head-churn workload shows 32 to 2 full viewport passes with identical pixels and an anonymous Amazon crossover shows settled-scroll frame p95 about 650 ms to 25 to 58 ms (research-artifacts/diagnostics/a2-*). Earlier: two anonymous Amazon scroll observations attribute repeated full viewport refresh requests to head script insertions/removals, alongside root style changes. A proposed skip for script-only head mutations was rejected by a synthetic html:has(head > script) preservation control: the subtitle ink stayed stale. The portable Simulated Native Off/Maximum source-scheme guard checks changed/restored ink, an independent negative and geometry. No renderer optimization is promoted; live loading/scroll performance remains pending. Source dependence, not script execution, is the counterexample."
+  },
+  {
+    "id": "campaign-subtitle-ink-observation",
+    "symptom": "A campaign subtitle appears black and the reporter recalls a different earlier color",
+    "status": "pending",
+    "cases": [
+      "residual-rendering-review"
+    ],
+    "evidence": "13 November supplied crop shows a small black subtitle over orange above a white heading. Earlier paint, original/applied computed facts, resource delivery, theme/level and initialized revision are not independently established. Screenshot observation is not a demonstrated new regression. Retain readable authored dark ink on a bright backing as a preservation negative; no automatic whitening or renderer change. Existing image-label final-state checks do not cover this campaign context."
+  },
+  {
+    "id": "progressive-text-backing-observation",
+    "symptom": "A backing appears behind text during theme application and disappears later",
+    "status": "pending",
+    "cases": [
+      "residual-rendering-review"
+    ],
+    "evidence": "Reporter-described temporal behavior, 13 November. Exact element/source layers, decode timing and intermediate frames remain missing. Unknown image samples can produce a backing before a later decision in current code, but that mechanism has not been tied to this report. Preserve authored backings and already-readable unbacked captions. Existing final screenshots and local image-label passes do not certify startup stability."
+  },
+  {
+    "id": "active-selector-state-readiness",
+    "symptom": "An active-selector final-state check sometimes sees a neutral white frame",
+    "status": "partial",
+    "cases": [
+      "select-proxy-fields"
+    ],
+    "evidence": "The full-run blue-ink assertion recurred in High contrast/Maximum with a white denied-resource frame. At 125% zoom this control is below the 1000px viewport. An identity-checked research copy with idle sampling held after stable neutral paint reproduces white offscreen, then blue/inset on reveal. Contrast alone accepted the stale border. The unchanged final blue, contrast, geometry and inset requirements now have state-aware readiness within the existing deadline; timeout evidence includes source classes and viewport rectangles. This establishes the oracle gap, not the cause of every historical failure or monitor-presentation/live-page acceptance. The fixture/source resources and renderer color policy remain unchanged."
+  },
+  {
+    "id": "palette-child-scheme-restoration-observation",
+    "symptom": "A palette child control can retain different paint after a source-scheme cycle",
+    "status": "pending",
+    "cases": [
+      "source-scheme-sampling"
+    ],
+    "evidence": "The initial synthetic fixture/root-scheme/focus cycle observed a Soft dark child button fill change from rgb(59,68,84) to rgb(48,55,69). The previous four-element renderer reproduces the observation. This is not evidence that the Chromium-only grouping change caused it, nor a live reported-site regression. Preferred child scheme/backing, settling and the corrected fixture child navigation need confirmation. Palette drift is not asserted as passed by the Chromium-only guard. No palette rendering fix is included."
   }
 ]

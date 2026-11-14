@@ -1,4 +1,4 @@
-(() => {
+(function nativeDarkModeWebsiteTheme() {
   // A document can already have the declarative script when it is injected on demand.
   const existingListener = globalThis.nativeDarkModeWebsiteThemeListenerV4;
   if (existingListener && chrome.runtime.onMessage.hasListener(existingListener)) return;
@@ -7,6 +7,48 @@
     globalThis.nativeDarkModeWebsiteThemeListener;
   if (previousListener && chrome.runtime.onMessage.hasListener(previousListener)) {
     chrome.runtime.onMessage.removeListener(previousListener);
+  }
+
+  // Capture the initialized instance and its dependencies, before any later reinjection.
+  // Hashing is lazy and uses executable function source, never fetched disk bytes.
+  const diagnosticInstance = {
+    instanceId: Array.from(crypto.getRandomValues(new Uint8Array(16)), n => n.toString(16).padStart(2, '0')).join(''),
+    initializedAt: new Date().toISOString(), extensionVersion: chrome.runtime.getManifest().version
+  };
+  const initializedColorSource = globalThis.nativeDarkModeChromiumColorSource;
+  const initializedImageSource = globalThis.nativeDarkModeImageContrastSource;
+  const rendererSource = () => nativeDarkModeWebsiteTheme.toString();
+  const sourceDigests = new WeakMap();
+  function diagnosticDigest(source) {
+    if (typeof source !== 'function') return Promise.resolve(null);
+    if (!sourceDigests.has(source)) sourceDigests.set(source, (async () => {
+      try {
+        const text = source();
+        if (typeof text !== 'string' || text.length > 2097152) return null;
+        if (!crypto.subtle) {
+          let timer;
+          try {
+            const result = await Promise.race([
+              chrome.runtime.sendMessage({ type: 'fingerprint-renderer-source-v1', source: text }),
+              new Promise(resolve => { timer = setTimeout(() => resolve(null), 2000); })
+            ]);
+            return /^[a-f0-9]{64}$/.test(result?.digest) ? result.digest : null;
+          } finally { clearTimeout(timer); }
+        }
+        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text.replace(/\r\n?/g, '\n')));
+        return Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, '0')).join('');
+      } catch { return null; }
+    })());
+    return sourceDigests.get(source);
+  }
+  async function rendererIdentity() {
+    const [renderer, colors, imageContrast, currentColors, currentImage] = await Promise.all([
+      rendererSource, initializedColorSource, initializedImageSource,
+      globalThis.nativeDarkModeChromiumColorSource, globalThis.nativeDarkModeImageContrastSource
+    ].map(diagnosticDigest));
+    return { version: 1, fingerprintKind: 'initializer-source-sha256-lf-v1', ...diagnosticInstance,
+      initialized: { renderer, colors, imageContrast }, currentDependencies: { colors: currentColors, imageContrast: currentImage },
+      preset: preset ?? null, separatorLevel: emphasizeSeparators === true ? 'medium' : emphasizeSeparators || 'off', observedAt: new Date().toISOString() };
   }
 
   const palettes = {
@@ -21,6 +63,12 @@
   const chromiumProbe = '--native-dark-mode-chromium-active';
   const paletteProbe = '--native-dark-mode-palette-active';
   const transitionProbe = '--native-dark-mode-transition-guard';
+  // Simulated Native marks its root scheme override so local sampling can tell
+  // an inherited override apart from an authored scheme without changing the
+  // root rule for every group. The authored root scheme is read during full
+  // sampling while the paint sheet is disabled.
+  const schemeOverride = 'dark native-dark-mode-override';
+  let authoredRootScheme;
   // An extension reload can leave its previous sheet in an open document.
   function removePreviousThemeSheets(root) {
     root.adoptedStyleSheets = root.adoptedStyleSheets.filter(style => {
@@ -82,6 +130,9 @@
         entry.users.clear();
       }
       group.ready.clear();
+      // Complete ready visible users before an idle sample can apply only part
+      // of this cohort while the ordinary viewport frame is still queued.
+      if (preset && dirtySurfaces.size) paintStateBeforeFrame();
     });
   }
   const labeledSvgArtwork = new Map();
@@ -4407,7 +4458,8 @@
     // Local sampling must expose the same authored scheme without clearing the
     // ancestors' repaired paint. Restore synchronously before browser paint.
     const rootPaint = preset === 'chromium' && sheet.cssRules[0]?.style;
-    const scheme = rootPaint && rootPaint.getPropertyValue('color-scheme');
+    const localScheme = rootPaint && authoredRootScheme === 'normal';
+    const scheme = rootPaint && !localScheme && rootPaint.getPropertyValue('color-scheme');
     const schemePriority = scheme && rootPaint.getPropertyPriority('color-scheme');
     if (scheme) rootPaint.removeProperty('color-scheme');
     const batch = new Set(elements);
@@ -4432,18 +4484,88 @@
         element.setAttribute(sampleMarker, '');
       }
     }
+    const exposed = [];
+    if (localScheme) {
+      // Expose the authored scheme only where the root override is inherited
+      // unchanged. An authored scheme on the element or an ancestor already
+      // resolves system colors, light-dark() and UA paint as the author wrote.
+      for (const element of elements) {
+        if (getComputedStyle(element).colorScheme !== schemeOverride) continue;
+        exposed.push(element);
+        element.setAttribute(sampleMarker, 'source-scheme');
+      }
+    }
     const backdrops = { images: new Map(), solid: new Map() };
     try {
       return elements.map(element => [element, inspect(element, backdrops, switchingRenderer)]);
     } finally {
       for (const [element, paint] of previous) element.setAttribute(marker, paint);
       for (const element of headings) element.removeAttribute(sampleMarker);
+      for (const element of exposed) element.removeAttribute(sampleMarker);
       if (scheme) rootPaint.setProperty('color-scheme', scheme, schemePriority);
     }
   }
 
   function paintVisibleSurfaces(onlyUnpainted = false, includeLookahead = preset !== 'chromium', switchingRenderer = false,
     changedRoots) {
+    if (preset !== 'chromium') {
+      return paintPaletteVisibleSurfaces(onlyUnpainted, includeLookahead, switchingRenderer, changedRoots);
+    }
+    const targets = collectVisibleSurfaces(onlyUnpainted, includeLookahead, changedRoots);
+    if (!targets.size) return;
+    let updates;
+    if (onlyUnpainted || changedRoots) {
+      updates = inspectLocal([...targets], switchingRenderer);
+    } else {
+      // Select geometry with the current paint still applied. Then read the
+      // authored layers as one transaction, restoring the sheet before writes.
+      const disabled = sheet.disabled;
+      const backdrops = { images: new Map(), solid: new Map() };
+      try {
+        sheet.disabled = true;
+        authoredRootScheme = getComputedStyle(document.documentElement).colorScheme;
+        updates = [...targets].map(element => [element, inspect(element, backdrops, switchingRenderer)]);
+      } finally {
+        sheet.disabled = disabled;
+      }
+    }
+    applyRoles(updates);
+  }
+
+  function collectVisibleSurfaces(onlyUnpainted, includeLookahead, changedRoots, targets = new Set()) {
+    const roots = changedRoots ? new Set(changedRoots) : new Set([document]);
+    if (!changedRoots) {
+      // A dirty pass may already have selected a newly inserted host. Its tree
+      // still needs collection even though the host itself is deduplicated.
+      for (const element of targets) {
+        const shadow = element.shadowRoot ?? (element instanceof HTMLElement ? chrome.dom?.openOrClosedShadowRoot(element) : null);
+        if (shadow) roots.add(shadow);
+      }
+    }
+    const lookahead = includeLookahead ? innerHeight * 1.25 : 0;
+    const horizontalLookahead = includeLookahead ? innerWidth * .5 : 0;
+    for (const root of roots) {
+      if (changedRoots && (!root.isConnected || roots.has(root.parentElement))) continue;
+      for (const element of changedRoots ? [root, ...root.querySelectorAll('*')] : root.querySelectorAll('*')) {
+        if (targets.has(element) || onlyUnpainted && sampledElements.has(element)) continue;
+        if (!(element instanceof HTMLElement || element instanceof SVGSVGElement) || element.matches(excluded)) continue;
+        const rect = element.getBoundingClientRect();
+        const inViewport = rect.width && rect.height && rect.bottom > -lookahead && rect.right > -horizontalLookahead &&
+          rect.top < innerHeight + lookahead && rect.left < innerWidth + horizontalLookahead;
+        const canvas = element === document.documentElement || element === document.body;
+        if (!inViewport && !canvas) continue;
+        targets.add(element);
+        // Every selected host includes its visible tree, including dirty-only
+        // passes, before inspect registers its sheets/observer during sampling.
+        const shadow = element.shadowRoot ?? (element instanceof HTMLElement ? chrome.dom?.openOrClosedShadowRoot(element) : null);
+        if (shadow) roots.add(shadow);
+      }
+      if (!changedRoots) for (const shadow of shadowRoots) if (shadow.host.isConnected) roots.add(shadow);
+    }
+    return targets;
+  }
+
+  function paintPaletteVisibleSurfaces(onlyUnpainted, includeLookahead, switchingRenderer, changedRoots) {
     const updates = [];
     const local = new Set();
     const backdrops = { images: new Map(), solid: new Map() };
@@ -4553,30 +4675,45 @@
       return;
     }
     const started = performance.now();
-    // A deadline checked only before collecting 64 nodes can still monopolize
-    // an animation frame. Sample small groups and recheck between style reads.
-    do {
-      const batch = new Set();
-      while (batch.size < 4) {
-        if (!elements) {
-          const root = pending.values().next().value;
-          if (!root) break;
-          pending.delete(root);
-          if (!root.isConnected) continue;
-          if (pending.has(root.parentElement) || pending.has(root.parentElement?.parentElement)) continue;
-          // A static list lets the rest of the subtree continue if the page removes a node.
-          elements = root.querySelectorAll('*').values();
-          if (root.nodeType === Node.ELEMENT_NODE && root !== document.documentElement && root !== document.body) batch.add(root);
-        } else {
-          const { value: element, done } = elements.next();
-          if (done) elements = undefined;
-          else if (element.isConnected && element !== document.body && !element.matches(excluded)) batch.add(element);
+    // Local samples need the authored scheme, but changing it on the root for
+    // every four-element group invalidates inherited styles across the page.
+    // Keep it exposed for this synchronous callback; inspectLocal then sees no
+    // scheme override to toggle. Restore before yielding or painting a frame.
+    const rootPaint = preset === 'chromium' && sheet.cssRules[0]?.style;
+    const scheme = rootPaint && authoredRootScheme !== 'normal' && rootPaint.getPropertyValue('color-scheme');
+    const schemePriority = scheme && rootPaint.getPropertyPriority('color-scheme');
+    if (scheme) rootPaint.removeProperty('color-scheme');
+    try {
+      // Chromium sampling exposes the authored root scheme. Amortize that
+      // page-wide invalidation over a bounded group, retaining the soft 6ms
+      // deadline between groups. Other palettes keep their existing grouping.
+      // A single costly style flush can already exceed this soft budget.
+      const batchLimit = preset === 'chromium' ? 16 : 4;
+      do {
+        const batch = new Set();
+        while (batch.size < batchLimit) {
+          if (!elements) {
+            const root = pending.values().next().value;
+            if (!root) break;
+            pending.delete(root);
+            if (!root.isConnected) continue;
+            if (pending.has(root.parentElement) || pending.has(root.parentElement?.parentElement)) continue;
+            // A static list lets the rest of the subtree continue if the page removes a node.
+            elements = root.querySelectorAll('*').values();
+            if (root.nodeType === Node.ELEMENT_NODE && root !== document.documentElement && root !== document.body) batch.add(root);
+          } else {
+            const { value: element, done } = elements.next();
+            if (done) elements = undefined;
+            else if (element.isConnected && element !== document.body && !element.matches(excluded)) batch.add(element);
+          }
         }
-      }
-      applyRoles(inspectLocal([...batch]));
-    } while ((elements || pending.size) && performance.now() - started < 6 &&
-      !idleDeadline.didTimeout && idleDeadline.timeRemaining() >= 2);
-    if (elements || pending.size) schedule();
+        applyRoles(inspectLocal([...batch]));
+      } while ((elements || pending.size) && performance.now() - started < 6 &&
+        !idleDeadline.didTimeout && idleDeadline.timeRemaining() >= 2);
+      if (elements || pending.size) schedule();
+    } finally {
+      if (scheme) rootPaint.setProperty('color-scheme', scheme, schemePriority);
+    }
   }
 
   function palettePaintRole(declarations, pseudoStyles = [], rules) {
@@ -5008,6 +5145,25 @@
       const preload = viewportPreloadAfter;
       const repaintViewport = viewportRequested;
       viewportRequested = viewportNeedsResample = viewportLookahead = viewportPreloadAfter = false;
+      if (preset === 'chromium') {
+        const dirty = new Set(dirtySurfaces);
+        const scrolling = new Set([...scrollingSurfaces].filter(root => root.isConnected));
+        dirtySurfaces.clear();
+        scrollingSurfaces.clear();
+        if (repaintViewport && !onlyUnpainted) {
+          paintVisibleSurfaces(false, includeLookahead);
+        } else {
+          // Gather all local targets before exposing source styles. Classify
+          // the deduplicated set, restore its source context, then apply once.
+          const targets = new Set();
+          if (dirty.size) collectVisibleSurfaces(false, false, dirty, targets);
+          if (!repaintViewport && scrolling.size) collectVisibleSurfaces(true, true, scrolling, targets);
+          if (repaintViewport) collectVisibleSurfaces(onlyUnpainted, includeLookahead, undefined, targets);
+          if (targets.size) applyRoles(inspectLocal([...targets]));
+        }
+        if (preload) scheduleViewport(true);
+        return;
+      }
       if (dirtySurfaces.size) {
         const roots = new Set(dirtySurfaces);
         dirtySurfaces.clear();
@@ -5036,7 +5192,35 @@
     });
   }
 
-  function refreshChromium() {
+  let deferredRefresh = false;
+  let deferredRefreshTimer;
+  let deferredRefreshStarted;
+  function clearDeferredRefresh() {
+    clearTimeout(deferredRefreshTimer);
+    deferredRefreshTimer = deferredRefreshStarted = undefined;
+    deferredRefresh = false;
+  }
+  function flushDeferredRefresh() {
+    deferredRefreshTimer = deferredRefreshStarted = undefined;
+    const pending = deferredRefresh;
+    deferredRefresh = false;
+    if (pending && preset === 'chromium') refreshChromium();
+  }
+  function refreshChromium(deferred = false) {
+    if (deferred) {
+      // Script-only head changes and root inline-style edits can change
+      // authored paint only through relational selectors, so their
+      // document-wide resample is coalesced into one trailing window.
+      // A continuous stream still refreshes at the maximum wait.
+      deferredRefresh = true;
+      deferredRefreshStarted ??= performance.now();
+      clearTimeout(deferredRefreshTimer);
+      const wait = Math.max(0, Math.min(250, deferredRefreshStarted + 1000 - performance.now()));
+      deferredRefreshTimer = setTimeout(flushDeferredRefresh, wait);
+      return;
+    }
+    clearDeferredRefresh();
+    authoredRootScheme = undefined;
     // Root state classes can expose a new fixed surface in this frame. Only
     // the offscreen scan may wait for the document-wide debounce.
     scheduleViewport();
@@ -5099,6 +5283,7 @@
       window.removeEventListener('resize', refreshChromium);
       cancelIdleCallback(idleBatch);
       clearTimeout(chromiumRefreshTimer);
+      clearDeferredRefresh();
       clearTimeout(horizontalScrollTimer);
       cancelAnimationFrame(viewportFrame);
       cancelAnimationFrame(hoverFrame);
@@ -5132,6 +5317,7 @@
       colorRules.clear();
       unusedColorRules.length = 0;
       sheet = transitionSheet = undefined;
+      authoredRootScheme = undefined;
       return;
     }
     if (sheet) {
@@ -5144,7 +5330,7 @@
       return;
     }
     sheet = new CSSStyleSheet();
-    sheet.replaceSync(next === 'chromium' ? `:root { ${chromiumProbe}: yes !important; color-scheme: dark; }` : paletteCSS(palettes[next]));
+    sheet.replaceSync(next === 'chromium' ? `:root { ${chromiumProbe}: yes !important; color-scheme: ${schemeOverride}; }\n[${sampleMarker}~="source-scheme"] { color-scheme: normal; }` : paletteCSS(palettes[next]));
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
     // Keep transition overrides active while the paint sheet is disabled for sampling.
     transitionSheet = new CSSStyleSheet();
@@ -5166,6 +5352,10 @@
                 !attribute.startsWith('aria-') && !/^data-(?:theme|state|open|active|disabled|selected|expanded|current)$/.test(attribute)) continue;
             forgetOverlayInk(target);
             if (target === document.documentElement || target === document.body || target.matches('style,link[rel~="stylesheet"]')) {
+              if (attribute === 'style' && (target === document.documentElement || target === document.body)) {
+                refreshChromium(true);
+                continue;
+              }
               refreshChromium();
               paintStateBeforeFrame();
               continue;
@@ -5184,7 +5374,12 @@
           }
           forgetOverlayInk(target);
           if (target?.closest('style') || target === document.head) {
-            refreshChromium();
+            // Stylesheet nodes keep their immediate refresh. Scripts, text and
+            // comments under head cannot carry paint themselves.
+            const scriptOnly = target === document.head && !target.closest('style') &&
+              (record.type === 'characterData' || [...record.addedNodes, ...record.removedNodes].every(node =>
+                node.nodeName === 'SCRIPT' || node.nodeType !== Node.ELEMENT_NODE));
+            refreshChromium(scriptOnly);
           } else if (record.type === 'characterData') {
             schedule(target);
           } else {
@@ -5287,8 +5482,12 @@
   }
 
   globalThis.nativeDarkModeWebsiteThemeListenerV4 = (message, sender, reply) => {
-    if (sender.id !== chrome.runtime.id ||
-        !['apply-website-preset-v3', 'apply-website-preset-v4'].includes(message.type)) return;
+    if (sender.id !== chrome.runtime.id) return;
+    if (message.type === 'diagnose-renderer-identity-v1') {
+      void rendererIdentity().then(reply, () => reply({ version: 1, unavailable: true }));
+      return true;
+    }
+    if (!['apply-website-preset-v3', 'apply-website-preset-v4'].includes(message.type)) return;
     revision++;
     const previous = preset;
     const previousSeparators = emphasizeSeparators;
