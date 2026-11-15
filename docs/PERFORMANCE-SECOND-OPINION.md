@@ -44,7 +44,7 @@ Current line numbers are navigation aids; use function names if they drift.
 | `:4449` — `inspectLocal` | Removes target markers and exposes the authored scheme per element through the sampling token when the authored root scheme is `normal` (root-rule exposure otherwise); restores synchronously. Promoted 14 November after the review's A1 experiment |
 | `:4490` / `:4515` — `paintVisibleSurfaces` / `collectVisibleSurfaces` | Current-paint geometry collection, source sampling, full versus local passes |
 | `:4650` — `paintBatch` | Idle scheduling, authored scheme per synchronous callback, Chromium groups of 16, palette groups of four, soft 6ms budget |
-| `:5118` — `flushViewport` | Dirty and newly visible work, source sampling and paint application |
+| `:5118` — `flushViewport` | Dirty and newly visible work, source sampling and paint application. A refresh coalesced with a scroll resamples the visible set only; the lookahead follows on the next frame (A5, promoted 15 November) |
 | `:5175` / `:5210` — `refreshChromium` / `setPreset` | Broad invalidation, activation, source restoration, observers and lifecycle |
 | `extension/chromium-colors.js` | Deterministic Chromium-derived color conversion |
 | `extension/image-contrast.js` | Numerical image/foreground selection and uncertainty policy |
@@ -140,6 +140,7 @@ Research decisions worth independently challenging:
 - Holding source context across more viewport work has promising local timings but failed image preservation and was rolled back. Failures remain; isolated passes do not erase them.
 - Adaptive grouping has a strong local full-scan result but no accepted live/interaction benefit; it is unpromoted.
 - Scroll deferral fails completion/performance gates and is unpromoted.
+- The review's A5 (promoted 15 November) is not scroll deferral: the scroll's visible work is unchanged. It stops a refresh that coalesces with a scroll from widening its synchronous resample to the 1.25-viewport lookahead region; that region is classified on the next frame through the local path. On the heavy anonymous Amazon variant the 1.2–1.9 s lookahead passes disappear and the worst settled scroll frame drops from 2.1–2.9 s to 1.1–1.7 s (`research-artifacts/diagnostics/a5-crossover-1794682981259`).
 - Indexed rule-specific attribute selectors preserve specificity in a prototype. Six local pairs with varied colors show 19.846% less style work and 12.119% less complete work, missing prospectively chosen 20%/15% gates. Shared-color controls do not improve. The thresholds and their rationale are open to review; do not silently call the candidate shipped or round it into a pass.
 - 1535 scheduling requests do not mean 1535 scans: 1442 had a queued ancestor; one observed scan had started and none completed. Mutation epochs are not proof of unchanged source paint.
 

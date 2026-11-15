@@ -4559,6 +4559,7 @@
       }
     }
     applyRoles(updates);
+    return targets;
   }
 
   function collectVisibleSurfaces(onlyUnpainted, includeLookahead, changedRoots, targets = new Set()) {
@@ -5180,7 +5181,14 @@
         dirtySurfaces.clear();
         scrollingSurfaces.clear();
         if (repaintViewport && !onlyUnpainted) {
-          paintVisibleSurfaces(false, includeLookahead);
+          // A coalesced scroll request must not widen this synchronous full
+          // resample to the lookahead region. Resample what is visible now and
+          // freshen the lookahead on the next frame through the local path.
+          const visible = paintVisibleSurfaces(false, false);
+          if (includeLookahead) {
+            for (const element of collectVisibleSurfaces(false, true)) if (!visible?.has(element)) sampledElements.delete(element);
+            scheduleViewport(true);
+          }
         } else {
           // Gather all local targets before exposing source styles. Classify
           // the deduplicated set, restore its source context, then apply once.
