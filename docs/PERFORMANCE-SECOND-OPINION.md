@@ -133,6 +133,8 @@ Research scripts sit at the top level of `research-artifacts/`; preserve the `pr
 
 Accepted local changes include authored-scheme batching over a synchronous idle callback, bounded Chromium-only groups of 16, phased collection/source reads/application, and discovery of newly inserted shadow trees. A later three-line sprite-publication change keeps ready visible cohorts ahead of idle work. It is an ordering repair, not an Amazon speedup claim.
 
+Promoted by the review after this handoff, all recorded in PLAN.md with their sealed verifications: A1/A2 (per-element authored scheme, coalesced script-only head refreshes), A3 (bounded text probes), A5 (visible-only coalesced resample), D2 (four exact micro-optimizations and the resize flag fix), E1 (exact image-label contrast reduction), G2 (palette sampling under the authored scheme) and H1 (15 November: whole-document rescans skip elements whose recorded input signature is unchanged; a documented heuristic with its known gap in the rendering guide's inventory row and coverage entry `unchanged-element-precheck`). F1 (parse-time scheduling) was measured and not promoted. The next planned experiment is H2, the same pre-check applied to the synchronous full visible pass, where 85–90% of the 3,700–7,400 target inspections per Amazon load re-derive unchanged paint inside 0.8–1.5 s of synchronous time; its mechanism, criteria and risks are in the review's section 8 and in the PLAN.md entry for 0.13.0.
+
 Research decisions worth independently challenging:
 
 - Static matrix: equal inspection counts with heavier equivalent CSS cause substantially more style work. A no-scheme ablation dramatically reduces style cost but changes native-control pixels; it is attribution evidence, not a valid fix.
