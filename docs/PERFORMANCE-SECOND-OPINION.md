@@ -44,7 +44,7 @@ Current line numbers are navigation aids; use function names if they drift.
 | `:4449` — `inspectLocal` | Removes target markers and exposes the authored scheme per element through the sampling token when the authored root scheme is `normal` (root-rule exposure otherwise); restores synchronously. Promoted 14 November after the review's A1 experiment |
 | `:4490` / `:4515` — `paintVisibleSurfaces` / `collectVisibleSurfaces` | Current-paint geometry collection, source sampling, full versus local passes |
 | `:4650` — `paintBatch` | Idle scheduling, authored scheme per synchronous callback, Chromium groups of 16, palette groups of four, soft 6ms budget |
-| `:5118` — `flushViewport` | Dirty and newly visible work, source sampling and paint application. A refresh coalesced with a scroll resamples the visible set only; the lookahead follows on the next frame (A5, promoted 15 November) |
+| `:5118` — `flushViewport` | Dirty and newly visible work, source sampling and paint application. A refresh coalesced with a scroll resamples the visible set only; the lookahead follows on the next frame (A5, promoted 15 November). Local batches force one style recalc instead of two and query running transitions once per batch (D2, promoted 15 November as an exact work reduction) |
 | `:5175` / `:5210` — `refreshChromium` / `setPreset` | Broad invalidation, activation, source restoration, observers and lifecycle |
 | `extension/chromium-colors.js` | Deterministic Chromium-derived color conversion |
 | `extension/image-contrast.js` | Numerical image/foreground selection and uncertainty policy |

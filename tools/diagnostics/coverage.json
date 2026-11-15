@@ -866,6 +866,16 @@
     "evidence": "Promoted 15 November: flushViewport OR-ed the lookahead flag across coalesced requests, so refresh-triggered full resamples on an anonymous 9172 to 10422-node Amazon document covered 1650 to 3244 targets for 1.2 to 1.9 s. The Simulated Native full resample now covers the visible set only and re-queues the lookahead region as an unpainted-only request for the next frame. Same-document runtime crossover (research-artifacts/diagnostics/a5-crossover-1794682981259): no lookahead-widened pass remains, largest pass 1.7 to 1.9 s to 0.8 to 1.5 s, worst settled scroll frame 2.1 to 2.9 s to 1.1 to 1.7 s, unique inspections equal within live variation. Eight fresh-profile activations unchanged; guard, 21 A/B states and the catalogue series identical in facts and pixels (a5-*). The local fixture does not coalesce a scroll with a refresh; the registered cases are preservation checks, and the live timing is not a machine-independent pass."
   },
   {
+    "id": "sampling-batch-self-invalidation",
+    "symptom": "Sampling batches invalidate style twice and query animations per element",
+    "status": "partial",
+    "cases": [
+      "dynamic-catalogue",
+      "source-scheme-sampling"
+    ],
+    "evidence": "Promoted 15 November as an exact work reduction, not a speed claim: a local sampling batch reads computed color-scheme before removing paint markers when no marker paint in the batch declares color-scheme (one style recalc instead of two), originalTransitionColors consults one document.getAnimations() map per batch, listItemFramePaint skips replaced elements, and collection tests the viewport rectangle before the exclusion selector. CPU profiles of anonymous Amazon carousel interactions attributed 100 to 216 ms per interaction to batch recalcs and 107 to 185 ms to per-element getAnimations (research-artifacts/diagnostics/d1-dirty-pass-profile-*). Catalogue series: renderer-forced recalcs 1455 to 489 (churn) and 891 to 308 (plain) per trial, identical facts and pixels, timings neutral; guard and all 21 A/B states identical including Soft and High contrast (d2-*). Live carousel idle work about a quarter lower on average with overlapping ranges; the per-click dirty pass is unchanged. The registered cases are preservation checks, not a machine-independent performance pass."
+  },
+  {
     "id": "late-shadow-foreground-collection",
     "symptom": "A newly inserted shadow tree misses the foreground pass when its host is already selected",
     "status": "partial",

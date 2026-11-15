@@ -3578,7 +3578,7 @@
   }
 
   function listItemFramePaint(element, getBackdrop) {
-    if (element.matches(':focus-within')) return [];
+    if (element.matches('img,video,canvas,iframe,embed,object,:focus-within')) return [];
     const backdrop = getBackdrop(element);
     if (!backdrop || luminance(backdrop) > .18) return [];
     const paints = [];
@@ -3717,12 +3717,33 @@
     });
   }
 
+  // Running CSS transitions per light-tree element, queried once per sampling
+  // batch. Marker removal at the start of a batch starts the transitions this
+  // reads, so each batch resets the map before its first read.
+  let batchTransitions;
+  function runningTransitions(element) {
+    if (element.getRootNode() !== document) return element.getAnimations();
+    if (!batchTransitions) {
+      batchTransitions = new Map();
+      // The map never outlives the current task.
+      queueMicrotask(() => { batchTransitions = undefined; });
+      for (const animation of document.getAnimations()) {
+        if (!(animation instanceof CSSTransition) || animation.effect?.pseudoElement) continue;
+        const target = animation.effect?.target;
+        if (!target) continue;
+        const list = batchTransitions.get(target);
+        if (list) list.push(animation); else batchTransitions.set(target, [animation]);
+      }
+    }
+    return batchTransitions.get(element) ?? [];
+  }
+
   function originalTransitionColors(element, style) {
     const colors = {};
     if (style.transitionDuration === '0s' && style.transitionDelay === '0s') return colors;
     // Removing the previous palette can start a transition toward the authored color.
     // Classify its destination before the browser paints any intermediate frames.
-    for (const animation of element.getAnimations()) {
+    for (const animation of runningTransitions(element)) {
       if (!(animation instanceof CSSTransition)) continue;
       const target = animation.effect?.getKeyframes().at(-1);
       if (target) Object.assign(colors, target);
@@ -4500,30 +4521,37 @@
       for (const button of list.querySelectorAll(':scope > li > button')) batch.add(button);
     }
     elements = [...batch];
+    batchTransitions = undefined;
     const previous = [];
     const headings = [];
     for (const element of elements) {
       const paint = element.getAttribute(marker);
-      if (paint !== null) {
-        previous.push([element, paint]);
-        element.removeAttribute(marker);
-      }
-      if (preset !== 'chromium' && element.matches(heading)) {
-        headings.push(element);
-        element.setAttribute(sampleMarker, '');
-      }
+      if (paint !== null) previous.push([element, paint]);
+      if (preset !== 'chromium' && element.matches(heading)) headings.push(element);
     }
+    // Expose the authored scheme only where the root override is inherited
+    // unchanged. An authored scheme on the element or an ancestor already
+    // resolves system colors, light-dark() and UA paint as the author wrote.
+    // Marker paint never declares color-scheme except for a few repairs, so
+    // when no element in this batch has such paint (the marker holds a rule
+    // token; the declarations are in its color-rule entry) the computed
+    // scheme can be read before the markers come off, and the batch
+    // invalidates style once instead of twice.
     const exposed = [];
-    if (localScheme) {
-      // Expose the authored scheme only where the root override is inherited
-      // unchanged. An authored scheme on the element or an ancestor already
-      // resolves system colors, light-dark() and UA paint as the author wrote.
+    const schemeInPaint = localScheme && previous.some(([element]) => elementColorRules.get(element)?.key?.includes('color-scheme'));
+    if (localScheme && !schemeInPaint) {
       for (const element of elements) {
-        if (getComputedStyle(element).colorScheme !== schemeOverride) continue;
-        exposed.push(element);
-        element.setAttribute(sampleMarker, 'source-scheme');
+        if (getComputedStyle(element).colorScheme === schemeOverride) exposed.push(element);
       }
     }
+    for (const [element] of previous) element.removeAttribute(marker);
+    for (const element of headings) element.setAttribute(sampleMarker, '');
+    if (schemeInPaint) {
+      for (const element of elements) {
+        if (getComputedStyle(element).colorScheme === schemeOverride) exposed.push(element);
+      }
+    }
+    for (const element of exposed) element.setAttribute(sampleMarker, 'source-scheme');
     const backdrops = { images: new Map(), solid: new Map() };
     try {
       return elements.map(element => [element, inspect(element, backdrops, switchingRenderer)]);
@@ -4552,6 +4580,7 @@
       const backdrops = { images: new Map(), solid: new Map() };
       try {
         sheet.disabled = true;
+        batchTransitions = undefined;
         authoredRootScheme = getComputedStyle(document.documentElement).colorScheme;
         updates = [...targets].map(element => [element, inspect(element, backdrops, switchingRenderer)]);
       } finally {
@@ -4578,12 +4607,13 @@
       if (changedRoots && (!root.isConnected || roots.has(root.parentElement))) continue;
       for (const element of changedRoots ? [root, ...root.querySelectorAll('*')] : root.querySelectorAll('*')) {
         if (targets.has(element) || onlyUnpainted && sampledElements.has(element)) continue;
-        if (!(element instanceof HTMLElement || element instanceof SVGSVGElement) || element.matches(excluded)) continue;
+        if (!(element instanceof HTMLElement || element instanceof SVGSVGElement)) continue;
         const rect = element.getBoundingClientRect();
         const inViewport = rect.width && rect.height && rect.bottom > -lookahead && rect.right > -horizontalLookahead &&
           rect.top < innerHeight + lookahead && rect.left < innerWidth + horizontalLookahead;
         const canvas = element === document.documentElement || element === document.body;
         if (!inViewport && !canvas) continue;
+        if (element.matches(excluded)) continue;
         targets.add(element);
         // Every selected host includes its visible tree, including dirty-only
         // passes, before inspect registers its sheets/observer during sampling.
@@ -5244,7 +5274,9 @@
     if (pending && preset === 'chromium') refreshChromium();
   }
   function refreshChromium(deferred = false) {
-    if (deferred) {
+    // The resize listener receives the Event as this argument; only an
+    // explicit true defers.
+    if (deferred === true) {
       // Script-only head changes and root inline-style edits can change
       // authored paint only through relational selectors, so their
       // document-wide resample is coalesced into one trailing window.
