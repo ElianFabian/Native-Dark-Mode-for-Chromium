@@ -2,7 +2,7 @@
 import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { startServer } from './server.mjs';
-import { launchBrowser, root, until } from './browser.mjs';
+import { launchBrowser, closeBrowser, root, until } from './browser.mjs';
 import { cases } from '../../../tools/diagnostics/cases.mjs';
 import { color, contrast } from '../../../tools/diagnostics/analysis.mjs';
 const artifacts = path.join(root, 'research-artifacts', 'diagnostics');
@@ -157,4 +157,4 @@ try {
   }
   await writeFile(path.join(artifacts, 'reported-artwork-corrected.png'), Buffer.from((await page.send('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
   console.log('Lab UI passed: accessible static/dynamic help, delayed hover/keyboard/Escape/click/hoverable bubble and narrow large-text bounds, gallery search, grouped evidence, accept/reopen, narrow large-text layout, focus, server guards, image decoding, GIF animation, original Indeed gradient/glyph preservation with modeled heading contrast, Junta logo context/light backing, and reported formacion GIF/EFP logo context in all custom themes.');
-} finally { await browser.close(); await server.close(); }
+} finally { try { await closeBrowser(browser); } finally { await server.close(); } }

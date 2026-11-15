@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<title>Pending reporter review · small arrows, joined frames and iframe startup</title>
+<title>Pending reporter review · controls, image captions and startup</title>
 <style>
 body { margin:24px; max-width:900px; font:16px/1.5 Arial; color:#222; background:#fff }
 section { margin:24px 0; padding:16px; border:1px dashed #777 }
@@ -22,6 +22,14 @@ button { font:inherit }
  <p>The quantity indicator remains dark on the reporter's page. The main text portion of the wishlist split button also appears to have different boundary weight from the arrow portion. The reporter suspects the main text frame rather than the arrow frame.</p>
  <p>The earlier context was Simulated Native with border Off; the latest screenshot does not independently reconfirm both settings. The <a href="compact-action-paint.html">source-based compact control reproduction</a> contains a single native-select overlay and a standalone split-arrow portion. It does not match the complete joined pair and all current live variant styles.</p>
  <p><strong>Pending:</strong> capture the full quantity control and both joined frame layers, including source/applied colors, alpha, fractional widths, shadows and generated paint. Compare Off with stronger levels without changing layout or flattening focus/hover states. Retain visible-overlay, disabled and multicolor preservation controls.</p>
+</section>
+<section>
+ <h2>Amazon · campaign subtitle and temporary text backings</h2>
+ <p>Reporter update, 13 November: loading still feels almost unchanged after the local background-scan optimization. A supplied crop shows a black small subtitle above a white large heading on an orange campaign panel. The reporter recalls a different earlier subtitle color. The crop proves the current visible result, not the previous paint, source ink, element/resource delivery or which code revision produced it.</p>
+ <p>The reporter also sees backgrounds appear behind some text during progressive theme application and disappear later. No temporal trace, exact affected element or source background has been captured. Image-sampling fallback followed by a later decision is a code-supported hypothesis, not an established cause for this report.</p>
+ <p><strong>Pending evidence:</strong> identify the exact element and initialized theme/level; retain original and applied foreground/text-fill/background, ancestor/generated layers, source image or CSS delivery and decode state; compare the same backing before and after. Record initial application and repeated resampling. Do not infer an improvement or regression solely from a changed neutral color.</p>
+ <p><strong>Preservation controls:</strong> readable authored dark text on a bright flat image may need to remain dark; an authored text backing must remain; a verified readable unbacked caption must not acquire an unnecessary transient plate. These are required future controls, not reconstructed source markup or automated passes.</p>
+ <p>The <a href="large-image-label.html">existing image-label reproduction</a> has a different image and reduced source CSS. Its passing final-state checks do not establish campaign-subtitle fidelity or startup stability. No new visual policy or guessed orange-panel reproduction is introduced here.</p>
 </section>
 <section>
  <h2>JitPack iframe · initial load and theme handoff</h2>

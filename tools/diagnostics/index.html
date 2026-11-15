@@ -8,7 +8,7 @@
 <main>
 <p class="help-hint">Hover over a control or focus it with Tab for help. Press Escape to dismiss.</p>
 <p id="job" role="status" aria-live="polite">Local fixtures and reports. An installed Brave/Chromium is required for captures.</p>
-<nav class="tabs" aria-label="Lab views"><button data-tab="gallery" aria-pressed="true">Cases</button><button data-tab="report" aria-pressed="false">Inspect report</button><button data-tab="compare" aria-pressed="false">Compare runs</button></nav>
+<nav class="tabs" aria-label="Lab views"><button data-tab="gallery" aria-pressed="true">Cases</button><button data-tab="report" aria-pressed="false">Inspect report</button><button data-tab="compare" aria-pressed="false">Compare runs</button><button data-tab="visual" aria-pressed="false">Visual comparison</button></nav>
 <section id="gallery"><h2>Regression collection</h2><p>Automated specimens run at 1000 × 900 CSS px before zoom. Previews show authored paint unless a theme is enabled on this local site. The collection includes original website assets and reduced fragments alongside generic synthetic cases; it is not a full website archive. Open a captured report for controlled original/themed comparisons.</p><label>Find a case<input id="case-search" type="search" placeholder="Indeed, Gradle, SEPE, icons, GIF, borders…"></label><div id="cases" class="cards"></div><details><summary id="coverage-count">Known-case coverage</summary><p>Every new reported rendering mechanism needs a local reproduction. Pending entries are gaps, not passing tests.</p><ul id="coverage"></ul></details></section>
 <section id="report" hidden>
  <h2>Inspect a capture</h2><div class="toolbar"><label>Saved run<select id="runs"><option value="">Choose a run</option></select></label><button id="refresh">Refresh runs</button><label class="file">Open capture JSON<input id="file" type="file" accept=".json,application/json"></label></div>
@@ -22,6 +22,16 @@
  <article id="detail" hidden><h3>Element evidence</h3><p id="explanation"></p><div id="swatches"></div><div id="pictures" class="pictures"></div><details open><summary>Raw captured facts</summary><pre id="raw"></pre></details></article>
 </section>
 <section id="compare" hidden><h2>Compare saved captures</h2><p>Uses the same current analysis policy for both files. Environment drift and changed node structure are flagged. Imported reports are treated as data; no page scripts are executed.</p><div class="toolbar"><label>Before<input id="before" type="file" accept=".json"></label><label>After<input id="after" type="file" accept=".json"></label><button id="diff">Compare</button></div><p id="diff-status" role="status"></p><pre id="diff-output"></pre></section>
+<section id="visual" hidden>
+<h2>Compare archived images</h2><p>Local fixture evidence only. Pixel changes and antialiasing require review; they do not establish a renderer defect. Source/theme comparisons need a separate source-fidelity review. No references or original images are modified here.</p>
+<div class="toolbar"><label>Case<select id="visual-case"></select></label><button id="visual-refresh">Refresh archive</button></div>
+<div class="toolbar"><label>Before<select id="visual-before"></select></label><label>After<select id="visual-after"></select></label><button id="visual-load">Compare images</button></div>
+<p id="visual-status" role="status" aria-live="polite">Choose two archived captures.</p>
+<details><summary>Capture conditions</summary><pre id="visual-facts"></pre></details>
+<div id="visual-output" hidden>
+<div class="toolbar"><label>View<select id="visual-mode"><option value="side">Side by side</option><option value="overlay">Opacity overlay</option><option value="difference">Pixel difference</option></select></label><label>Zoom<select id="visual-zoom"><option value="0.5">50%</option><option value="1" selected>100%</option><option value="2">200%</option></select></label><label>After opacity<input id="visual-opacity" type="range" min="0" max="100" value="50"></label><label>Channel tolerance<input id="visual-tolerance" type="range" min="0" max="255" value="0"></label></div>
+<p id="visual-result" role="status"></p><div class="visual-panes"><figure><figcaption id="visual-caption-a">Before</figcaption><div class="visual-scroll"><canvas id="visual-a" role="img" aria-label="Before capture" tabindex="0"></canvas></div></figure><figure id="visual-second"><figcaption>After</figcaption><div class="visual-scroll"><canvas id="visual-b" role="img" aria-label="After capture" tabindex="0"></canvas></div></figure></div>
+</div></section>
 <p class="notice">Measurements are review evidence, not accessibility certification. Unknown backdrops and unsupported SVG compositions remain explicit. This initial runner covers steady states; scroll, hover, frame and performance automation remain in the coverage backlog.</p>
 </main>
 <script type="module" src="/tools/diagnostics/ui.mjs"></script>

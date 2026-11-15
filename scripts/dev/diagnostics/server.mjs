@@ -3,6 +3,9 @@ import { readFile, readdir, stat, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { root } from './browser.mjs';
 
+import {decodeScreenshotPng} from './png-pixels.mjs';
+import { visualCases,listVisuals,readVisual,visualImage,visualCompatibility } from './visual-archive.mjs';
+
 const reports = path.join(root, 'research-artifacts', 'diagnostics');
 export async function startServer(port = 0) {
   let job = { state: 'idle' };
@@ -30,6 +33,23 @@ export async function startServer(port = 0) {
         return;
       }
       if (request.method !== 'GET' && request.method !== 'HEAD') return send(405, { error: 'Method not allowed.' });
+      if(url.pathname.startsWith('/api/visual')){
+        try{
+          const q=url.searchParams, only=keys=>{if([...q.keys()].some(k=>!keys.includes(k))||keys.some(k=>q.getAll(k).length!==1))throw Error('Invalid visual query');};
+          if(url.pathname==='/api/visual-cases'){only([]);return send(200,await visualCases());}
+          if(url.pathname==='/api/visuals'){only(['case']);return send(200,await listVisuals(q.get('case')));}
+          if(url.pathname==='/api/visual'||url.pathname==='/api/visual-image'||url.pathname==='/api/visual-pixels'){
+            only(['case','run','capture']);const args=[q.get('case'),q.get('run'),q.get('capture')];
+            if(url.pathname==='/api/visual-pixels')return send(200,decodeScreenshotPng(await visualImage(...args)).pixels,'application/octet-stream');
+            return send(200,url.pathname==='/api/visual'?await readVisual(...args):await visualImage(...args),url.pathname==='/api/visual'?'application/json':'image/png');
+          }
+          if(url.pathname==='/api/visual-compare'){
+            only(['case','beforeRun','beforeCapture','afterRun','afterCapture']);
+            return send(200,visualCompatibility(await readVisual(q.get('case'),q.get('beforeRun'),q.get('beforeCapture')),await readVisual(q.get('case'),q.get('afterRun'),q.get('afterCapture'))));
+          }
+          return send(404,{error:'Unknown visual endpoint.'});
+        }catch(error){return send(error.code==='ENOENT'?404:400,{error:'Visual evidence unavailable, invalid or corrupted.'});}
+      }
       if (url.pathname === '/api/reports') {
         await mkdir(reports, { recursive: true });
         const names = (await readdir(reports)).filter(n => /^run-[\w-]+$/.test(n)).sort().reverse();

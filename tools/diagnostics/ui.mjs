@@ -152,3 +152,6 @@ async function run(gallery = false) {
 }
 $('#run').onclick = () => run(); $('#run-gallery').onclick = () => run(true);
 runs().catch(error => { $('#summary').textContent = error.message; });
+
+import { installVisualViewer } from './visual-viewer.mjs';
+installVisualViewer();

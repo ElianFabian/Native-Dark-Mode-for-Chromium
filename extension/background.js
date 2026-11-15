@@ -1,6 +1,7 @@
 import { DarkModeController } from './controller.js';
 import { RuleManager, isExtensionStore, isSeparatorEmphasis, matchingRule } from './rules.js';
 import { createBackup, importBackup, mergeRules, parseConfigurationBackup } from './backup.js';
+import { fingerprintRendererSource } from './renderer-fingerprint.js';
 
 const controller = new DarkModeController(chrome);
 const manager = new RuleManager(chrome, controller);
@@ -16,6 +17,11 @@ async function snapshot(tabId) {
 
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (sender.id !== chrome.runtime.id || !message) return;
+  if (message.type === 'fingerprint-renderer-source-v1' && Number.isInteger(sender.tab?.id)) {
+    // HTTP content worlds may lack WebCrypto. Hash only bounded own initializer source on request.
+    void fingerprintRendererSource(message.source).then(digest => reply({ digest }), () => reply({ digest: null }));
+    return true;
+  }
   if (message.type === 'website-preset' && Number.isInteger(sender.tab?.id)) {
     // Only return the active preset. Embedded documents do not receive stored rules.
     if (isExtensionStore(sender.tab.url)) {

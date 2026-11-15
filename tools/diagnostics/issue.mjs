@@ -9,7 +9,8 @@ export function issueMarkdown(report) {
   for(const capture of report.captures.filter(c=>c.sourceId)) {
     const source=report.captures.find(c=>c.id===capture.sourceId);
     lines.push(`## ${capture.theme} / ${capture.level} / ${capture.scale}`, '',
-      `Settled: ${capture.settled}. Rows: ${capture.rows.length}. Skipped: ${capture.coverage?.skipped ?? 'unknown'}.`, '');
+      `Settled: ${capture.settled}. Rows: ${capture.rows.length}. Skipped: ${capture.coverage?.skipped ?? 'unknown'}.`,
+      `Executing renderer: ${capture.rendererIdentity?.status ?? 'not recorded'}. Instance: ${capture.rendererIdentity?.observed?.instanceId ?? 'unknown'}. Fingerprint kind: ${capture.rendererIdentity?.expected?.fingerprintKind ?? 'unknown'}.`, '');
     let matched=0;
     for(const row of capture.rows.slice(0,50)) {
       const original=source?.rows.find(r=>r.key===row.key&&r.signature===row.signature);

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Source scheme and sampling preservation controls</title>
+<style id="author-style">
+:root { color-scheme: normal; }
+:root.author-light { color-scheme: light !important; }
+:root.author-dark { color-scheme: dark !important; }
+body { margin:16px; background:white; color:#253342; font:16px Arial; }
+h1 { font-size:22px; }
+.controls { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.panel { padding:12px; border:1px solid #999; background:light-dark(#f5f5f5,#222); color:CanvasText; }
+.light { color-scheme:light; } .dark { color-scheme:dark; } .adaptive { color-scheme:light dark; }
+button,input,select,a { margin:4px; }
+.panel a { display:inline-block; }
+.panel a:focus { outline:2px solid currentColor; }
+.panel a:hover { text-decoration:none; }
+.panel :disabled { opacity:.6; }
+.glyph { width:20px; height:20px; vertical-align:middle; fill:currentColor; }
+.spacer { height:1100px; }
+#tail { padding:12px; border:1px solid #aaa; color:CanvasText; background:light-dark(#fafafa,#181818); }
+iframe { width:420px; height:170px; border:1px solid #888; }
+#head-dependent,#head-independent { color:#222; background:white; }
+.late-source-context { position:fixed; top:36px; right:12px; padding:8px; background:white; color:#222; z-index:20; }
+.late-source-context span { color:#222; }
+.late-source-context img { display:block; width:160px; height:56px; }
+html:has(head > script[type="application/x-ndm-probe"]) #head-dependent { color:#b00000; }
+</style>
+<h1>Synthetic source-scheme preservation</h1>
+<p>Native/system colors, authored schemes, inheritance and sampling groups. This is not an Amazon reproduction.</p>
+<div class="controls">
+  <section class="panel"><strong>Inherited scheme</strong></section>
+  <section class="panel light"><strong>Authored light</strong></section>
+  <section class="panel dark"><strong>Authored dark</strong></section>
+  <section class="panel adaptive"><strong>Authored light/dark</strong></section>
+</div>
+<div id="shadow-host"></div>
+<p><a id="head-dependent" href="#tail">Head-dependent source ink</a> <a id="head-independent" href="#tail">Independent source ink</a></p>
+<template id="late-source-context"><section class="late-source-context"><span>New source label</span><button>New native control</button><a href="#late-static"><img src="../solid-artwork.svg" alt="New static source glyph" data-late-image="static"></a><a href="#late-pulse"><img src="../animated-artwork.svg" alt="New opacity source glyph" data-late-image="pulse"></a><div data-late-shadow></div></section></template>
+<iframe title="Eligible local child" data-src="source-scheme-sampling.html?child=1"></iframe>
+<div class="spacer"></div>
+<section id="tail"><strong>Initially offscreen inheritance</strong><div><span>System-colored ancestor <button>Native tail button</button><a href="#tail">Unspecified link color</a><svg class="glyph" viewBox="0 0 20 20" aria-label="Synthetic functional glyph"><path d="M2 8h6V2h4v6h6v4h-6v6H8v-6H2z"/></svg></span></div></section>
+<script>
+window.createLateSourceContext=(mode='open')=>{
+  const fragment=document.querySelector('#late-source-context').content.cloneNode(true);
+  const host=fragment.querySelector('[data-late-shadow]');
+  window.lateSourceShadow=host.attachShadow({mode});
+  lateSourceShadow.innerHTML='<style>:host{display:block}span{color:#222}.readable{color:#eee}</style><span>New shadow label</span><span class="readable">Readable shadow negative</span><button>New shadow native control</button>';
+  document.body.append(fragment);
+};
+const controls='<button>Native button</button><button disabled>Disabled</button><input aria-label="Synthetic input" placeholder="Placeholder"><select aria-label="Synthetic select"><option>Option</option></select><a href="#tail">Inherited link</a><div><span style="color:CanvasText">System text</span><span style="color:light-dark(#123,#def)">Adaptive text</span><svg class="glyph" viewBox="0 0 20 20" aria-label="Synthetic functional glyph"><path d="M2 8h6V2h4v6h6v4h-6v6H8v-6H2z"/></svg></div>';
+for(const panel of document.querySelectorAll('.panel'))panel.insertAdjacentHTML('beforeend',controls);
+const shadow=document.getElementById('shadow-host').attachShadow({mode:'open'});
+shadow.innerHTML='<style>:host{display:block;margin:12px 0}button{color:ButtonText}a{margin:8px}</style><button>Shadow native control</button><a href="#tail">Shadow link</a>';
+if(new URLSearchParams(location.search).has('child')){
+  document.querySelector('iframe').remove();document.querySelector('.spacer').remove();document.querySelector('#tail').remove();
+  document.querySelectorAll('.panel').forEach((p,i)=>{if(i)p.remove()});
+  document.querySelector('h1').remove();document.querySelector('p').remove();
+}else{const frame=document.querySelector('iframe');frame.src=frame.dataset.src;}
+document.documentElement.dataset.fixtureReady='yes';
+</script>
+</html>

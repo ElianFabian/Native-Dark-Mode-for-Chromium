@@ -1,6 +1,6 @@
 // Shared image-text selection policy. This aggregation is an engineering
 // heuristic, not an APCA/WCAG conformance test. See docs/IMAGE-TEXT-CONTRAST.md.
-(() => {
+(function nativeDarkModeImageContrast() {
   const dark = [18, 18, 18, 1], light = [255, 255, 255, 1];
 
   function targetFor(size, weight) {
@@ -51,4 +51,6 @@
     return { target, uncertain: best.coverage < .9 || best.worst < target / 2,
       method: sample.method || 'weighted-region', ...best, candidates: measurements };
   };
+  // Read only on an authorized diagnostic request, not on the paint path.
+  globalThis.nativeDarkModeImageContrastSource = () => nativeDarkModeImageContrast.toString();
 })();

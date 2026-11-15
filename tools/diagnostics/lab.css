@@ -30,3 +30,5 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; max-hei
 .help-tooltip { position: fixed; z-index: 10000; max-width: min(380px,calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: auto; padding: 12px 16px; border: 1px solid #a4b7d2; border-radius: 8px; background: #253348; color: #edf2fa; box-shadow: 0 4px 16px #0008; overflow-wrap: anywhere; font-size: .95rem; }
 @media(max-width:650px) { header { align-items: start; flex-direction: column; } header,main { padding: 16px; } h1 { font-size: 2rem; } }
 @media(max-width:900px) { .cards { grid-template-columns: minmax(0,1fr); } }
+
+.visual-panes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.visual-panes figure{min-width:0;margin:0}.visual-scroll{overflow:auto;max-height:65vh;border:1px solid #8594ac}.visual-scroll canvas{display:block;max-width:none}.visual-panes:has(#visual-second[hidden]){grid-template-columns:minmax(0,1fr)}#visual .toolbar label{min-width:0;max-width:100%}#visual select{max-width:100%}#visual-facts{white-space:pre-wrap;overflow-wrap:anywhere}@media(max-width:650px){.visual-panes{grid-template-columns:minmax(0,1fr)}}

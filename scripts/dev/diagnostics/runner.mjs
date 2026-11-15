@@ -3,12 +3,15 @@ import { execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import { launchBrowser, root, until } from './browser.mjs';
+import { launchBrowser, closeBrowser, root, until } from './browser.mjs';
 import { collectPaint } from '../../../tools/diagnostics/collect.mjs';
 import { analyze, compare } from '../../../tools/diagnostics/analysis.mjs';
 import { cases } from '../../../tools/diagnostics/cases.mjs';
 import { issueMarkdown } from '../../../tools/diagnostics/issue.mjs';
 import { triage, summaryMarkdown } from '../../../tools/diagnostics/triage.mjs';
+import { createMetrics, sourceHashes } from './metrics.mjs';
+import { expectedRendererIdentity, compareRendererIdentity } from './identity.mjs';
+import { archiveCapture } from './visual-archive.mjs';
 
 async function fixtureDigest() {
   const hash = createHash('sha256');
@@ -22,11 +25,11 @@ async function fixtureDigest() {
   await walk(path.join(root, 'fixtures')); return hash.digest('hex');
 }
 
-async function stable(page, options) {
+async function stable(page, options, measure = (_phase, action) => action()) {
   let previous, since = performance.now(), sample;
   const end = performance.now() + 6000;
   do {
-    sample = await page.evaluate(`(${collectPaint})(${JSON.stringify(options)})`);
+    sample = await measure('collection', () => page.evaluate(`(${collectPaint})(${JSON.stringify(options)})`));
     const signature = JSON.stringify(sample);
     if (signature !== previous) { since = performance.now(); previous = signature; }
     if (performance.now() - since >= 200) return { ...sample, settled: true };
@@ -40,7 +43,13 @@ export async function captureSuite({ base, browser, url, selector, labels = fals
   const name = 'run-' + Date.now() + '-' + randomUUID().slice(0, 8);
   const directory = outputDirectory ? path.resolve(outputDirectory) : path.join(root, 'research-artifacts', 'diagnostics', name);
   await mkdir(directory, { recursive: true });
-  const owned = await launchBrowser(browser);
+  const metrics = createMetrics({ category: 'capture', sessionId: process.env.NDM_METRICS_SESSION,
+    hashes: await sourceHashes(), scope: [url ? 'live' : gallery ? 'gallery' : 'smoke', ...themes, ...levels] });
+  const finishRun = metrics.start('run', { artifact: path.relative(root, directory).replaceAll('\\', '/') });
+  let owned;
+  try { owned = await metrics.measure('browser-startup', () => launchBrowser(browser)); }
+  catch (error) { finishRun('failed'); throw error; }
+  let outcome = 'failed';
   const abort = () => { void owned.close().catch(() => {}); };
   signal?.addEventListener('abort', abort, { once: true });
   const report = { format: 'native-dark-diagnostics', version: 1, runId: name, environment: { browser: owned.version.product, platform: process.platform,
@@ -51,6 +60,7 @@ export async function captureSuite({ base, browser, url, selector, labels = fals
       .map(file => readFile(path.join(root, 'extension', file))));
     report.environment.rendererHash = renderer.reduce((hash, bytes) => hash.update(bytes), createHash('sha256')).digest('hex');
     report.environment.fixtureHash = await fixtureDigest();
+    report.environment.expectedRendererIdentity = await expectedRendererIdentity();
     let page = await owned.open('about:blank');
     const selected = url ? [{ id: 'live', url }] : cases.filter(c => gallery ? c.extended : !c.extended && ['automated', 'capture-only'].includes(c.status));
     for (const specimen of selected) for (const scale of scales) {
@@ -64,43 +74,61 @@ export async function captureSuite({ base, browser, url, selector, labels = fals
         // the previous live page blocking the next authored/theme capture.
         await page.close(); page = await owned.open('about:blank');
         await page.send('Emulation.setDeviceMetricsOverride', { width: 1000, height: 900, deviceScaleFactor: 1, mobile: false });
-        await page.send('Page.navigate', { url: address }); await page.send('Page.bringToFront');
-        await until(() => page.evaluate(`document.readyState==='complete' && !!document.body && ${url ? 'true' : "document.documentElement.dataset.fixtureReady==='yes'"}`), 'specimen load');
+        const caseId = `${specimen.id}/${scale}/${theme}/${level}/default`;
+        const measure = (phase, action) => metrics.measure(phase, action, { caseId });
+        await measure('navigation', async () => {
+          await page.send('Page.navigate', { url: address }); await page.send('Page.bringToFront');
+          await until(() => page.evaluate(`document.readyState==='complete' && !!document.body && ${url ? 'true' : "document.documentElement.dataset.fixtureReady==='yes'"}`), 'specimen load');
+        });
         if(issue) {
           const found=await page.evaluate(`(()=>{const elements=document.querySelectorAll(${JSON.stringify(selector)});elements[0]?.scrollIntoView({block:'center',behavior:'instant'});return elements.length})()`);
           if(!found) throw Error('Issue selector matched no element. Check the URL, selector and frame; isolated profiles do not share your login.');
         }
-        const readiness = await page.evaluate(`(async()=>{
+        const readiness = await measure('resource-readiness', () => page.evaluate(`(async()=>{
           document.documentElement.style.zoom=${scale};
           const bounded=async work=>{let timer;try{return await Promise.race([work.then(()=>true,()=>false),new Promise(resolve=>{timer=setTimeout(()=>resolve(false),2000)})]);}finally{clearTimeout(timer);}};
           const visible=[...document.images].filter(e=>{const r=e.getBoundingClientRect();return r.width&&r.height&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;});
           const [fontsReady,visibleImagesReady]=await Promise.all([bounded(document.fonts.ready),bounded(Promise.all(visible.map(e=>e.decode().catch(()=>{}))))]);
           return {fontsReady,visibleImagesReady,visibleImages:visible.length};
-        })()`);
+        })()`));
         if (theme !== 'source') {
-          await owned.rule(address, theme, level);
-          await until(() => page.evaluate("!!document.querySelector('[data-native-dark-mode-paint]')"), 'theme paint');
+          await measure('theme-application', async () => {
+            await owned.rule(address, theme, level);
+            await until(() => page.evaluate("!!document.querySelector('[data-native-dark-mode-paint]')"), 'theme paint');
+          });
         }
-        const sample = await stable(page, { targeted: !url, selector, context:issue, limit:issue?50:1500, labels: !url || labels });
+        const sample = await measure('stabilization', () => stable(page, { targeted: !url, selector, context:issue, limit:issue?50:1500, labels: !url || labels }, measure));
         if(issue&&!sample.rows.length) throw Error('No visible inspectable rows for the issue selector; frame, visibility or traversal limits may prevent inspection.');
         sample.readiness = readiness;
         if (!readiness.fontsReady || !readiness.visibleImagesReady) sample.settled = false;
         const id = `${specimen.id}/${scale}/${theme}/${level}/default`;
+        const rendererIdentity = await measure('renderer-identity', async () => compareRendererIdentity(report.environment.expectedRendererIdentity, await owned.rendererIdentity(page)));
         const screenshot = `${String(report.captures.length).padStart(3, '0')}.png`;
         // Screenshots only for public local fixtures. Live capture defaults to computed facts.
+        let visualArchive = null;
         if (!url) {
-          const image = await page.send('Page.captureScreenshot', { format: 'png' });
-          await writeFile(path.join(directory, screenshot), Buffer.from(image.data, 'base64'));
+          await measure('screenshot-export', async () => {
+            const conditions=await page.evaluate(`(()=>({origin:location.origin,path:location.pathname,viewport:[innerWidth,innerHeight],dpr:devicePixelRatio,zoom:[getComputedStyle(document.documentElement).zoom,getComputedStyle(document.body).zoom],scroll:[scrollX,scrollY],fonts:document.fonts.status,observedAt:new Date().toISOString()}))()`);
+            if(conditions.origin!==new URL(base).origin||!conditions.path.startsWith('/fixtures/'))throw Error('Visual archive requires the owned local fixture document');
+            const image = await page.send('Page.captureScreenshot', { format: 'png' });
+            const png=Buffer.from(image.data,'base64');
+            await writeFile(path.join(directory, screenshot), png);
+            const archived=await archiveCapture({caseId:specimen.id,runId:name,captureId:id,png,metadata:{provenance:'local-fixture',fixturePath:conditions.path,
+              theme,level,state:'default',action:'steady-state',browser:owned.version.product,platform:process.platform,viewport:conditions.viewport,dpr:conditions.dpr,zoom:conditions.zoom,
+              scroll:conditions.scroll,crop:'viewport',fonts:conditions.fonts,readiness,settled:sample.settled,identityStatus:rendererIdentity.status,
+              rendererHash:report.environment.rendererHash,fixtureHash:report.environment.fixtureHash,observedAt:conditions.observedAt}});
+            visualArchive=path.relative(root,archived.directory).replaceAll('\\','/');
+          });
         }
         const capture = { id, specimen: specimen.id, theme, level, scale, state: 'default', sourceId: theme === 'source' ? null : sourceId,
-          screenshot: url ? null : screenshot, ...sample };
+          screenshot: url ? null : screenshot, visualArchive, rendererIdentity, ...sample };
         report.captures.push(capture);
         console.log(`${id}: ${sample.rows.length} elements, ${sample.settled ? 'stable' : 'UNSTABLE'}`);
       }
     }
     if(issue) report.issue={url:new URL(url).origin+new URL(url).pathname,selector,labels:Boolean(labels),contextDepth:4,
       limitations:'Fresh isolated profile; default state only. No shared login, hover trigger, closed roots, frame selection or exact image pixels. Source/themed structural matching is best-effort.'};
-    const analysis = analyze(report);
+    const analysis = await metrics.measure('analysis', () => analyze(report));
     if (!url) {
       for (const capture of report.captures.filter(c => c.theme !== 'source' && cases.find(s => s.id === c.specimen)?.status === 'automated')) {
         const checks = analysis.checks.filter(c => c.capture === capture.id);
@@ -111,8 +139,9 @@ export async function captureSuite({ base, browser, url, selector, labels = fals
         const drawingPreserved = capture.rows.every(row => !row.svg || JSON.stringify(row.svg.geometry) === JSON.stringify(original.rows.find(r => r.key === row.key)?.svg?.geometry));
         const multicolor = capture.rows.find(r => r.key === 'fixture:multicolor'), originalMulticolor = original.rows.find(r => r.key === 'fixture:multicolor');
         const negativePreserved = !multicolor || JSON.stringify(multicolor.svg.paints) === JSON.stringify(originalMulticolor.svg.paints) && multicolor.layers[0].filter === originalMulticolor.layers[0].filter;
-        report.assertions.push({ id: capture.id, passed: capture.settled && required && drawingPreserved && negativePreserved && failures.length === 0,
-          failures: failures.map(c => c.id), requiredMeasured: required, drawingPreserved, negativePreserved });
+        const identityVerified = capture.rendererIdentity.status === 'match' && capture.rendererIdentity.observed.preset === capture.theme && capture.rendererIdentity.observed.separatorLevel === capture.level;
+        report.assertions.push({ id: capture.id, passed: identityVerified && capture.settled && required && drawingPreserved && negativePreserved && failures.length === 0,
+          failures: failures.map(c => c.id), requiredMeasured: required, drawingPreserved, negativePreserved, identityVerified });
       }
       // Prove detection using a real DOM corruption, without editing the renderer.
       const testUrl = `${base}/fixtures/diagnostics/cases.html?case=subtle-frame`;
@@ -131,7 +160,8 @@ export async function captureSuite({ base, browser, url, selector, labels = fals
       report.selfTest = { introducedBorderDetected: detected, repairedBorderResolved: resolved };
       report.assertions.push({ id: 'deliberate-dom-border-corruption-detected-and-repaired', passed: detected && resolved });
     }
-    report.timings = { captureAndAnalysisMs: Math.round(performance.now() - started) };
+    report.timings = { captureAndAnalysisMs: Math.round(performance.now() - started), metricsWriteMs: metrics.overheadMs };
+    report.metrics = { sessionId: metrics.sessionId, runId: metrics.runId };
     await writeFile(path.join(directory, 'capture.json'), JSON.stringify(report, null, 2));
     await writeFile(path.join(directory, 'analysis.json'), JSON.stringify(analysis, null, 2));
     if(issue) await writeFile(path.join(directory,'issue.md'),issueMarkdown(report));
@@ -141,6 +171,12 @@ export async function captureSuite({ base, browser, url, selector, labels = fals
     if (comparison) await writeFile(path.join(directory, 'comparison.json'), JSON.stringify(compare(JSON.parse(await readFile(comparison, 'utf8')), report), null, 2));
     const failed = report.assertions.filter(a => !a.passed);
     console.log(`Report: ${directory}\n${url ? 'Capture only: no fixture assertions. Review measurement and coverage results.' : `Assertions: ${report.assertions.length - failed.length}/${report.assertions.length}`}`);
+    outcome = failed.length ? 'failed' : 'passed';
     return { name, directory, assertions: report.assertions, passed: failed.length === 0 };
-  } finally { signal?.removeEventListener('abort', abort); await owned.close(); }
+  } finally {
+    signal?.removeEventListener('abort', abort);
+    try { await metrics.measure('browser-cleanup', () => closeBrowser(owned)); }
+    catch (error) { outcome = 'failed'; throw error; }
+    finally { finishRun(signal?.aborted ? 'aborted' : outcome); }
+  }
 }

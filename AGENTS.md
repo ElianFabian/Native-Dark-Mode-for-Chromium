@@ -87,6 +87,10 @@ Use [extension/manifest.json](extension/manifest.json) as the extension version 
 
 ## Efficient rendering repair loop
 
+For new or reopened incidents, use [Incident response decision flow](docs/INCIDENT-RESPONSE-FLOW.md) as the entry point. Preserve its source-fidelity gates and independent reproduction/local/integration/original-context verification statuses.
+
+Read [Efficient rendering repair procedure](docs/RENDERING-REPAIR-WORKFLOW.md) for the ordered evidence, reproduction and verification workflow and its current capability limits. Follow [Rendering efficiency implementation plan](docs/RENDERING-EFFICIENCY-PLAN.md) when building the pending extraction, visual comparison, timing and performance tools; do not assume planned features already exist. Batch independent reporter console reads per page/state and validate the unthemed local baseline before changing renderer heuristics.
+
 Use [Reporting and fast testing](docs/REPORTING-AND-FAST-TESTING.md) for the diagnostic handoff and measured testing shortcuts. Start with URL/case, theme, level and trigger; inspect the selector-scoped issue bundle before inferring missing styles from a screenshot. Its raw facts, ancestor/generated layers and deterministic property differences remain separate from defect classification. Keep missing selectors, unmatched nodes and unsupported/authenticated states explicit. Do not export live labels without the existing opt-in.
 
 For a narrow mechanism change, `npm run verify -- --focus GROUPS` retains all unit/syntax tests and the selected shared browser groups. Choose all affected groups and retain preservation controls; source classification/scheduling changes often require broader verification. Focused results never substitute for complete `npm run verify -- --browser` release checks. `npm test` discovers test files only under `test/`; keep new unit tests there. Do not cache test success or shorten assertions to claim a speed improvement. Prefer waiting for the actual bounded state transition over fixed sleeps/frame-count assumptions.

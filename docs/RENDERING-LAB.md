@@ -124,3 +124,31 @@ The image-text follow-up uses weighted word-region sampling and the shared perce
 
 
 For selector-scoped issue bundles, focused browser groups and measured unit-discovery improvements, see [Reporting and fast testing](REPORTING-AND-FAST-TESTING.md). The full browser verification now also checks issue-bundle creation and redaction. The changed-backing scroll probe waits for four real bounded transitions while recording all intermediate frames, rather than assuming 32 frames always exercise a transition.
+
+
+## Failure evidence validation
+
+The full `npm run verify -- --browser` path also validates the local failure collector with a deliberate assertion on the existing canonical frame fixture. It checks frozen expected/actual facts, ancestor/generated layers, viewport/element PNGs and refusal outside the owned fixture path. This is a tooling self-test, not a renderer defect or an additional live-site pass. Shared runs retain unique success/failure manifests and partial results under ignored `research-artifacts/diagnostics/shared-…/`; see [diagnostic reliability design](DIAGNOSTIC-RELIABILITY-DESIGN.md).
+
+
+Full browser verification also checks initialized renderer identity using an ignored extension copy. It retains controlled stale-source/dependency-change results, reinjection identity, preset/Off, child-frame and HTTP-worker-fallback evidence. Real runtime reload invalidation is recorded separately from the successful fresh-process experiment; this is not stale-context recovery coverage. Capture JSON retains runtime identity separately from its existing disk renderer hash, and canonical automated assertions require matching identity/settings. See [diagnostic reliability design](DIAGNOSTIC-RELIABILITY-DESIGN.md#2-identify-the-executing-renderer).
+
+
+## Individual shared cases
+
+Use `npm run verify -- --list-cases` to inspect named shared-run IDs/groups and atomic companions; these IDs describe the shared expectations and may differ from gallery specimen IDs. `npm run verify -- --cases ID[,ID...]` runs syntax/all Node tests plus the selected units, retaining their source, negative, theme, level and state checks. Shared setup/state companions remain together and are reported explicitly. Unknown/empty/duplicate selections fail. The full inventory now registers 375 combinations, including both catalogue inputs; group selection preserves their original ordering and required companions. A selected case is reduced scope, not a release pass. The checked-in variant inventory asserts current output completeness and never caches results. Unique shared manifests/results record scope and per-unit durations. See [reporting and fast testing](REPORTING-AND-FAST-TESTING.md#named-case-selection).
+
+
+Named shared cases also support explicit `--repeat 2..10` experiments through verification, using a fresh owned browser/profile/server per attempt and retaining all companions/variants. Results are retained per attempt and aggregated without retry-to-green. Mixed completed outcomes fail as unstable; timeout/compatibility/cleanup gaps fail as incomplete. Default group/full verification does not repeat. See [reporting](REPORTING-AND-FAST-TESTING.md#repeating-a-case-explicitly) for commands, bounds and retained-state/prefix replay limitations.
+
+
+## Visual archive (local steady state)
+
+Capture-suite PNGs now also enter ignored `research-artifacts/visual-regressions/<case>/<run>/<capture-key>/`, with metadata/checksums and immutable originals. Existing report links and diagnostic capture files remain. `npm run visuals -- list CASE` finds capture IDs and selected references; `reference CASE RUN CAPTURE` explicitly selects a baseline; `compare CASE RUN CAPTURE RUN CAPTURE` checks conditions and returns nonzero for unknown/incompatible evidence. This is metadata comparison, not a pixel diff or visual pass. New captures never promote references. Live/issue reports are not archived as screenshots. Supplied-image import, frame sequences, shared ad hoc screenshots and a visual archive viewer remain pending. See the [repair procedure](RENDERING-REPAIR-WORKFLOW.md#local-visual-archive).
+
+
+## Visual comparison tab
+
+The **Visual comparison** tab browses archived local case/run/capture IDs, labeling explicitly selected references. Load two images to inspect side-by-side with shared zoom/scroll, an opacity overlay or a raw RGBA difference map with changed-region bounds. Capture-condition compatibility and unknown fields remain visible. Geometry mismatch keeps the original images and disables overlay/difference. Channel tolerance (default zero) is explicit; differences, including antialiasing/content changes, require review and are not automatic renderer failures.
+
+Analysis decodes original archive PNG bytes on the local server with Node/zlib, avoiding perturbed browser Canvas readbacks observed in isolated Brave. Supported input is non-interlaced 8-bit RGB/RGBA, at most four million pixels/20 MiB per image; unsupported/corrupt inputs fail. Original PNGs/reference selections are never changed by the viewer, and no mask is applied. Read-only endpoints validate archive IDs and checksums and accept no arbitrary path or remote URL. Full verification includes this viewer independently of the retained computed-report comparison. See the [repair procedure](RENDERING-REPAIR-WORKFLOW.md#visual-comparison-in-the-lab) for exact limits and timing semantics.

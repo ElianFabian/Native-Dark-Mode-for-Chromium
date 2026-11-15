@@ -2,7 +2,7 @@
 // Adapted from Blink's dark_mode_color_filter.cc, dark_mode_color_classifier.cc,
 // and dark_mode_lab_color_space.h at 39567dda62f317e0d95c05c608e68ff81f7d9e42.
 // Distributed under the BSD-style license in LICENSE.chromium.
-(() => {
+(function nativeDarkModeChromiumColors() {
   const white = [0.964212, 1, 0.825188];
   // Blink's sRGB matrix after Bradford adaptation from D65 to D50, and its inverse.
   const rgbToXyz = [
@@ -99,4 +99,6 @@
         perceptualScore(value, background, dark, light, bgDark, bgLight));
     };
   };
+  // Read only on an authorized diagnostic request, not on the paint path.
+  globalThis.nativeDarkModeChromiumColorSource = () => nativeDarkModeChromiumColors.toString();
 })();
