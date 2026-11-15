@@ -1732,6 +1732,10 @@
     const top = rect.top + topInset + (boxHeight - height) * Number(position[2]) / 100;
     const range = document.createRange();
     const colors = new Map();
+    // The sample keeps the luminance of every pixel it has yielded, by pixel
+    // position, so repeated label sampling over the same image does not
+    // recompute it. At most 96 x 96 doubles per sample.
+    sample.luminances ??= new Float64Array(sample.width * sample.height).fill(NaN);
     let words = 0, visits = 0;
     for (const node of placement?.labels?.flatMap(label => [...label.childNodes]) ?? element.childNodes) {
       if (!textNode(node)) continue;
@@ -1759,14 +1763,20 @@
               const key = (r << 16) + (g << 8) + b;
               const entry = colors.get(key);
               if (entry) entry.weight++;
-              else colors.set(key, { color: [r, g, b, 1], weight: 1 });
+              else {
+                const color = [r, g, b, 1];
+                let value = sample.luminances[index / 4];
+                if (Number.isNaN(value)) sample.luminances[index / 4] = value = luminance(color);
+                colors.set(key, { color, weight: 1, luminance: value });
+              }
             }
           }
         }
       }
     }
     return colors.size ? { colors: [...colors.values()].map(v => v.color),
-      weights: [...colors.values()].map(v => v.weight), method: 'weighted-word-bounds' } : null;
+      weights: [...colors.values()].map(v => v.weight), luminances: [...colors.values()].map(v => v.luminance),
+      method: 'weighted-word-bounds' } : null;
   }
 
   function imageLabelPaint(element, style, minimum) {
@@ -1807,29 +1817,49 @@
     if (!authored?.[3] || style.backgroundClip === 'text') return '';
     const dark = [18, 18, 18, 1], light = [255, 255, 255, 1];
     const colors = sampled?.colors ?? [dark, light];
-    const contrast = (ink, backing, alpha) => {
+    // Pixel luminances are fixed for the sample; every candidate ink is
+    // measured against the same values. An opaque ink composited over any
+    // backdrop is the ink itself, so its luminance is read once per ink. With
+    // a floor, the scan stops at the first pixel below it: the minimum over the
+    // region is below the floor exactly when some pixel is.
+    const pixelLuminances = sampled?.luminances?.length === colors.length ? sampled.luminances : colors.map(luminance);
+    const contrast = (ink, backing, alpha, floor = -Infinity) => {
       let worst = Infinity;
-      for (const pixel of colors) {
-        const bg = alpha ? compositeColor([...backing.slice(0, 3), alpha], pixel) : pixel;
-        worst = Math.min(worst, contrastRatio(luminance(compositeColor(ink, bg)), luminance(bg)));
+      const opaque = ink[3] === 1;
+      const inkLuminance = opaque ? luminance(ink) : undefined;
+      if (!alpha && opaque) {
+        for (const pixel of pixelLuminances) {
+          worst = Math.min(worst, contrastRatio(inkLuminance, pixel));
+          if (worst < floor) return worst;
+        }
+        return worst;
+      }
+      const plate = alpha ? [...backing.slice(0, 3), alpha] : null;
+      for (let index = 0; index < colors.length; index++) {
+        const bg = plate ? compositeColor(plate, colors[index]) : colors[index];
+        worst = Math.min(worst, contrastRatio(opaque ? inkLuminance : luminance(compositeColor(ink, bg)),
+          plate ? luminance(bg) : pixelLuminances[index]));
+        if (worst < floor) return worst;
       }
       return worst;
     };
+    let neutral;
+    const preferredNeutral = () => neutral ??= contrast(dark) > contrast(light) ? dark : light;
     const decision = globalThis.nativeDarkModeImageTextContrast?.(sampled, {
       authored, fontSize: parseFloat(style.fontSize), fontWeight: parseFloat(style.fontWeight)
     });
-    let ink = decision?.ink ?? (contrast(authored) >= minimum ? authored : contrast(dark) > contrast(light) ? dark : light);
+    let ink = decision?.ink ?? (contrast(authored, undefined, 0, minimum) >= minimum ? authored : preferredNeutral());
     // Before manufacturing a rectangle, try a foreground that meets the
     // fallback ratio over the entire verified region. Small text over a flat
     // colored picture often has such an ink even if the perceptual policy
     // preferred the source polarity. Mixed/unknown pixels retain the backing.
     let adequateForeground = false;
-    if (allowBacking && sampled && contrast(ink) < minimum && parseFloat(style.fontSize) < 24) {
-      const candidate = contrast(dark) > contrast(light) ? dark : light;
+    if (allowBacking && sampled && contrast(ink, undefined, 0, minimum) < minimum && parseFloat(style.fontSize) < 24) {
+      const candidate = preferredNeutral();
       // A fully verified image region uses a shared 4.5 foreground floor;
       // the stronger palette's ordinary-text target must not force a plate
       // where a readable picture caption can stand on its own.
-      if (contrast(candidate) >= 4.5) { ink = candidate; adequateForeground = true; }
+      if (contrast(candidate, undefined, 0, 4.5) >= 4.5) { ink = candidate; adequateForeground = true; }
     }
     const backing = luminance(ink) < .5 ? light : dark;
     const declarations = `color: ${rgba(ink)} !important; -webkit-text-fill-color: ${rgba(ink)} !important;`;
@@ -1843,7 +1873,7 @@
     // Small text, uncertain regions and unsupported samples retain fallback.
     if (!allowBacking || retainedLargeInk || adequateForeground) return declarations;
     let alpha = 0;
-    while (contrast(ink, backing, alpha) < minimum && alpha < 1) alpha = Math.min(1, alpha + .1);
+    while (contrast(ink, backing, alpha, minimum) < minimum && alpha < 1) alpha = Math.min(1, alpha + .1);
     return declarations +
       (alpha ? `background-color: ${rgba([...backing.slice(0, 3), Math.round(alpha * 10) / 10])} !important;` : '');
   }

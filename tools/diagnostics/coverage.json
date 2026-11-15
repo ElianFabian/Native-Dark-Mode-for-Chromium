@@ -866,6 +866,16 @@
     "evidence": "Promoted 15 November: flushViewport OR-ed the lookahead flag across coalesced requests, so refresh-triggered full resamples on an anonymous 9172 to 10422-node Amazon document covered 1650 to 3244 targets for 1.2 to 1.9 s. The Simulated Native full resample now covers the visible set only and re-queues the lookahead region as an unpainted-only request for the next frame. Same-document runtime crossover (research-artifacts/diagnostics/a5-crossover-1794682981259): no lookahead-widened pass remains, largest pass 1.7 to 1.9 s to 0.8 to 1.5 s, worst settled scroll frame 2.1 to 2.9 s to 1.1 to 1.7 s, unique inspections equal within live variation. Eight fresh-profile activations unchanged; guard, 21 A/B states and the catalogue series identical in facts and pixels (a5-*). The local fixture does not coalesce a scroll with a refresh; the registered cases are preservation checks, and the live timing is not a machine-independent pass."
   },
   {
+    "id": "image-label-contrast-loops",
+    "symptom": "Image-label contrast loops recompute pixel luminance per candidate ink",
+    "status": "partial",
+    "cases": [
+      "large-image-label",
+      "source-scheme-sampling"
+    ],
+    "evidence": "Promoted 15 November as an exact work reduction, not a speed claim: image samples cache pixel luminance by position, sampledImageLabelPaint reads an opaque ink's luminance once per ink, stops floor comparisons at the first failing pixel and decides the neutral ink once per label. 80,000 Node cases identical with and without the shared policy (research-artifacts/diagnostics/e1-equivalence-*); synthetic 42-label probe identical paint in 48 of 48 A/B pairs and pixels identical at tolerance 1, label sampling 198 to 287 ms to 61 to 93 ms per pass (e1-label-fixture-ab-*); guard, 21 three-theme states and catalogue series identical (e1-*). Live Amazon runs inconclusive: the hotspot depends on the served content variant. The registered cases are preservation checks, not a machine-independent performance pass."
+  },
+  {
     "id": "sampling-batch-self-invalidation",
     "symptom": "Sampling batches invalidate style twice and query animations per element",
     "status": "partial",
