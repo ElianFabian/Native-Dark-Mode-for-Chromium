@@ -85,6 +85,45 @@
   const shadowRoots = new Set();
   const elementColorRules = new Map();
   const authoredPaint = new WeakMap();
+  // Unchanged-element pre-check for the whole-document idle rescan: the
+  // authored inputs an element was last classified from, recorded in local
+  // sampling, and the elements of the current batch that the document scan
+  // (not a subtree scan) produced.
+  let inspectSignatures = new WeakMap();
+  const labelImages = new WeakMap();
+  let precheckEligible = null;
+  let precheckSkipped = 0;
+  const signatureAttributes = ['role', 'hidden', 'disabled', 'aria-disabled', 'aria-expanded', 'aria-selected', 'aria-current', 'aria-hidden', 'data-theme', 'open', 'type'];
+  function sampleSignature(element, style, backdrops) {
+    const rect = element.getBoundingClientRect();
+    const before = getComputedStyle(element, '::before'), after = getComputedStyle(element, '::after');
+    const image = element instanceof HTMLImageElement ? element : element.firstElementChild instanceof HTMLImageElement ? element.firstElementChild : null;
+    const hasText = Array.prototype.some.call(element.childNodes, textNode);
+    // An overlay label's picture is found by geometry, not through the label,
+    // so the picture it was sampled against and its card's pictures are inputs.
+    const labelImage = labelImages.get(element);
+    const card = hasText ? element.closest(`a[href],${heading}`) : null;
+    return [
+      style.color, style.webkitTextFillColor, style.backgroundColor, style.backgroundImage, style.backgroundSize,
+      style.backgroundRepeat, style.backgroundBlendMode, style.backgroundPositionX, style.backgroundPositionY,
+      style.borderTopColor, style.borderRightColor, style.borderBottomColor, style.borderLeftColor,
+      style.borderTopStyle, style.borderStyle, style.borderTopWidth, style.borderBottomWidth, style.borderTopLeftRadius, style.borderImageSource,
+      style.boxShadow, style.outlineStyle, style.outlineWidth, style.outlineColor,
+      style.opacity, style.display, style.visibility, style.position, style.filter, style.mixBlendMode, style.maskImage, style.webkitMaskImage,
+      style.transform, style.clipPath, style.paddingTop, style.paddingLeft, style.overflowX, style.overflowY, style.pointerEvents,
+      style.textDecorationLine, style.textDecorationColor, style.textDecorationStyle, style.textDecorationThickness, style.textUnderlineOffset,
+      style.fontSize, style.fontWeight, style.colorScheme, style.appearance, style.cursor,
+      style.fill, style.stroke, style.fillOpacity, style.strokeOpacity,
+      String(chromiumTextBackdrop(element, backdrops.solid)),
+      element.childElementCount, hasText ? 1 : 0,
+      Math.round(rect.width), Math.round(rect.height),
+      element.href ? 1 : 0, signatureAttributes.map(name => element.getAttribute(name)).join('|'),
+      image ? image.currentSrc + '|' + image.complete + '|' + image.naturalWidth : '',
+      labelImage ? labelImage.isConnected + '|' + labelImage.currentSrc + '|' + labelImage.complete + '|' + labelImage.naturalWidth : '',
+      card ? card.getElementsByTagName('img').length + '|' + (card.querySelector('img')?.currentSrc ?? '') : '',
+      before.content, before.backgroundImage, before.backgroundColor, after.content, after.backgroundImage, after.backgroundColor
+    ].join('\u0001');
+  }
   let inspectingElement;
   const colorRules = new Map();
   const unusedColorRules = [];
@@ -1782,6 +1821,8 @@
 
   function imageLabelPaint(element, style, minimum) {
     const image = overlayImage(element, style);
+    if (image) labelImages.set(element, image);
+    else labelImages.delete(element);
     if (!image) return flowImageLabelPaint(element, style, minimum);
     if (!overlayLabels.has(image)) overlayLabels.set(image, new Set());
     overlayLabels.get(image).add(element);
@@ -4584,8 +4625,25 @@
     }
     for (const element of exposed) element.setAttribute(sampleMarker, 'source-scheme');
     const backdrops = { images: new Map(), solid: new Map() };
+    const signatureBackdrops = { images: new Map(), solid: new Map() };
+    const signable = element => preset === 'chromium' && (element instanceof HTMLElement || element instanceof SVGSVGElement);
     try {
-      return elements.map(element => [element, inspect(element, backdrops, switchingRenderer)]);
+      const updates = [];
+      for (const element of elements) {
+        if (precheckEligible?.has(element) && signable(element)) {
+          const recorded = inspectSignatures.get(element);
+          if (recorded !== undefined && sampleSignature(element, getComputedStyle(element), signatureBackdrops) === recorded) {
+            precheckSkipped++;
+            continue;
+          }
+        }
+        updates.push([element, inspect(element, backdrops, switchingRenderer)]);
+        // Record only in document scans: dirty flushes stay free of this cost,
+        // and the first rescan after one records what later rescans compare.
+        if (precheckEligible?.has(element) && signable(element)) inspectSignatures.set(element, sampleSignature(element, getComputedStyle(element), signatureBackdrops));
+        else inspectSignatures.delete(element);
+      }
+      return updates;
     } finally {
       for (const [element, paint] of previous) element.setAttribute(marker, paint);
       for (const element of headings) element.removeAttribute(sampleMarker);
@@ -4761,6 +4819,7 @@
     });
   }
 
+  let documentScan = false;
   function paintBatch(idleDeadline) {
     idleBatch = undefined;
     if (horizontalScrollTimer !== undefined) return;
@@ -4785,6 +4844,7 @@
       const batchLimit = preset === 'chromium' ? 16 : 4;
       do {
         const batch = new Set();
+        const eligible = new Set();
         while (batch.size < batchLimit) {
           if (!elements) {
             const root = pending.values().next().value;
@@ -4794,14 +4854,23 @@
             if (pending.has(root.parentElement) || pending.has(root.parentElement?.parentElement)) continue;
             // A static list lets the rest of the subtree continue if the page removes a node.
             elements = root.querySelectorAll('*').values();
+            documentScan = root === document.documentElement;
             if (root.nodeType === Node.ELEMENT_NODE && root !== document.documentElement && root !== document.body) batch.add(root);
           } else {
             const { value: element, done } = elements.next();
             if (done) elements = undefined;
-            else if (element.isConnected && element !== document.body && !element.matches(excluded)) batch.add(element);
+            else if (element.isConnected && element !== document.body && !element.matches(excluded)) {
+              batch.add(element);
+              if (documentScan) eligible.add(element);
+            }
           }
         }
-        applyRoles(inspectLocal([...batch]));
+        precheckEligible = eligible;
+        try {
+          applyRoles(inspectLocal([...batch]));
+        } finally {
+          precheckEligible = null;
+        }
       } while ((elements || pending.size) && performance.now() - started < 6 &&
         !idleDeadline.didTimeout && idleDeadline.timeRemaining() >= 2);
       if (elements || pending.size) schedule();
@@ -5345,11 +5414,13 @@
     const next = Object.hasOwn(separatorLevels, value) ? value : false;
     if (emphasizeSeparators === next) return;
     emphasizeSeparators = next;
+    inspectSignatures = new WeakMap();
     if (preset !== 'chromium') {
       sheet.replaceSync(paletteCSS(palettes[preset]));
       palettePaintRules.clear();
       paletteLabelRules.clear();
       sampledElements = new WeakSet();
+      inspectSignatures = new WeakMap();
       paintVisibleSurfaces();
       scheduleDocument();
       return;
@@ -5412,6 +5483,7 @@
       }
       marked.clear();
       sampledElements = new WeakSet();
+      inspectSignatures = new WeakMap();
       chromiumColorCache.clear();
       paletteTransitionRules.clear();
       palettePaintRules.clear();
@@ -5428,6 +5500,7 @@
       palettePaintRules.clear();
       paletteLabelRules.clear();
       sampledElements = new WeakSet();
+      inspectSignatures = new WeakMap();
       paintVisibleSurfaces(false, true, true);
       scheduleDocument();
       return;
