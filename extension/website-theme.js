@@ -233,7 +233,8 @@
       paint('icon-light', 'filter: brightness(0) invert(1)')
     ];
     return [
-      `:root:root { ${paletteProbe}: ${colors.base}; color-scheme: dark !important; background-color: ${colors.base} !important; color: ${colors.text} !important; ${backdrop(colors.base)} !important; }`,
+      `:root:root { ${paletteProbe}: ${colors.base}; color-scheme: ${schemeOverride} !important; background-color: ${colors.base} !important; color: ${colors.text} !important; ${backdrop(colors.base)} !important; }`,
+      `[${sampleMarker}~="source-scheme"] { color-scheme: normal; }`,
       `:root body { background-color: ${colors.surface} !important; ${backdrop(colors.surface)} !important; }`,
       paint('surface', `background-color: ${colors.surface} !important; ${backdrop(colors.surface)}`),
       paint('raised', `background-color: ${colors.raised} !important; ${backdrop(colors.raised)}`),
@@ -4537,7 +4538,7 @@
     // Full sampling disables the paint sheet, including its root dark scheme.
     // Local sampling must expose the same authored scheme without clearing the
     // ancestors' repaired paint. Restore synchronously before browser paint.
-    const rootPaint = preset === 'chromium' && sheet.cssRules[0]?.style;
+    const rootPaint = sheet.cssRules[0]?.style;
     const localScheme = rootPaint && authoredRootScheme === 'normal';
     const scheme = rootPaint && !localScheme && rootPaint.getPropertyValue('color-scheme');
     const schemePriority = scheme && rootPaint.getPropertyPriority('color-scheme');
@@ -4676,7 +4677,10 @@
           if (inViewport || canvas) {
             if (changedRoots || onlyUnpainted) local.add(element);
             else {
-              if (updates.length === 0) sheet.disabled = true;
+              if (updates.length === 0) {
+                sheet.disabled = true;
+                authoredRootScheme = getComputedStyle(document.documentElement).colorScheme;
+              }
               updates.push([element, inspect(element, backdrops, switchingRenderer)]);
             }
           }
@@ -4769,7 +4773,7 @@
     // every four-element group invalidates inherited styles across the page.
     // Keep it exposed for this synchronous callback; inspectLocal then sees no
     // scheme override to toggle. Restore before yielding or painting a frame.
-    const rootPaint = preset === 'chromium' && sheet.cssRules[0]?.style;
+    const rootPaint = sheet.cssRules[0]?.style;
     const scheme = rootPaint && authoredRootScheme !== 'normal' && rootPaint.getPropertyValue('color-scheme');
     const schemePriority = scheme && rootPaint.getPropertyPriority('color-scheme');
     if (scheme) rootPaint.removeProperty('color-scheme');
