@@ -4676,18 +4676,19 @@
         sheet.disabled = true;
         batchTransitions = undefined;
         authoredRootScheme = getComputedStyle(document.documentElement).colorScheme;
-        // An already painted target whose sheet-disabled inputs equal the
-        // recorded ones keeps its paint. A renderer switch or a changed
-        // authored root scheme forgets every record first; a first inspection
-        // is never skipped, nor is an image: its repairs come from resource
-        // samples cached by the backing they were sampled against, which the
-        // pass refreshes by inspecting it.
+        // An already inspected target whose sheet-disabled inputs equal the
+        // recorded ones keeps its paint, or keeps having none: an element whose
+        // inspection found no paint of its own is recorded like any other. A
+        // renderer switch or a changed authored root scheme forgets every
+        // record first; a first inspection is never skipped, nor is an image:
+        // its repairs come from resource samples cached by the backing they
+        // were sampled against, which the pass refreshes by inspecting it.
         if (switchingRenderer || fullSignatureScheme !== authoredRootScheme) fullSignatures = new WeakMap();
         fullSignatureScheme = authoredRootScheme;
         const signatureBackdrops = { images: new Map(), solid: new Map() };
         updates = [];
         for (const element of targets) {
-          if (sampledElements.has(element) && element.hasAttribute(marker) && !(element instanceof HTMLImageElement)) {
+          if (sampledElements.has(element) && !(element instanceof HTMLImageElement)) {
             const recorded = fullSignatures.get(element);
             if (recorded !== undefined && sampleSignature(element, getComputedStyle(element), signatureBackdrops) === recorded) {
               fullSkipped++;
