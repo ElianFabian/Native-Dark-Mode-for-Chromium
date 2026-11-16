@@ -93,6 +93,11 @@
   const labelImages = new WeakMap();
   let precheckEligible = null;
   let precheckSkipped = 0;
+  // Full-pass pre-check: signatures read with the sheet disabled, kept apart
+  // from the local-sampling signatures because inherited values differ.
+  let fullSignatures = new WeakMap();
+  let fullSkipped = 0;
+  let fullSignatureScheme;
   const signatureAttributes = ['role', 'hidden', 'disabled', 'aria-disabled', 'aria-expanded', 'aria-selected', 'aria-current', 'aria-hidden', 'data-theme', 'open', 'type'];
   function sampleSignature(element, style, backdrops) {
     const rect = element.getBoundingClientRect();
@@ -4671,7 +4676,27 @@
         sheet.disabled = true;
         batchTransitions = undefined;
         authoredRootScheme = getComputedStyle(document.documentElement).colorScheme;
-        updates = [...targets].map(element => [element, inspect(element, backdrops, switchingRenderer)]);
+        // An already painted target whose sheet-disabled inputs equal the
+        // recorded ones keeps its paint. A renderer switch or a changed
+        // authored root scheme forgets every record first; a first inspection
+        // is never skipped, nor is an image: its repairs come from resource
+        // samples cached by the backing they were sampled against, which the
+        // pass refreshes by inspecting it.
+        if (switchingRenderer || fullSignatureScheme !== authoredRootScheme) fullSignatures = new WeakMap();
+        fullSignatureScheme = authoredRootScheme;
+        const signatureBackdrops = { images: new Map(), solid: new Map() };
+        updates = [];
+        for (const element of targets) {
+          if (sampledElements.has(element) && element.hasAttribute(marker) && !(element instanceof HTMLImageElement)) {
+            const recorded = fullSignatures.get(element);
+            if (recorded !== undefined && sampleSignature(element, getComputedStyle(element), signatureBackdrops) === recorded) {
+              fullSkipped++;
+              continue;
+            }
+          }
+          updates.push([element, inspect(element, backdrops, switchingRenderer)]);
+          fullSignatures.set(element, sampleSignature(element, getComputedStyle(element), signatureBackdrops));
+        }
       } finally {
         sheet.disabled = disabled;
       }
@@ -5415,12 +5440,14 @@
     if (emphasizeSeparators === next) return;
     emphasizeSeparators = next;
     inspectSignatures = new WeakMap();
+    fullSignatures = new WeakMap();
     if (preset !== 'chromium') {
       sheet.replaceSync(paletteCSS(palettes[preset]));
       palettePaintRules.clear();
       paletteLabelRules.clear();
       sampledElements = new WeakSet();
       inspectSignatures = new WeakMap();
+      fullSignatures = new WeakMap();
       paintVisibleSurfaces();
       scheduleDocument();
       return;
@@ -5484,6 +5511,7 @@
       marked.clear();
       sampledElements = new WeakSet();
       inspectSignatures = new WeakMap();
+      fullSignatures = new WeakMap();
       chromiumColorCache.clear();
       paletteTransitionRules.clear();
       palettePaintRules.clear();
@@ -5501,6 +5529,7 @@
       paletteLabelRules.clear();
       sampledElements = new WeakSet();
       inspectSignatures = new WeakMap();
+      fullSignatures = new WeakMap();
       paintVisibleSurfaces(false, true, true);
       scheduleDocument();
       return;
