@@ -1,0 +1,26 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Synthetic sampling batch inheritance probe</title>
+<style>
+  html { background: #fff; color: #0f1111; font: 15px/20px Arial, sans-serif; }
+  body { margin: 24px; }
+  .card { background: #fff; width: 150px; padding: 8px; }
+  a { display: block; color: #2162a1; text-decoration: none; }
+  .detail { position: relative; }
+  .badge { display: flex; }
+  .message { background: #fff; color: #cc0c39; font-weight: 700; line-height: 12px; width: 96px; min-height: 32px; }
+  .message span { font-size: 12px; line-height: 16px; }
+  .control { margin-top: 24px; background: #fff; color: #222; width: 180px; }
+</style>
+<h1>Synthetic batch inheritance probe</h1>
+<p>This models measured color inheritance and backing; it is not an extracted Amazon carousel.</p>
+<p>Pending: alternate the buttons. They toggle unused classes without changing authored paint. The label should keep the same color after either rescan. Preserve the independent control and geometry.</p>
+<button type="button" onclick="resampleMessage()">Rescan parent and label</button>
+<button type="button" onclick="resampleLabel()">Rescan label alone</button>
+<div class="card"><a href="#probe"><div class="detail"><div><div class="badge"><div class="message" id="message" role="presentation"><span id="label">Synthetic<br>offer label</span></div></div></div></div></a></div>
+<div class="control" id="control">Independent neutral control</div>
+<p>Matched source facts: inherited rgb(204,12,57) label, opaque white parent, transparent inline span, 12px bold text and blue link ancestor. Product imagery, exact font, sibling tree, viewport position and live mutation sequence remain reduced; pseudo-element content and complete cascade were not captured. No original-page equivalence is claimed.</p>
+<script>
+  window.resampleMessage = () => document.getElementById('message').classList.toggle('probe-state');
+  window.resampleLabel = () => document.getElementById('label').classList.toggle('probe-state');
+</script>

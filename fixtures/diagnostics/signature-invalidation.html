@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Synthetic stylesheet invalidation controls</title>
+<style>
+  html { background: white; color: #222; font: 16px Arial; }
+  body { margin: 24px; }
+  ul { padding: 0; list-style: none; }
+  li, .frame { box-sizing: border-box; position: relative; width: 240px; height: 60px; margin: 16px; background: white; }
+  .frame { border: 1px solid #ccc; }
+  li::before { content: ""; position: absolute; inset: 0; box-sizing: border-box; border: 1px solid #ccc; pointer-events: none; }
+</style>
+<style id="changes"></style>
+<h1>Synthetic cache invalidation probe</h1>
+<ul><li id="pseudo">Generated frame</li><li id="control">Unchanged control</li></ul>
+<div class="frame" id="edge">Asymmetric frame</div>
+<script>
+  // A stylesheet mutation, not an element mutation: exercises broad resampling.
+  window.changeFrame = enabled => {
+    document.getElementById('changes').textContent = enabled ?
+      '#pseudo::before { border-color: #444; border-width: 4px; } #edge { border-right-width: 4px; }' : '';
+  };
+</script>

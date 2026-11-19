@@ -84,6 +84,8 @@ try {
   if(flags.includes('--browser')) await run('Visual viewer checks',process.execPath,['--experimental-websocket','scripts/dev/diagnostics/check-visual-viewer.mjs']);
   if(flags.includes('--browser')) await run('Parent disconnect cleanup',process.execPath,['--experimental-websocket','scripts/dev/diagnostics/check-parent-disconnect.mjs']);
   if(flags.includes('--browser')) await run('Simulated Native source scheme',process.execPath,['--experimental-websocket','scripts/dev/diagnostics/check-source-scheme.mjs']);
+  if(flags.includes('--browser')) await run('Stylesheet signature invalidation',process.execPath,['--experimental-websocket','scripts/dev/diagnostics/check-signature-invalidation.mjs']);
+  if(flags.includes('--browser')) await run('Settled scroll collection',process.execPath,['--experimental-websocket','scripts/dev/diagnostics/check-empty-scroll.mjs']);
   if(focus) await run('Focused rendering: '+focus, process.execPath, ['--experimental-websocket','scripts/dev/diagnostics/check-rendering-cases.mjs','--groups',focus]);
   if(caseIds && repeat === undefined) await run('Selected rendering cases',process.execPath,['--experimental-websocket','scripts/dev/diagnostics/check-rendering-cases.mjs','--cases',caseIds]);
   if(repeat !== undefined) await run('Repeated rendering cases',process.execPath,['--experimental-websocket','scripts/dev/diagnostics/repeat-rendering-cases.mjs','--cases',caseIds,'--repeat',repeat,...(attemptTimeout?['--attempt-timeout',attemptTimeout]:[]),...(repeatTimeout?['--repeat-timeout',repeatTimeout]:[])]);

@@ -99,6 +99,14 @@
   let fullSkipped = 0;
   let fullSignatureScheme;
   const signatureAttributes = ['role', 'hidden', 'disabled', 'aria-disabled', 'aria-expanded', 'aria-selected', 'aria-current', 'aria-hidden', 'data-theme', 'open', 'type'];
+  // Generated frames/glyphs are classification inputs even when a stylesheet
+  // changes no property or geometry of the originating element.
+  const generatedSignatureProperties = ['content', 'color', 'backgroundImage', 'backgroundColor',
+    'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
+    'borderStyle', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+    'borderImageSource', 'borderTopLeftRadius', 'boxShadow', 'outlineStyle', 'outlineWidth', 'outlineColor',
+    'transform', 'filter', 'maskImage', 'opacity', 'display', 'position', 'top', 'left', 'width', 'height',
+    'boxSizing', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'];
   function sampleSignature(element, style, backdrops) {
     const rect = element.getBoundingClientRect();
     const before = getComputedStyle(element, '::before'), after = getComputedStyle(element, '::after');
@@ -112,7 +120,7 @@
       style.color, style.webkitTextFillColor, style.backgroundColor, style.backgroundImage, style.backgroundSize,
       style.backgroundRepeat, style.backgroundBlendMode, style.backgroundPositionX, style.backgroundPositionY,
       style.borderTopColor, style.borderRightColor, style.borderBottomColor, style.borderLeftColor,
-      style.borderTopStyle, style.borderStyle, style.borderTopWidth, style.borderBottomWidth, style.borderTopLeftRadius, style.borderImageSource,
+      style.borderTopStyle, style.borderStyle, style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth, style.borderTopLeftRadius, style.borderImageSource,
       style.boxShadow, style.outlineStyle, style.outlineWidth, style.outlineColor,
       style.opacity, style.display, style.visibility, style.position, style.filter, style.mixBlendMode, style.maskImage, style.webkitMaskImage,
       style.transform, style.clipPath, style.paddingTop, style.paddingLeft, style.overflowX, style.overflowY, style.pointerEvents,
@@ -126,13 +134,20 @@
       image ? image.currentSrc + '|' + image.complete + '|' + image.naturalWidth : '',
       labelImage ? labelImage.isConnected + '|' + labelImage.currentSrc + '|' + labelImage.complete + '|' + labelImage.naturalWidth : '',
       card ? card.getElementsByTagName('img').length + '|' + (card.querySelector('img')?.currentSrc ?? '') : '',
-      before.content, before.backgroundImage, before.backgroundColor, after.content, after.backgroundImage, after.backgroundColor
+      ...[before, after].flatMap(pseudo => ['none', 'normal'].includes(pseudo.content) ?
+        [pseudo.content] : generatedSignatureProperties.map(property => pseudo[property]))
     ].join('\u0001');
   }
   let inspectingElement;
   const colorRules = new Map();
   const unusedColorRules = [];
   let sampledElements = new WeakSet();
+  let scrollCollectionEmpty = false;
+
+  function forgetSample(element) {
+    scrollCollectionEmpty = false;
+    return sampledElements.delete(element);
+  }
   const artworkContrast = new WeakMap();
   const staticArtwork = new Map();
   const linkedArtworkBackings = new WeakMap();
@@ -187,6 +202,8 @@
   const overlayLabels = new WeakMap();
   let overlayAuthoredInk = new WeakMap();
   const overlayInkLabels = new Set();
+  let imageInkConsumers = new WeakSet();
+  let imageInkBatch = null;
   const raisedLinks = new WeakSet();
   const chromiumColorCache = new Map();
   const paletteTransitionRules = new Map();
@@ -613,6 +630,7 @@
       ? chrome.dom?.openOrClosedShadowRoot(element) : null);
     if (root && !shadowRoots.has(root)) {
       shadowRoots.add(root);
+      scrollCollectionEmpty = false;
       removePreviousThemeSheets(root);
       root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
       if (transitionSheet) root.adoptedStyleSheets = [...root.adoptedStyleSheets, transitionSheet];
@@ -1737,7 +1755,7 @@
     if (!image.complete || !image.naturalWidth || !image.naturalHeight || !source) return null;
     if (!overlayImages.has(source)) {
       if (rect.right < -128 || rect.left > innerWidth + 128 || rect.bottom < -128 || rect.top > innerHeight + 128) {
-        sampledElements.delete(element);
+        forgetSample(element);
         return null;
       }
       const scale = Math.min(1, 96 / Math.max(image.naturalWidth, image.naturalHeight));
@@ -1841,17 +1859,41 @@
     }
   }
 
+  function readSourceImageInk(element, style) {
+    return chromiumSrgb(originalTransitionColors(element, style).webkitTextFillColor ?? style.webkitTextFillColor);
+  }
+
+  function prepareImageInkBatch(elements) {
+    if (preset !== 'chromium' || sheet.disabled) return null;
+    // Share source exposure only for known, uncached consumers in this inspection.
+    const targets = elements.filter(element => imageInkConsumers.has(element) && !overlayAuthoredInk.has(element));
+    if (targets.length < 2) return null;
+    const values = new Map();
+    try {
+      sheet.disabled = true;
+      for (const element of targets) values.set(element, readSourceImageInk(element, getComputedStyle(element)));
+    } finally {
+      sheet.disabled = false;
+    }
+    return values;
+  }
+
   function originalImageLabelInk(element, style) {
+    imageInkConsumers.add(element);
     if(overlayAuthoredInk.has(element)&&!sheet.disabled)return overlayAuthoredInk.get(element);
     let ink;
-    const disabled=sheet.disabled;
-    try{
-      // Measure source inheritance, not a parent's already applied palette.
-      // This synchronous probe is cached; async image completion reuses it.
-      sheet.disabled=true;
-      const source=disabled?style:getComputedStyle(element);
-      ink=chromiumSrgb(originalTransitionColors(element,source).webkitTextFillColor??source.webkitTextFillColor);
-    }finally{sheet.disabled=disabled}
+    const disabled = sheet.disabled;
+    if (!disabled && imageInkBatch?.has(element)) {
+      ink = imageInkBatch.get(element);
+    } else {
+      // Read authored inheritance and cache it for asynchronous image completion.
+      try {
+        sheet.disabled = true;
+        ink = readSourceImageInk(element, disabled ? style : getComputedStyle(element));
+      } finally {
+        sheet.disabled = disabled;
+      }
+    }
     if(ink){
       if(overlayInkLabels.size>=512){const oldest=overlayInkLabels.values().next().value;overlayInkLabels.delete(oldest);overlayAuthoredInk.delete(oldest)}
       overlayInkLabels.add(element);overlayAuthoredInk.set(element,ink);
@@ -4632,7 +4674,9 @@
     const backdrops = { images: new Map(), solid: new Map() };
     const signatureBackdrops = { images: new Map(), solid: new Map() };
     const signable = element => preset === 'chromium' && (element instanceof HTMLElement || element instanceof SVGSVGElement);
+    const previousImageInkBatch = imageInkBatch;
     try {
+      imageInkBatch = prepareImageInkBatch(elements);
       const updates = [];
       for (const element of elements) {
         if (precheckEligible?.has(element) && signable(element)) {
@@ -4650,6 +4694,7 @@
       }
       return updates;
     } finally {
+      imageInkBatch = previousImageInkBatch;
       for (const [element, paint] of previous) element.setAttribute(marker, paint);
       for (const element of headings) element.removeAttribute(sampleMarker);
       for (const element of exposed) element.removeAttribute(sampleMarker);
@@ -4706,7 +4751,8 @@
     return targets;
   }
 
-  function collectVisibleSurfaces(onlyUnpainted, includeLookahead, changedRoots, targets = new Set()) {
+  function collectVisibleSurfaces(onlyUnpainted, includeLookahead, changedRoots, targets = new Set(), verifyEmpty = false) {
+    let empty = verifyEmpty;
     const roots = changedRoots ? new Set(changedRoots) : new Set([document]);
     if (!changedRoots) {
       // A dirty pass may already have selected a newly inserted host. Its tree
@@ -4723,6 +4769,8 @@
       for (const element of changedRoots ? [root, ...root.querySelectorAll('*')] : root.querySelectorAll('*')) {
         if (targets.has(element) || onlyUnpainted && sampledElements.has(element)) continue;
         if (!(element instanceof HTMLElement || element instanceof SVGSVGElement)) continue;
+        // An eligible offscreen element also prevents reusing an empty collection.
+        if (empty && !element.matches(excluded)) empty = false;
         const rect = element.getBoundingClientRect();
         const inViewport = rect.width && rect.height && rect.bottom > -lookahead && rect.right > -horizontalLookahead &&
           rect.top < innerHeight + lookahead && rect.left < innerWidth + horizontalLookahead;
@@ -4737,6 +4785,7 @@
       }
       if (!changedRoots) for (const shadow of shadowRoots) if (shadow.host.isConnected) roots.add(shadow);
     }
+    if (verifyEmpty) scrollCollectionEmpty = empty;
     return targets;
   }
 
@@ -5307,7 +5356,7 @@
     }
     for (const queued of dirtySurfaces) if (root.contains(queued)) dirtySurfaces.delete(queued);
     dirtySurfaces.add(root);
-    sampledElements.delete(root);
+    forgetSample(root);
     requestViewportFrame();
   }
 
@@ -5324,7 +5373,7 @@
     viewportFrame = requestAnimationFrame(flushViewport);
   }
 
-  function flushViewport() {
+  function flushViewport(frameTime) {
       viewportFrame = undefined;
       if (!preset) return;
       if (horizontalScrollTimer !== undefined) return;
@@ -5345,7 +5394,7 @@
           // freshen the lookahead on the next frame through the local path.
           const visible = paintVisibleSurfaces(false, false);
           if (includeLookahead) {
-            for (const element of collectVisibleSurfaces(false, true)) if (!visible?.has(element)) sampledElements.delete(element);
+            for (const element of collectVisibleSurfaces(false, true)) if (!visible?.has(element)) forgetSample(element);
             scheduleViewport(true);
           }
         } else {
@@ -5354,7 +5403,15 @@
           const targets = new Set();
           if (dirty.size) collectVisibleSurfaces(false, false, dirty, targets);
           if (!repaintViewport && scrolling.size) collectVisibleSurfaces(true, true, scrolling, targets);
-          if (repaintViewport) collectVisibleSurfaces(onlyUnpainted, includeLookahead, undefined, targets);
+          if (repaintViewport) {
+            // Restrict the proof to a clean animation-frame request. A state
+            // microtask can run before pending mutation records are delivered.
+            const verifyEmpty = frameTime !== undefined && onlyUnpainted &&
+              !dirty.size && !scrolling.size && !preload;
+            if (!verifyEmpty || !scrollCollectionEmpty) {
+              collectVisibleSurfaces(onlyUnpainted, includeLookahead, undefined, targets, verifyEmpty);
+            }
+          }
           if (targets.size) applyRoles(inspectLocal([...targets]));
         }
         if (preload) scheduleViewport(true);
@@ -5447,6 +5504,7 @@
       palettePaintRules.clear();
       paletteLabelRules.clear();
       sampledElements = new WeakSet();
+      scrollCollectionEmpty = false;
       inspectSignatures = new WeakMap();
       fullSignatures = new WeakMap();
       paintVisibleSurfaces();
@@ -5495,6 +5553,8 @@
       compactBackgroundWaiters.clear();
       scrollingSurfaces.clear();
       overlayInkLabels.clear();overlayAuthoredInk=new WeakMap();
+      imageInkConsumers = new WeakSet();
+      imageInkBatch = null;
       viewportFrame = chromiumRefreshTimer = horizontalScrollTimer = undefined;
       viewportRequested = viewportNeedsResample = viewportLookahead = viewportPreloadAfter = false;
       idleBatch = elements = undefined;
@@ -5511,6 +5571,7 @@
       }
       marked.clear();
       sampledElements = new WeakSet();
+      scrollCollectionEmpty = false;
       inspectSignatures = new WeakMap();
       fullSignatures = new WeakMap();
       chromiumColorCache.clear();
@@ -5529,6 +5590,7 @@
       palettePaintRules.clear();
       paletteLabelRules.clear();
       sampledElements = new WeakSet();
+      scrollCollectionEmpty = false;
       inspectSignatures = new WeakMap();
       fullSignatures = new WeakMap();
       paintVisibleSurfaces(false, true, true);
@@ -5567,7 +5629,7 @@
               continue;
             }
             if (['class', 'style', 'hidden', 'data-theme', 'open', 'aria-hidden', 'aria-expanded'].includes(attribute)) {
-              const sampled = sampledElements.delete(target);
+              const sampled = forgetSample(target);
               // Hidden menus can be opened before the idle scan ever visited
               // them. Paint the newly visible popup together, not on hover of
               // each item. Ordinary unsampled class changes stay time-sliced.
@@ -5577,6 +5639,9 @@
             }
             schedule(target);
             continue;
+          }
+          if (scrollCollectionEmpty && Array.prototype.some.call(record.addedNodes, node => node.nodeType === Node.ELEMENT_NODE)) {
+            scrollCollectionEmpty = false;
           }
           forgetOverlayInk(target);
           if (target?.closest('style') || target === document.head) {
@@ -5608,6 +5673,7 @@
           if (root.host.isConnected) continue;
           root.adoptedStyleSheets = root.adoptedStyleSheets.filter(style => style !== sheet && style !== transitionSheet);
           shadowRoots.delete(root);
+          scrollCollectionEmpty = false;
           removedShadow = true;
         }
         if (removedShadow) {

@@ -1,5 +1,21 @@
 [
   {
+    "id": "sampling-batch-inherited-ink",
+    "symptom": "Inherited label ink changes with the membership of a sampling batch",
+    "status": "pending",
+    "cases": ["sampling-batch-inheritance"],
+    "evidence": "Ordinary unused-class mutations reproduce different label ink for parent-plus-label versus label-only sampling in all custom themes at Off/Maximum, with constant backing, geometry and independent control. Standalone check-sampling-batch-inheritance asserts color invariance and currently fails. Amazon pending-root coalescing saved work but changed settled ink; candidate remains unpromoted. Local reduction matches measured source colors/inheritance but not the complete carousel or cascade."
+  },
+  {
+    "id": "stylesheet-signature-border-invalidation",
+    "symptom": "Stylesheet-only generated border and side-width changes leave cached paint stale",
+    "status": "partial",
+    "cases": [
+      "signature-invalidation"
+    ],
+    "evidence": "Synthetic browser reproduction fails on pre-repair renderer; expanded signature passes all custom themes at Off/Maximum against fresh classification, with independent control, fixed geometry and source restoration. Complete browser verification runs check-signature-invalidation. Ancestor-layout dependencies and other unmodeled inputs remain outside this narrow repair."
+  },
+  {
     "id": "small-dropdown-followup",
     "symptom": "Small dropdown indicators beside document sharing and editing controls remain dim",
     "status": "pending",
@@ -874,6 +890,13 @@
       "source-scheme-sampling"
     ],
     "evidence": "Promoted 15 November as an exact work reduction, not a speed claim: image samples cache pixel luminance by position, sampledImageLabelPaint reads an opaque ink's luminance once per ink, stops floor comparisons at the first failing pixel and decides the neutral ink once per label. 80,000 Node cases identical with and without the shared policy (research-artifacts/diagnostics/e1-equivalence-*); synthetic 42-label probe identical paint in 48 of 48 A/B pairs and pixels identical at tolerance 1, label sampling 198 to 287 ms to 61 to 93 ms per pass (e1-label-fixture-ab-*); guard, 21 three-theme states and catalogue series identical (e1-*). Live Amazon runs inconclusive: the hotspot depends on the served content variant. The registered cases are preservation checks, not a machine-independent performance pass."
+  },
+  {
+    "id": "image-label-source-ink-batching",
+    "symptom": "Repeated source text color reads for image labels toggle the theme sheet and recalculate styles for each label",
+    "status": "partial",
+    "cases": ["large-image-label", "source-scheme-sampling"],
+    "evidence": "Simulated Native shares one synchronous source exposure over known uncached label consumers within an existing local inspection. First-use fallback, palette policy, cache invalidation and target order are preserved. Production repeats and the candidate match exact sampled states and final pixels for controlled color transitions and delayed image reload. The confirmed anonymous Amazon crossover shows shorter settled scroll stalls across four pairs, with similar total work on that page variant. The registered cases preserve rendering. Live timing and the separate transition probes are recorded in PERFORMANCE-NEXT-STEPS.md."
   },
   {
     "id": "unchanged-element-precheck",
