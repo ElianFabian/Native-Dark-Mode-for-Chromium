@@ -124,6 +124,14 @@ The unmodified local image-label carousel also returned correct predictions on a
 
 Run `node --experimental-websocket tools/research/carousel-click-trace.mjs --phases --challenge-color` for the adversarial workload. The live, local control and final challenge reports end in `1795115618096`, `1795115640073` and `1795115705166` respectively. These are retrospective rule predictions with production paint still applied on every click.
 
+#### Generated border changes with stable element paint
+
+A local carousel variant puts three list items on each card group. The forward click adds a border to the first item's existing `::before`, changes the second item's transparent border to opaque gray at the same width, and leaves the third item's paint alone. The renderer's stored element paint, authored foreground and projected backing agreed with their prior values on **108 inspections that nevertheless required a different rule**. Checking the content and top border width of both pseudos rejected 54 of those predictions. Including their top border colors rejected the other 54. The forward trials also admitted 220 correct predictions with the expanded check. The final local rerun enforced these outcomes with assertions.
+
+On four physical clicks in one anonymous Amazon.es carousel session, the two computed pseudo-style reads and the six property reads took **3.0–5.2 ms per click** across 158–180 previously color-only inspections. The combined check, including equal stored element paint and projected backing, admitted 613 correct predictions and zero incorrect predictions in the observed windows. The pseudo timing includes storing the result for comparison. It excludes snapshot comparison and independent backing resolution. Full classification still ran on every element, so the measurement provides the cost of this part of the check. A complete shortcut would also need evidence for other inputs, including generated images, side borders, element geometry and ancestor-dependent paint. Directly reusing a previous paint rule remains experimental.
+
+Reproduce the local control with `node --experimental-websocket tools/research/carousel-click-trace.mjs --phases --generated-frame`. Measure the same reads on the public carousel with `--phases --live --compare-source --measure-frame-check`. The detailed local, assertion rerun and live reports end in `1795115914043`, `1795115971085` and `1795115927511`.
+
 ### 3. Determine which stylesheet edits really require a global resample
 
 

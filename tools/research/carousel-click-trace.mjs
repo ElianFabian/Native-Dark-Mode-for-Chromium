@@ -18,6 +18,10 @@ assert.ok(!auditPaint || (probeMotion && live), '--audit-paint requires --live -
 const phases = probeMotion || process.argv.includes('--phases');
 const challengeColor = process.argv.includes('--challenge-color');
 assert.ok(!challengeColor || (phases && !live && !probeMotion), '--challenge-color requires local --phases.');
+const generatedFrame = process.argv.includes('--generated-frame');
+const measureFrameCheck = generatedFrame || process.argv.includes('--measure-frame-check');
+assert.ok(!generatedFrame || (!live && !probeMotion && !challengeColor), '--generated-frame requires the local class-driven carousel.');
+assert.ok(!measureFrameCheck || phases, 'Frame measurements require --phases.');
 assert.ok(!(detail && phases), 'Choose either individual helper timers or contiguous classification phases.');
 const compareSource = !live || process.argv.includes('--compare-source');
 const directory = path.join(root, 'research-artifacts/diagnostics/carousel-click-trace-' + (live ? 'live-' : 'local-') +
@@ -121,7 +125,12 @@ if (detail) {
   }`);
 }
 replace('function inspect(', 'function traced_inspect(');
+if (measureFrameCheck) {
+  replace("      return preset === 'chromium' ? chromiumColors(element, backdrops, switchingRenderer) :",
+    "      if (preset === 'chromium') ndmReadFrame(element);\n      return preset === 'chromium' ? chromiumColors(element, backdrops, switchingRenderer) :");
+}
 const colorCohort = phases ? `const previousBacking = ndmPriorBacking.get(args[0]);
+    const previousFrame = ndmFrames.get(args[0]);
     const previousSource = authoredPaint.get(args[0]);
     const previousKey = elementColorRules.get(args[0])?.key;
     const eligible = ndmClickTrace && /^color:[^;]+;\\n\\n\\[\\]$/u.test(previousKey ?? '');
@@ -138,7 +147,16 @@ const colorCohort = phases ? `const previousBacking = ndmPriorBacking.get(args[0
           backing.every((value,i) => value === previousBacking[i])) {
         const equal = paint && !paint.transition && !paint.pseudoStyles.length && previousKey.split('\\n')[0] === paint.declarations;
         ndmCount(equal ? 'predictionCorrect' : 'predictionWrong');
-        if (JSON.stringify(previousSource) === JSON.stringify(current)) ndmCount(equal ? 'snapshotCorrect' : 'snapshotWrong');
+        if (JSON.stringify(previousSource) === JSON.stringify(current)) {
+          ndmCount(equal ? 'snapshotCorrect' : 'snapshotWrong');
+          const frame = ndmFrames.get(args[0]);
+          if (previousFrame && frame && frame.slice(0,4).every((value,index) => value === previousFrame[index])) {
+            ndmCount(equal ? 'frameWidthCorrect' : 'frameWidthWrong');
+            if (frame[4] === previousFrame[4] && frame[5] === previousFrame[5]) {
+              ndmCount(equal ? 'frameCorrect' : 'frameWrong');
+            }
+          }
+        }
       }
     }
     return paint;` : 'return traced_inspect(...args);';
@@ -192,6 +210,16 @@ replace('  requestPreset();', `
   let ndmTraceCounts = {};
   let ndmDetails = {};
   const ndmPriorBacking = new WeakMap();
+  const ndmFrames = new WeakMap();
+  function ndmReadFrame(element) {
+    const eligible = ndmClickTrace && /^color:[^;]+;\\n\\n\\[\\]$/u.test(elementColorRules.get(element)?.key ?? '');
+    const start = eligible ? performance.now() : 0;
+    const before = getComputedStyle(element, '::before');
+    const after = getComputedStyle(element, '::after');
+    ndmFrames.set(element, [before.content, before.borderTopWidth, after.content, after.borderTopWidth,
+      before.borderTopColor, after.borderTopColor]);
+    if (eligible) ndmInterval('generatedFrameCheck', start);
+  }
   let ndmReasons;
   let ndmInline, ndmInlineSelections;
   let ndmOrigin = 'other';
@@ -369,7 +397,7 @@ async function connectTrace(browser) {
   };
 }
 
-function installLocalCarousel(challengeColor) {
+function installLocalCarousel(challengeColor, generatedFrame) {
   const template = document.querySelector('.cards');
   const carousel = document.createElement('section');
   const style = document.createElement('style');
@@ -383,12 +411,24 @@ function installLocalCarousel(challengeColor) {
   if (challengeColor) style.textContent +=
     '.probe-next .probe-track *{box-shadow:0 0 0 32px white}' +
     '.probe-next .probe-track .cards::before{content:"";position:absolute;inset:0;border:1px solid #ccc;pointer-events:none}';
+  if (generatedFrame) style.textContent +=
+    '.frame-control{position:relative;color:#222}' +
+    '.frame-control::before{content:"";position:absolute;inset:0;border:0 solid #ccc;pointer-events:none}' +
+    '.probe-next .frame-positive::before{border-width:1px}' +
+    '.frame-ink::before{border:1px solid transparent}.probe-next .frame-ink::before{border-color:#ccc}';
   document.head.append(style);
   carousel.innerHTML = '<button type="button">Next</button><button type="button">Previous</button>' +
     '<div class="probe-window"><div class="probe-track"></div></div>';
   template.replaceWith(carousel);
   const track = carousel.querySelector('.probe-track');
-  for (let index = 0; index < 39; index++) track.append(template.cloneNode(true));
+  for (let index = 0; index < 39; index++) {
+    const group = template.cloneNode(true);
+    if (generatedFrame) group.insertAdjacentHTML('afterbegin',
+      '<div class="frame-control frame-positive" role="listitem">Generated frame</div>' +
+      '<div class="frame-control frame-ink" role="listitem">Generated frame ink</div>' +
+      '<div class="frame-control" role="listitem">Stable frame control</div>');
+    track.append(group);
+  }
   const [next, previous] = carousel.querySelectorAll('button');
   next.addEventListener('click', () => carousel.classList.add('probe-next'));
   previous.addEventListener('click', () => carousel.classList.remove('probe-next'));
@@ -620,8 +660,11 @@ try {
     await until(() => page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"), 'local source ready');
   }
   const locator = live ? findLiveCarousel : probeMotion ? findLocalMotionCarousel : installLocalCarousel;
-  const locate = challengeColor ? '() => (' + locator.toString() + ')(true)' : locator.toString();
+  const locate = challengeColor || generatedFrame ?
+    '() => (' + locator.toString() + ')(' + challengeColor + ', ' + generatedFrame + ')' : locator.toString();
   report.challengeColor = challengeColor;
+  report.generatedFrame = generatedFrame;
+  report.measureFrameCheck = measureFrameCheck;
   const install = '(' + installInput.toString() + ')(' + locate + ', ' + (auditPaint ? makeLivePaintAudit.toString() : 'null') + ')';
   report.workload = live ? await until(() => page.evaluate(install), 'supported storefront carousel', 12000) : await page.evaluate(install);
   assert.ok(report.workload?.cards >= 10);
@@ -702,6 +745,16 @@ try {
     }
   }
   if (auditPaint) report.paintAudit = await page.evaluate('ndmClickInput.summarizeAudit()');
+  if (generatedFrame) {
+    const forward = report.actions.filter(action => action.preset === 'chromium' && action.direction === 0);
+    assert.equal(forward.length, 2);
+    for (const {counts} of forward) {
+      assert.ok(counts.frameWidthWrong > 0, 'A fixed-width generated border must invalidate the own-style prediction.');
+      assert.ok(counts.snapshotWrong > counts.frameWidthWrong, 'The width check must detect some generated changes.');
+      assert.equal(counts.frameWrong ?? 0, 0, 'The top-border color check must catch the fixed-width changes.');
+      assert.ok(counts.frameCorrect > 0, 'The check must still admit unchanged controls.');
+    }
+  }
   report.status = 'complete';
 } catch (error) {
   report.status = 'incomplete';
