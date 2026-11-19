@@ -1,5 +1,12 @@
 [
   {
+    "id": "inline-motion-descendant-paint",
+    "symptom": "Deferring classification during a track transition can expose stale descendant paint at first motion",
+    "status": "partial",
+    "cases": ["inline-motion-dependency"],
+    "evidence": "A checked-in synthetic track has a style-attribute-dependent swatch and an adjacent independent swatch. The standalone motion probe compares both directions at first motion and after queue drain in source and Simulated Native Off. The research-only deferral missed the dependent swatch on all four clicks. A separate anonymous storefront audit found repeatable first-motion computed foreground differences in both directions that converged after idle. Live pixel appearance and original-page selector dependencies remain unverified."
+  },
+  {
     "id": "sampling-batch-inherited-ink",
     "symptom": "Inherited label ink changes with the membership of a sampling batch",
     "status": "pending",

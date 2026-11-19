@@ -1,0 +1,39 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Carousel motion can change descendant paint</title>
+<style>
+  body { font: 16px/1.4 Arial, sans-serif; margin: 24px; background: white; color: #222; }
+  .probe-window { width: min(900px, 100%); overflow: hidden; }
+  .probe-track { display: flex; width: max-content; gap: 8px; transition: transform .26s ease; }
+  .card { position: relative; flex: none; width: 140px; padding: 8px; background: white; }
+  .card span { display: inline-block; width: 16px; height: 16px; }
+  .motion-dependent, .motion-control { background-color: #eee; }
+  .probe-track[style*="(-489px)"] .motion-dependent { background-color: #a61248; }
+</style>
+<h1>Carousel motion and descendant paint</h1>
+<p>Use Next and Previous. The first square on card five changes color as the track moves. The adjacent square keeps its color.</p>
+<section>
+  <button type="button" id="next">Next</button>
+  <button type="button" id="previous">Previous</button>
+  <div class="probe-window"><div class="probe-track"></div></div>
+</section>
+<script>
+  const track = document.querySelector('.probe-track');
+  for (let index = 0; index < 12; index++) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.textContent = 'Card ' + (index + 1);
+    card.append(document.createElement('br'));
+    for (let square = 0; square < 28; square++) {
+      const swatch = document.createElement('span');
+      if (index === 4 && square < 2) swatch.className = square ? 'motion-control' : 'motion-dependent';
+      card.append(swatch);
+    }
+    track.append(card);
+  }
+  document.querySelector('#next').onclick = () => {
+    track.style.cssText = 'transition: transform .26s ease; transform: translateX(-489px)';
+  };
+  document.querySelector('#previous').onclick = () => track.removeAttribute('style');
+  document.documentElement.dataset.fixtureReady = 'yes';
+</script>
