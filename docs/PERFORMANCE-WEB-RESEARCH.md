@@ -116,7 +116,16 @@ Phase reports end in `1795114348555` and `1795114423345`. Live scheduling compar
 
 The final diagnostic repeated the local color control with policy order reversed (`1795115474052`). All four deferred clicks again missed first-motion paint. Across both orders the authored page and current renderer matched their references on eight of eight clicks each. The independent swatch and settled colors passed for every policy.
 
+#### Testing reuse of a single foreground declaration
+
+On a fresh isolated Brave visit to Amazon.es, the four physical clicks spent 24.6–32.2 ms inspecting elements whose previous output was a single color declaration. The enclosing classification loop took 43.4–57.2 ms. These instrumented intervals overlap. They include reading current inputs and updating source snapshots, work a safe implementation would still need. A diagnostic compared old and current authored color, text fill and projected solid backing against the result of full classification. Of 671 previous-color-only inspections, 623 met the comparison and all 623 retained their paint. The probe read the backing already computed by full classification. Its timing does not establish the cost of obtaining that backing independently or a realizable speedup.
+
+The unmodified local image-label carousel also returned correct predictions on all 355 admitted inspections. A synthetic state that adds a broad white shadow to track descendants and a generated frame on card groups broke the prediction on 81 and 83 inspections on the two forward clicks. Comparing the complete stored own-paint snapshot rejected all 164 incorrect predictions, but supplied zero correct admissions during those forward clicks. The snapshot omits some contextual and generated-layer inputs, so this single control cannot validate general reuse. Keep full classification. The next experiment should price the required guards separately and exercise generated-only paint changes with the element's own snapshot held constant.
+
+Run `node --experimental-websocket tools/research/carousel-click-trace.mjs --phases --challenge-color` for the adversarial workload. The live, local control and final challenge reports end in `1795115618096`, `1795115640073` and `1795115705166` respectively. These are retrospective rule predictions with production paint still applied on every click.
+
 ### 3. Determine which stylesheet edits really require a global resample
+
 
 The current full visible pass exposes the source sheet state, visits every visible candidate and compares full signatures. The fixed narrow stream spent 582 ms in signatures and 11 ms classifying elements across the measured paths. Accelerating only known mismatches barely changed broad-stream browser task time (3,910 → 3,870 ms, within repeat variation). A potentially larger saving is to avoid initiating a redundant full pass. This needs evidence about the stylesheet *and all other reasons coalesced into the same pass*. In the two detailed earlier Amazon startup profiles, passes attributed solely to stylesheet text occupied 75 and 264 ms. Those totals include necessary work and are descriptive ceilings for eliminating those sole-cause full calls in those runs. [Fixed benchmark and startup causes](PERFORMANCE-NEXT-STEPS.md#full-pass-signature-shortcut-on-a-fixed-stylesheet-workload)
 

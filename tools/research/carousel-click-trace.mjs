@@ -16,6 +16,8 @@ assert.ok(!deferFirst || probeMotion, '--defer-first requires --probe-motion.');
 const auditPaint = process.argv.includes('--audit-paint');
 assert.ok(!auditPaint || (probeMotion && live), '--audit-paint requires --live --probe-motion.');
 const phases = probeMotion || process.argv.includes('--phases');
+const challengeColor = process.argv.includes('--challenge-color');
+assert.ok(!challengeColor || (phases && !live && !probeMotion), '--challenge-color requires local --phases.');
 assert.ok(!(detail && phases), 'Choose either individual helper timers or contiguous classification phases.');
 const compareSource = !live || process.argv.includes('--compare-source');
 const directory = path.join(root, 'research-artifacts/diagnostics/carousel-click-trace-' + (live ? 'live-' : 'local-') +
@@ -119,8 +121,30 @@ if (detail) {
   }`);
 }
 replace('function inspect(', 'function traced_inspect(');
+const colorCohort = phases ? `const previousBacking = ndmPriorBacking.get(args[0]);
+    const previousSource = authoredPaint.get(args[0]);
+    const previousKey = elementColorRules.get(args[0])?.key;
+    const eligible = ndmClickTrace && /^color:[^;]+;\\n\\n\\[\\]$/u.test(previousKey ?? '');
+    const started = eligible ? performance.now() : 0;
+    const paint = traced_inspect(...args);
+    const elapsed = eligible ? performance.now() : 0;
+    const backing = args[1].solid.get(args[0]);
+    ndmPriorBacking.set(args[0], backing);
+    if (eligible) {
+      (ndmDetails.previousColorOnly ??= []).push([started,elapsed]);
+      const current = authoredPaint.get(args[0]);
+      if (previousSource && current && previousSource.color === current.color &&
+          previousSource.webkitTextFillColor === current.webkitTextFillColor && backing && previousBacking &&
+          backing.every((value,i) => value === previousBacking[i])) {
+        const equal = paint && !paint.transition && !paint.pseudoStyles.length && previousKey.split('\\n')[0] === paint.declarations;
+        ndmCount(equal ? 'predictionCorrect' : 'predictionWrong');
+        if (JSON.stringify(previousSource) === JSON.stringify(current)) ndmCount(equal ? 'snapshotCorrect' : 'snapshotWrong');
+      }
+    }
+    return paint;` : 'return traced_inspect(...args);';
+wrappers.push('function ndmInspectCohort(...args) {' + colorCohort + '}');
 wrappers.push(`function inspect(...args) {
-    if (!ndmClickTrace) return traced_inspect(...args);
+    if (!ndmClickTrace) return ndmInspectCohort(...args);
     const previous = ndmInspectionKeys;
     ndmInspectionKeys = new Set();
     ndmCount('inspected');
@@ -129,7 +153,7 @@ wrappers.push(`function inspect(...args) {
     const id = ndmElementIds.get(element) ?? ++ndmNextElement;
     ndmElementIds.set(element,id);
     ndmVisits.push([performance.now(), id, ndmOrigin]);
-    try { return traced_inspect(...args); } finally { ndmInspectionKeys = previous; }
+    try { return ndmInspectCohort(...args); } finally { ndmInspectionKeys = previous; }
   }`);
 replace('    const rootPaint = sheet.cssRules[0]?.style;\n    const localScheme', "    let ndmLocalPhase = ndmStart('scheme-setup');\n    const rootPaint = sheet.cssRules[0]?.style;\n    const localScheme");
 replace('    for (const [element] of previous) element.removeAttribute(marker);',
@@ -167,6 +191,7 @@ replace('  requestPreset();', `
   let ndmInspectionKeys;
   let ndmTraceCounts = {};
   let ndmDetails = {};
+  const ndmPriorBacking = new WeakMap();
   let ndmReasons;
   let ndmInline, ndmInlineSelections;
   let ndmOrigin = 'other';
@@ -344,7 +369,7 @@ async function connectTrace(browser) {
   };
 }
 
-function installLocalCarousel() {
+function installLocalCarousel(challengeColor) {
   const template = document.querySelector('.cards');
   const carousel = document.createElement('section');
   const style = document.createElement('style');
@@ -355,6 +380,9 @@ function installLocalCarousel() {
     '.probe-track .text{inset:4px;transition:color .28s, background-color .28s}' +
     '.probe-track .text span,.probe-track h3{font-size:12px}' +
     '.probe-next .probe-track .text{color:#fff0bd}.probe-next .probe-track .authored{background-color:#473023}';
+  if (challengeColor) style.textContent +=
+    '.probe-next .probe-track *{box-shadow:0 0 0 32px white}' +
+    '.probe-next .probe-track .cards::before{content:"";position:absolute;inset:0;border:1px solid #ccc;pointer-events:none}';
   document.head.append(style);
   carousel.innerHTML = '<button type="button">Next</button><button type="button">Previous</button>' +
     '<div class="probe-window"><div class="probe-track"></div></div>';
@@ -592,7 +620,9 @@ try {
     await until(() => page.evaluate("document.documentElement.dataset.fixtureReady==='yes'"), 'local source ready');
   }
   const locator = live ? findLiveCarousel : probeMotion ? findLocalMotionCarousel : installLocalCarousel;
-  const install = '(' + installInput.toString() + ')(' + locator.toString() + ', ' + (auditPaint ? makeLivePaintAudit.toString() : 'null') + ')';
+  const locate = challengeColor ? '() => (' + locator.toString() + ')(true)' : locator.toString();
+  report.challengeColor = challengeColor;
+  const install = '(' + installInput.toString() + ')(' + locate + ', ' + (auditPaint ? makeLivePaintAudit.toString() : 'null') + ')';
   report.workload = live ? await until(() => page.evaluate(install), 'supported storefront carousel', 12000) : await page.evaluate(install);
   assert.ok(report.workload?.cards >= 10);
   if (!live) await page.evaluate('Promise.all([...document.images].map(image=>image.decode())).then(()=>true)');
