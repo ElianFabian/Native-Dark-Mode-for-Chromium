@@ -6,7 +6,7 @@
 
 Usa el modo oscuro integrado en Chromium en las webs y secciones que elijas. Guarda una regla una vez y la extensión la aplicará cuando vuelvas.
 
-La **versión 0.13.0** abarata el muestreo de los temas personalizados en páginas grandes: los reanálisis en reposo omiten los elementos cuyas entradas no cambiaron, el contraste de las etiquetas sobre imágenes reutiliza la luminancia de los píxeles, las actualizaciones se agrupan con el desplazamiento y con los cambios de solo scripts en head, y Soft dark y High contrast muestrean con el esquema de color de la propia página. También añade diagnósticos de identidad del renderizador, evidencia de fallos y archivo visual. [Notas de la versión en inglés](docs/RELEASE-0.13.0.md)
+La **versión 0.13.1** reduce el trabajo repetido al desplazarse por páginas ya muestreadas en Simulated Native y mejora la detección de cambios de estilo que afectan a los bordes. [Notas de la versión en inglés](docs/RELEASE-0.13.1.md)
 
 Este proyecto se desarrolló con la ayuda de IA mediante OpenAI Codex.
 

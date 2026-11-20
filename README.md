@@ -6,7 +6,7 @@
 
 Use Chromium's built-in dark mode on the websites and sections you choose. Save a rule once and the extension applies it when you return.
 
-**Version 0.13.0** makes the custom themes' sampling cheaper on large pages: idle rescans skip elements whose inputs are unchanged, image-label contrast reuses pixel luminance, refreshes coalesce with scrolls and with script-only head changes, and Soft dark and High contrast sample under the page's own color scheme. It also adds renderer identity, failure evidence and visual archive diagnostics. [Release notes](docs/RELEASE-0.13.0.md)
+**Version 0.13.1** reduces repeated work when scrolling through already sampled pages in Simulated Native and improves detection of stylesheet changes that affect borders. [Release notes](docs/RELEASE-0.13.1.md)
 
 This project was built with AI assistance using OpenAI Codex.
 
