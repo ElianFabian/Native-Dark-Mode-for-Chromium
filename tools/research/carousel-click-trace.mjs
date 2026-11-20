@@ -19,9 +19,12 @@ const phases = probeMotion || process.argv.includes('--phases');
 const challengeColor = process.argv.includes('--challenge-color');
 assert.ok(!challengeColor || (phases && !live && !probeMotion), '--challenge-color requires local --phases.');
 const generatedFrame = process.argv.includes('--generated-frame');
-const measureFrameCheck = generatedFrame || process.argv.includes('--measure-frame-check');
+const measureBackingCheck = process.argv.includes('--measure-backing-check');
+const measurePaintSignature = process.argv.includes('--measure-paint-signature');
+const measureFrameCheck = generatedFrame || measureBackingCheck || process.argv.includes('--measure-frame-check');
 assert.ok(!generatedFrame || (!live && !probeMotion && !challengeColor), '--generated-frame requires the local class-driven carousel.');
-assert.ok(!measureFrameCheck || phases, 'Frame measurements require --phases.');
+assert.ok(!(measureFrameCheck || measurePaintSignature) || phases, 'Paint measurements require --phases.');
+assert.ok(!measurePaintSignature || !measureFrameCheck, 'Measure the broader signature in a separate run.');
 assert.ok(!(detail && phases), 'Choose either individual helper timers or contiguous classification phases.');
 const compareSource = !live || process.argv.includes('--compare-source');
 const directory = path.join(root, 'research-artifacts/diagnostics/carousel-click-trace-' + (live ? 'live-' : 'local-') +
@@ -125,12 +128,14 @@ if (detail) {
   }`);
 }
 replace('function inspect(', 'function traced_inspect(');
-if (measureFrameCheck) {
+if (measureFrameCheck || measurePaintSignature) {
+  const reader = measurePaintSignature ? 'ndmReadSignature' : 'ndmReadFrame';
   replace("      return preset === 'chromium' ? chromiumColors(element, backdrops, switchingRenderer) :",
-    "      if (preset === 'chromium') ndmReadFrame(element);\n      return preset === 'chromium' ? chromiumColors(element, backdrops, switchingRenderer) :");
+    "      if (preset === 'chromium') " + reader + "(element, backdrops);\n      return preset === 'chromium' ? chromiumColors(element, backdrops, switchingRenderer) :");
 }
 const colorCohort = phases ? `const previousBacking = ndmPriorBacking.get(args[0]);
     const previousFrame = ndmFrames.get(args[0]);
+    const previousSignature = ndmSignatures.get(args[0]);
     const previousSource = authoredPaint.get(args[0]);
     const previousKey = elementColorRules.get(args[0])?.key;
     const eligible = ndmClickTrace && /^color:[^;]+;\\n\\n\\[\\]$/u.test(previousKey ?? '');
@@ -141,6 +146,22 @@ const colorCohort = phases ? `const previousBacking = ndmPriorBacking.get(args[0
     ndmPriorBacking.set(args[0], backing);
     if (eligible) {
       (ndmDetails.previousColorOnly ??= []).push([started,elapsed]);
+      if (previousSignature !== undefined && previousSignature === ndmSignatures.get(args[0])) {
+        const equal = paint && !paint.transition && !paint.pseudoStyles.length &&
+          previousKey.split('\\n')[0] === paint.declarations;
+        ndmCount(equal ? 'signaturePredictionCorrect' : 'signaturePredictionWrong');
+      }
+      if (ndmEarlyBacking.has(args[0])) {
+        const earlyBacking = ndmEarlyBacking.get(args[0]);
+        ndmCount(ndmSameBacking(earlyBacking, backing) ? 'earlyBackingMatches' : 'earlyBackingDiffers');
+        const frame = ndmFrames.get(args[0]);
+        if (earlyBacking && previousBacking && ndmSameBacking(earlyBacking, previousBacking) && previousFrame && frame &&
+            frame.every((value,index) => value === previousFrame[index])) {
+          const equal = paint && !paint.transition && !paint.pseudoStyles.length &&
+            previousKey.split('\\n')[0] === paint.declarations;
+          ndmCount(equal ? 'earlyPredictionCorrect' : 'earlyPredictionWrong');
+        }
+      }
       const current = authoredPaint.get(args[0]);
       if (previousSource && current && previousSource.color === current.color &&
           previousSource.webkitTextFillColor === current.webkitTextFillColor && backing && previousBacking &&
@@ -211,7 +232,32 @@ replace('  requestPreset();', `
   let ndmDetails = {};
   const ndmPriorBacking = new WeakMap();
   const ndmFrames = new WeakMap();
-  function ndmReadFrame(element) {
+  const ndmEarlyBacking = new WeakMap();
+  const ndmPriorSource = new WeakMap();
+  const ndmSignatures = new WeakMap();
+  const ndmBackingByBatch = new WeakMap();
+  function ndmBatchBacking(backdrops) {
+    let cache = ndmBackingByBatch.get(backdrops.solid);
+    if (!cache) {
+      cache = new Map();
+      ndmBackingByBatch.set(backdrops.solid, cache);
+    }
+    return cache;
+  }
+  function ndmReadSignature(element, backdrops) {
+    const eligible = ndmClickTrace && /^color:[^;]+;\\n\\n\\[\\]$/u.test(elementColorRules.get(element)?.key ?? '');
+    if (ndmClickTrace && !eligible) {
+      ndmSignatures.delete(element);
+      return;
+    }
+    const start = eligible ? performance.now() : 0;
+    ndmSignatures.set(element, sampleSignature(element, getComputedStyle(element), {solid:ndmBatchBacking(backdrops)}));
+    if (eligible) ndmInterval('paintSignatureCheck', start);
+  }
+  function ndmSameBacking(a, b) {
+    return a === b || Boolean(a && b && a.length === b.length && a.every((value,index) => value === b[index]));
+  }
+  function ndmReadFrame(element, backdrops) {
     const eligible = ndmClickTrace && /^color:[^;]+;\\n\\n\\[\\]$/u.test(elementColorRules.get(element)?.key ?? '');
     const start = eligible ? performance.now() : 0;
     const before = getComputedStyle(element, '::before');
@@ -219,6 +265,26 @@ replace('  requestPreset();', `
     ndmFrames.set(element, [before.content, before.borderTopWidth, after.content, after.borderTopWidth,
       before.borderTopColor, after.borderTopColor]);
     if (eligible) ndmInterval('generatedFrameCheck', start);
+    if (${measureBackingCheck}) {
+      const previous = ndmPriorSource.get(element);
+      const current = authoredPaint.get(element);
+      ndmPriorSource.set(element, current);
+      if (!eligible) return;
+      const snapshotStart = performance.now();
+      const keys = current ? Object.keys(current) : [];
+      const ownPaintMatches = Boolean(previous && current &&
+        keys.length === Object.keys(previous).length && keys.every(key => current[key] === previous[key]));
+      ndmInterval('ownPaintComparison', snapshotStart);
+      if (!ownPaintMatches) {
+        ndmEarlyBacking.delete(element);
+        return;
+      }
+      const backingStart = performance.now();
+      // Use a separate cache with the production batch lifetime to avoid warming production classification.
+      const value = chromiumTextBackdrop(element, ndmBatchBacking(backdrops));
+      ndmEarlyBacking.set(element, value);
+      ndmInterval('independentBackingCheck', backingStart);
+    }
   }
   let ndmReasons;
   let ndmInline, ndmInlineSelections;
@@ -665,6 +731,8 @@ try {
   report.challengeColor = challengeColor;
   report.generatedFrame = generatedFrame;
   report.measureFrameCheck = measureFrameCheck;
+  report.measureBackingCheck = measureBackingCheck;
+  report.measurePaintSignature = measurePaintSignature;
   const install = '(' + installInput.toString() + ')(' + locate + ', ' + (auditPaint ? makeLivePaintAudit.toString() : 'null') + ')';
   report.workload = live ? await until(() => page.evaluate(install), 'supported storefront carousel', 12000) : await page.evaluate(install);
   assert.ok(report.workload?.cards >= 10);

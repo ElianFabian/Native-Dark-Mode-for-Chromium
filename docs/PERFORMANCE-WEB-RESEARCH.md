@@ -132,6 +132,20 @@ On four physical clicks in one anonymous Amazon.es carousel session, the two com
 
 Reproduce the local control with `node --experimental-websocket tools/research/carousel-click-trace.mjs --phases --generated-frame`. Measure the same reads on the public carousel with `--phases --live --compare-source --measure-frame-check`. The detailed local, assertion rerun and live reports end in `1795115914043`, `1795115971085` and `1795115927511`.
 
+#### Backing and signature costs before rule reuse
+
+On four physical clicks with 0.13.1 in isolated Brave, an own-paint snapshot comparison took 0.4–0.6 ms per click. Resolving the backing ahead of classification took 0.4–0.8 ms for the 143–167 candidates per click that passed the snapshot check. The backing check used a separate cache with the production sampling batch's lifetime. It agreed with every sampled production backing. Together with the generated-border reads, the measured checks took 3.7–6.6 ms per click. The combined check correctly predicted 620 unchanged rules. On the local generated-frame workload it admitted 464 correct predictions and rejected the 108 known changes. Reports end in `1795196848981` and `1795196842692`.
+
+A separate storefront session timed the existing wider sampling signature for the same type of candidate. It includes element geometry, authored state, image information, backing, and more generated-layer properties. That read cost 11.2–13.1 ms per click over four clicks, and correctly predicted 688 unchanged rules with zero observed false matches. The two sessions served different documents, and their timings describe the checks rather than the speedup from using them. Both probes kept full classification and produced diagnostic comparisons. The broader-signature report ends in `1795196971946`.
+
+Use `node --experimental-websocket tools/research/carousel-click-trace.mjs --phases --live --compare-source --measure-backing-check` to repeat the narrower probe. Replace `--measure-backing-check` with `--measure-paint-signature` for the wider signature. For the local control use `--phases --generated-frame --measure-backing-check`.
+
+The next performance checks, in priority order:
+
+1. **First scroll after navigation.** Repeat the cold first-wheel measurement on matched page content. Attribute long tasks to full viewport refreshes, dirty subtree inspections and browser style/layout. Then test which stylesheet edits actually require a full resample. Keep a first-frame reveal and an unchanged control.
+2. **Repeated reads within a carousel sample.** Measure repeated pseudo-style and backdrop reads before persistent paint reuse. A per-sample cache has a smaller invalidation surface. Verify it across author transitions, generated images, side-only borders, inherited paint, and shadow trees. Score it on paired click-to-first-motion timing with first-frame paint and geometry as controls.
+3. **Scroll while the page is still changing.** Add a fixed workload with image decoding, inserted cards, and a nested scroller. Compare browser task time and the slowest frame intervals. The settled-scroll benchmark establishes a CPU saving and provides a baseline for this more demanding case.
+
 ### 3. Determine which stylesheet edits really require a global resample
 
 
