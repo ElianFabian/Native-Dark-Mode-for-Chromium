@@ -168,6 +168,22 @@ The integrated comparison saved work in three of four adjacent pairs. Window fra
 
 On the final renderer, two additional window gestures counted 1,392 initial idle inspections each, alongside 191–239 inspections of already sampled elements. That means roughly 85–88% of idle inspections began with an unsampled element. Prioritize reducing the cost of initial classification on this workload. The counts describe sampled membership at classifier entry. A mutation can forget membership and require fresh classification. The report ends in `1795257374929`. Reproduce with `--attribute --count-inspections`.
 
+#### Avoiding artwork snapshots on unpainted layers
+
+During two window gestures on the loading catalogue, image-artwork input collection took 24.6–25.7 ms and the general authored paint snapshot took 29.3–34.2 ms. Classifying paint took 194–211 ms inclusive, including calls into other helpers. The profile report ends in `1795257461835`.
+
+An empty element can have an image on its own layer or on either generated layer. The renderer now checks all three background images first. When all are `none`, it clears any older artwork snapshot and skips the remaining artwork property reads. Image-bearing layers still record the complete snapshot, including the host and both generated layers. The property names are shared across inspections.
+
+In the reverse-order prototype run with phase timers, the artwork helper went from a median of 23.6 to 6.6 ms per window gesture. The initial run without phase timers measured a median of 686 → 669 ms in total browser task time through queue drain. The integrated comparison, with shared property names in both policies, measured 692 → 685 ms. Paired timings varied in both directions. Frame p95 stayed about 8.5 ms, and the sampled first-frame and settled paint controls matched. The cut in artwork property reads is deterministic on elements with three image-free layers. A live-page responsiveness gain remains unmeasured.
+
+The prototype reports end in `1795257518234` and `1795257560649`. The integrated report ends in `1795257639395`. Repeat the latter with `node --experimental-websocket tools/research/scroll-during-load.mjs --compare-artwork --reverse`.
+
+Reusing an already resolved element backdrop and skipping transition property bookkeeping on zero-time, unguarded elements reduced backdrop helper calls from around 20,000 to 7,600 and removed roughly 1,000 transition helper calls per window gesture. Median task time through queue drain increased from 669 to 706 ms without phase timers and from 723 to 731 ms in the reverse-order profile. The experiment preserved the sampled paint controls and frame p95 stayed around 8.5 ms. The candidate remains experimental. Reports end in `1795257990317` and `1795258019465`. Repeat with `--compare-bookkeeping`.
+
+Precomputing border property names and avoiding an array allocation when the snapshot only checks border presence reduced median snapshot time by about 2 ms in the attribution run. Timer-free medians through queue drain went from 696 to 647 ms in one comparison and from 648 to 672 ms with the order reversed. Sampled paint and frame p95 matched. The sign change leaves the overall gain unconfirmed, and the renderer keeps its original snapshot builder. Reports end in `1795258089028`, `1795258129256`, and `1795258175152`. Repeat the timer-free comparison with `--compare-snapshot`.
+
+This is the stopping point for incremental tuning on these workloads. The collector and image changes removed measurable work. The latest classifier candidates either removed a small portion of the work or traded gains for losses across repeats. The remaining classification cost spans authored CSS, generated layers, ancestry and layout. A larger change needs a new hypothesis about which work can be eliminated and a matched first-frame paint control.
+
 ### 3. Determine which stylesheet edits really require a global resample
 
 #### First-wheel attribution and skipped image signatures

@@ -2625,21 +2625,24 @@
     return sample.keepBackdrop ? original : null;
   }
 
+  const artworkLayerProperties = ['backgroundImage','backgroundColor','backgroundSize','backgroundRepeat','backgroundOrigin',
+    'backgroundPositionX','backgroundPositionY','opacity','filter','mixBlendMode','transform','clipPath',
+    'content','display','width','height','outlineStyle','outlineWidth','outlineColor',
+    ...borderEdges.flatMap(side => ['Color', 'Style', 'Width'].map(property => `border${side}${property}`))];
+
   function rememberArtworkLayers(element, style) {
     if (element.childElementCount || element.textContent.trim() || element.clientWidth < 96 ||
         element.clientWidth > 800 || element.clientHeight < 20 || element.clientHeight > 240) {
       authoredArtworkLayers.delete(element); return;
     }
-    const properties = ['backgroundImage','backgroundColor','backgroundSize','backgroundRepeat','backgroundOrigin',
-      'backgroundPositionX','backgroundPositionY','opacity','filter','mixBlendMode','transform','clipPath',
-      'content','display','width','height','outlineStyle','outlineWidth','outlineColor',
-      ...borderEdges.flatMap(side=>['Color','Style','Width'].map(property=>`border${side}${property}`))];
-    const layers = ['', '::before', '::after'].map(pseudo=>{
-      const paint=pseudo?getComputedStyle(element,pseudo):style;
-      return [pseudo,Object.fromEntries(properties.map(property=>[property,paint[property]]))];
-    });
-    if (layers.some(([,paint])=>paint.backgroundImage!=='none')) authoredArtworkLayers.set(element,layers);
-    else authoredArtworkLayers.delete(element);
+    const layers = [['', style], ['::before', getComputedStyle(element, '::before')],
+      ['::after', getComputedStyle(element, '::after')]];
+    if (layers.every(([, paint]) => paint.backgroundImage === 'none')) {
+      authoredArtworkLayers.delete(element);
+      return;
+    }
+    authoredArtworkLayers.set(element, layers.map(([pseudo, paint]) =>
+      [pseudo, Object.fromEntries(artworkLayerProperties.map(property => [property, paint[property]]))]));
   }
 
   function backgroundArtworkPaint(element, style, getBackdrop) {

@@ -58,6 +58,8 @@ Share the evidence and calculations before sharing the paint policy. For example
 
 ## Rendering fixes and regression checks
 
+Artwork sampling checks the element and both generated layers for background images before collecting the full artwork snapshot. When an image is present, the renderer records all three layers so mixed logos, cropped artwork, and authored backings keep their existing classification inputs. [Loading profile and benchmark](PERFORMANCE-WEB-RESEARCH.md#avoiding-artwork-snapshots-on-unpainted-layers)
+
 Clean Simulated Native window-scroll frames retain the unsampled elements from observed trees between membership changes and read fresh geometry on each visit. The scroll regression check covers an offscreen element retained in a nonempty collection and sampled on reveal, alongside insertions into the document, a closed shadow root and a nested scroller. [Loading-scroll comparison](PERFORMANCE-WEB-RESEARCH.md#scrolling-while-a-catalogue-inserts-cards-and-decodes-images)
 
 In Simulated Native, a full visible pass re-inspects images for resource and backdrop changes. It keeps the backdrop entry shared by later signatures in the same pass and omits the unused image signature. This optimization covers the full pass. Idle scans retain their existing signature checks. The fixed image-heavy stylesheet workload exercised both narrow and broad changes, with a no-image workload as a control. [Measurements and limits](PERFORMANCE-WEB-RESEARCH.md#first-wheel-attribution-and-skipped-image-signatures)

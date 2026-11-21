@@ -106,11 +106,18 @@ const report = { status:'running', startSources:await sourceHashes(), trials:[] 
 const expected = await expectedRendererIdentity();
 const attribute = process.argv.includes('--attribute');
 const collector = process.argv.includes('--compare-collector');
+const artwork = process.argv.includes('--compare-artwork');
+const bookkeeping = process.argv.includes('--compare-bookkeeping');
+const snapshot = process.argv.includes('--compare-snapshot');
+assert.ok([collector, artwork, bookkeeping, snapshot].filter(Boolean).length <= 1, 'Compare one optimization at a time.');
+const compare = collector || artwork || bookkeeping || snapshot;
 const countInspections = process.argv.includes('--count-inspections');
 assert.ok(!countInspections || attribute, 'Inspection counts require --attribute.');
+const profileClassification = process.argv.includes('--profile-classification');
+assert.ok(!profileClassification || attribute, 'Classification profiling requires --attribute.');
 const reverse = process.argv.includes('--reverse');
 let extensionDirectory;
-if (attribute || collector) {
+if (attribute || compare) {
   extensionDirectory = path.join(out, 'extension');
   await cp(path.join(root, 'extension'), extensionDirectory, {recursive:true});
   const renderer = path.join(extensionDirectory, 'website-theme.js');
@@ -118,7 +125,65 @@ if (attribute || collector) {
   if (collector) {
     const snapshot = 'const snapshot = verifyEmpty ? (scrollCandidates ??= new Map()) : null;';
     assert.equal(source.split(snapshot).length, 2);
-    source = source.replace(snapshot, snapshot.replace('verifyEmpty ?', 'verifyEmpty && ndmUseScrollCandidates ?'));
+    source = source.replace(snapshot, snapshot.replace('verifyEmpty ?', 'verifyEmpty && ndmUseOptimizedPath ?'));
+  }
+  if (artwork) {
+    const check = "if (layers.every(([, paint]) => paint.backgroundImage === 'none')) {";
+    const capture = `    authoredArtworkLayers.set(element, layers.map(([pseudo, paint]) =>
+      [pseudo, Object.fromEntries(artworkLayerProperties.map(property => [property, paint[property]]))]));`;
+    assert.equal(source.split(check).length, 2);
+    assert.equal(source.split(capture).length, 2);
+    source = source.replace(check, check.replace('if (', 'if (ndmUseOptimizedPath && '));
+    source = source.replace(capture, `    const records = layers.map(([pseudo, paint]) =>
+      [pseudo, Object.fromEntries(artworkLayerProperties.map(property => [property, paint[property]]))]);
+    if (ndmUseOptimizedPath || records.some(([, paint]) => paint.backgroundImage !== 'none')) {
+      authoredArtworkLayers.set(element, records);
+    } else {
+      authoredArtworkLayers.delete(element);
+    }`);
+  }
+  if (bookkeeping) {
+    const first = '    const panelEdge = formPanelEdge(element, backdropFor(element));';
+    const last = '    const fallbackControlIcon = pseudoStyles.some';
+    assert.equal(source.split(first).length, 2);
+    assert.equal(source.split(last).length, 2);
+    const start = source.indexOf(first);
+    const end = source.indexOf(last, start);
+    assert.ok(end > start);
+    const edges = source.slice(start, end);
+    source = source.replace(edges, '    const ownBackdrop = ndmUseOptimizedPath ? backdropFor(element) : undefined;\n' +
+      edges.replaceAll('backdropFor(element)', '(ndmUseOptimizedPath ? ownBackdrop : backdropFor(element))'));
+    const properties = "    const properties = new Set(['color', ...declarations.map(value => value.split(':', 1)[0])]);";
+    assert.equal(source.split(properties).length, 2);
+    source = source.replace(properties, `    if (ndmUseOptimizedPath && !(elementColorRules.get(element)?.transition ?? paletteTransitions.get(element))?.original &&
+        style.transitionDuration === '0s' && style.transitionDelay === '0s') {
+      return { declarations: declarations.join(''), transition: null, pseudoStyles };
+    }
+` + properties);
+  }
+  if (snapshot) {
+    const borderCheck = 'chromiumSrgb(style.backgroundColor)?.[3] || paintedBorderSides(style).length || labeledPointerControl(element, style)';
+    assert.equal(source.split(borderCheck).length, 2);
+    source = source.replace(borderCheck, `chromiumSrgb(style.backgroundColor)?.[3] || (ndmUseOptimizedPath ?
+      borderEdges.some(side => parseFloat(style[\`border\${side}Width\`]) > 0 &&
+        chromiumSrgb(style[\`border\${side}Color\`])?.[3] !== 0) : paintedBorderSides(style).length) || labeledPointerControl(element, style)`);
+    const borderCapture = "Object.fromEntries(borderEdges.flatMap(side => ['Color', 'Style', 'Width'].map(property =>";
+    assert.equal(source.split(borderCapture).length, 2);
+    source = source.replace(borderCapture, "(ndmUseOptimizedPath ? ndmCaptureBorder(style, destination) : " + borderCapture);
+    const closeCapture = "destination[\`border\${side}Color\`] ?? style[\`border\${side}Color\`] : style[\`border\${side}\${property}\`]]))) : {})";
+    assert.equal(source.split(closeCapture).length, 2);
+    source = source.replace(closeCapture, closeCapture.replace('])))', ']))))'));
+    const propertyList = "  const borderEdges = ['Top', 'Right', 'Bottom', 'Left'];";
+    assert.equal(source.split(propertyList).length, 2);
+    source = source.replace(propertyList, propertyList + `
+  const ndmBorderProperties = borderEdges.flatMap(side => ['Color','Style','Width'].map(kind => [\`border\${side}\${kind}\`,kind === 'Color']));
+  function ndmCaptureBorder(style, destination) {
+    const record = {};
+    for (const [property, color] of ndmBorderProperties) {
+      record[property] = color ? destination[property] ?? style[property] : style[property];
+    }
+    return record;
+  }`);
   }
   const wrappers = [];
   if (countInspections) {
@@ -134,6 +199,17 @@ if (attribute || collector) {
     }`);
   }
   const phases = ['paintBatch','flushViewport','collectVisibleSurfaces','inspectLocal','sampleSignature'];
+  if (profileClassification) {
+    phases.push('chromiumColors','rememberArtworkLayers','originalTransitionColors','listItemFramePaint',
+      'hasImageBackdrop','chromiumSeparators','authoredBackdropStyle','chromiumTextBackdrop',
+      'imageLabelPaint','decorativePseudos','paintTransition');
+    const before = '      authoredPaint.set(element, {';
+    assert.equal(source.split(before).length, 2);
+    source = source.replace(before, '      const snapshotStart = performance.now();\n' + before);
+    const after = '      });\n    }\n    const root = element.shadowRoot';
+    assert.equal(source.split(after).length, 2);
+    source = source.replace(after, "      });\n      ndmRecordPhase('authoredPaintSnapshot', snapshotStart);\n    }\n    const root = element.shadowRoot");
+  }
   for (const name of attribute ? phases : []) {
     const anchor = 'function ' + name + '(';
     assert.equal(source.split(anchor).length, 2, name);
@@ -145,9 +221,7 @@ if (attribute || collector) {
       ${countsOrigin ? 'const origin = ndmLoadInspectOrigin; ndmLoadInspectOrigin = ' + JSON.stringify(name) + ';' : ''}
       try { return measured_${name}(...args); }
       finally {
-        const phase = ndmLoadPhases.${name} ??= {calls:0,ms:0};
-        phase.calls++;
-        phase.ms += performance.now() - start;
+        ndmRecordPhase('${name}', start);
         ${countsOrigin ? 'ndmLoadInspectOrigin = origin;' : ''}
       }
     }`);
@@ -156,10 +230,16 @@ if (attribute || collector) {
   assert.equal(source.split(anchor).length, 2);
   source = source.replace(anchor, `
   let ndmLoadPhases;
+  function ndmRecordPhase(name, start) {
+    if (!ndmLoadPhases) return;
+    const phase = ndmLoadPhases[name] ??= {calls:0,ms:0};
+    phase.calls++;
+    phase.ms += performance.now() - start;
+  }
   let ndmLoadInspections, ndmLoadSeen, ndmLoadInspectOrigin;
-  let ndmUseScrollCandidates = false;
+  let ndmUseOptimizedPath = false;
   globalThis.ndmLoadUseCandidate = enabled => {
-    ndmUseScrollCandidates = enabled;
+    ndmUseOptimizedPath = enabled;
     invalidateScrollCollection();
     return true;
   };
@@ -183,6 +263,7 @@ if (attribute || collector) {
     deferredRefreshTimer !== undefined || horizontalScrollTimer !== undefined);
   ${wrappers.join('\n')}
 ${anchor}`);
+  new Function(source);
   await writeFile(renderer, source);
   expected.initialized.renderer = initializerFingerprint(source, 'nativeDarkModeWebsiteTheme');
 }
@@ -195,11 +276,11 @@ try {
   report.browser = browser.version.product;
   const first = reverse ? 'candidate' : 'baseline', second = reverse ? 'baseline' : 'candidate';
   const comparison = [first,second,second,first,first,second,second,first];
-  const order = collector ? ['baseline','baseline',...comparison] :
+  const order = compare ? ['baseline','baseline',...comparison] :
     attribute ? ['chromium','chromium'] :
     ['source','chromium','chromium','source','source','chromium','chromium','source'];
   for (const variant of order) {
-    const policy = collector ? 'chromium' : variant;
+    const policy = compare ? 'chromium' : variant;
     const row = {policy, variant, gestures:[]};
     report.trials.push(row);
     const page = await browser.open('about:blank');
@@ -211,7 +292,7 @@ try {
       await page.send('Page.navigate', {url});
       await until(() => page.evaluate("document.documentElement?.dataset.fixtureReady==='yes'"), 'catalogue ready');
       await page.evaluate('window.ndmLoadScroll = (' + installWorkload.toString() + ')()');
-      if (collector) await browser.inRendererWorld(page,
+      if (compare) await browser.inRendererWorld(page,
         function (candidate) { return ndmLoadUseCandidate(candidate); }, [variant === 'candidate']);
       const source = await page.evaluate('ndmLoadScroll.quiet()');
       await browser.rule(url, policy, 'off');
@@ -243,7 +324,7 @@ try {
         assert.deepEqual(result.settled.size, [190,112]);
         const firstPaintMismatches = result.batches.filter(batch =>
           JSON.stringify(batch.firstFrame) !== JSON.stringify(result.settled)).length;
-        if (collector) {
+        if (compare) {
           assert.equal(firstPaintMismatches, 0, kind + ' first-frame paint');
           const paint = [result.quiet, result.settled];
           if (!paintReferences.has(kind)) paintReferences.set(kind, paint);
@@ -253,7 +334,7 @@ try {
         row.gestures.push({kind, ...result, p95:percentile(result.frames,.95), max:Math.max(...result.frames),
           firstPaintMismatches, work, phases});
       }
-      if (collector) {
+      if (compare) {
         await until(async () => !(await browser.inRendererWorld(page,
           function () { return ndmLoadBusy(); }))[0].result, 'renderer queues drained');
         const totalEnd = await readMetrics(page);
