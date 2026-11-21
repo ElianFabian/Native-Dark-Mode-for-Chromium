@@ -4741,7 +4741,13 @@
             }
           }
           updates.push([element, inspect(element, backdrops, switchingRenderer)]);
-          fullSignatures.set(element, sampleSignature(element, getComputedStyle(element), signatureBackdrops));
+          if (element instanceof HTMLImageElement) {
+            // Images always resample. Keep the backdrop entry used by later
+            // signatures in this pass without recording an unread signature.
+            chromiumTextBackdrop(element, signatureBackdrops.solid);
+          } else {
+            fullSignatures.set(element, sampleSignature(element, getComputedStyle(element), signatureBackdrops));
+          }
         }
       } finally {
         sheet.disabled = disabled;

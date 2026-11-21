@@ -58,6 +58,8 @@ Share the evidence and calculations before sharing the paint policy. For example
 
 ## Rendering fixes and regression checks
 
+In Simulated Native, a full visible pass re-inspects images for resource and backdrop changes. It keeps the backdrop entry shared by later signatures in the same pass and omits the unused image signature. This optimization covers the full pass. Idle scans retain their existing signature checks. The fixed image-heavy stylesheet workload exercised both narrow and broad changes, with a no-image workload as a control. [Measurements and limits](PERFORMANCE-WEB-RESEARCH.md#first-wheel-attribution-and-skipped-image-signatures)
+
 | Symptom | Implementation | Verification |
 | --- | --- | --- |
 | Deferring classification during a track transition can expose stale descendant paint at first motion | The current renderer resamples a dirty track immediately. Deferral in an isolated renderer copy left a descendant with the wrong background until the idle scan. | The [synthetic inline motion fixture](../fixtures/diagnostics/inline-motion-dependency.html) checks both directions, the dependent swatch, and an independent neighbor at first motion and after settling. The standalone probe compares darkening disabled and Simulated Native Off. [Measurements](PERFORMANCE-WEB-RESEARCH.md#inline-transition-edits-and-first-motion) |
