@@ -143,9 +143,15 @@
   const unusedColorRules = [];
   let sampledElements = new WeakSet();
   let scrollCollectionEmpty = false;
+  let scrollCandidates;
+
+  function invalidateScrollCollection() {
+    scrollCollectionEmpty = false;
+    scrollCandidates = undefined;
+  }
 
   function forgetSample(element) {
-    scrollCollectionEmpty = false;
+    invalidateScrollCollection();
     return sampledElements.delete(element);
   }
   const artworkContrast = new WeakMap();
@@ -630,7 +636,7 @@
       ? chrome.dom?.openOrClosedShadowRoot(element) : null);
     if (root && !shadowRoots.has(root)) {
       shadowRoots.add(root);
-      scrollCollectionEmpty = false;
+      invalidateScrollCollection();
       removePreviousThemeSheets(root);
       root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
       if (transitionSheet) root.adoptedStyleSheets = [...root.adoptedStyleSheets, transitionSheet];
@@ -4759,6 +4765,9 @@
 
   function collectVisibleSurfaces(onlyUnpainted, includeLookahead, changedRoots, targets = new Set(), verifyEmpty = false) {
     let empty = verifyEmpty;
+    // Only clean scroll frames reuse membership. Geometry still changes with
+    // scrolling, resource loads and animations, so read it on every visit.
+    const snapshot = verifyEmpty ? (scrollCandidates ??= new Map()) : null;
     const roots = changedRoots ? new Set(changedRoots) : new Set([document]);
     if (!changedRoots) {
       // A dirty pass may already have selected a newly inserted host. Its tree
@@ -4772,17 +4781,29 @@
     const horizontalLookahead = includeLookahead ? innerWidth * .5 : 0;
     for (const root of roots) {
       if (changedRoots && (!root.isConnected || roots.has(root.parentElement))) continue;
-      for (const element of changedRoots ? [root, ...root.querySelectorAll('*')] : root.querySelectorAll('*')) {
+      // Newly found shadow trees become reusable after inspect observes them.
+      const observedRoot = snapshot && (root === document || shadowRoots.has(root));
+      const retained = observedRoot ? snapshot.get(root) : undefined;
+      const next = observedRoot && !retained ? new Set() : null;
+      if (next) snapshot.set(root, next);
+      for (const element of retained ?? (changedRoots ? [root, ...root.querySelectorAll('*')] : root.querySelectorAll('*'))) {
+        if (retained && (!element.isConnected || sampledElements.has(element))) {
+          retained.delete(element);
+          continue;
+        }
         if (targets.has(element) || onlyUnpainted && sampledElements.has(element)) continue;
         if (!(element instanceof HTMLElement || element instanceof SVGSVGElement)) continue;
         // An eligible offscreen element also prevents reusing an empty collection.
-        if (empty && !element.matches(excluded)) empty = false;
+        if (retained || (empty || next) && !element.matches(excluded)) {
+          next?.add(element);
+          empty = false;
+        }
         const rect = element.getBoundingClientRect();
         const inViewport = rect.width && rect.height && rect.bottom > -lookahead && rect.right > -horizontalLookahead &&
           rect.top < innerHeight + lookahead && rect.left < innerWidth + horizontalLookahead;
         const canvas = element === document.documentElement || element === document.body;
         if (!inViewport && !canvas) continue;
-        if (element.matches(excluded)) continue;
+        if (!retained && element.matches(excluded)) continue;
         targets.add(element);
         // Every selected host includes its visible tree, including dirty-only
         // passes, before inspect registers its sheets/observer during sampling.
@@ -4791,7 +4812,10 @@
       }
       if (!changedRoots) for (const shadow of shadowRoots) if (shadow.host.isConnected) roots.add(shadow);
     }
-    if (verifyEmpty) scrollCollectionEmpty = empty;
+    if (verifyEmpty) {
+      scrollCollectionEmpty = empty;
+      if (empty) scrollCandidates = undefined;
+    }
     return targets;
   }
 
@@ -5510,7 +5534,7 @@
       palettePaintRules.clear();
       paletteLabelRules.clear();
       sampledElements = new WeakSet();
-      scrollCollectionEmpty = false;
+      invalidateScrollCollection();
       inspectSignatures = new WeakMap();
       fullSignatures = new WeakMap();
       paintVisibleSurfaces();
@@ -5577,7 +5601,7 @@
       }
       marked.clear();
       sampledElements = new WeakSet();
-      scrollCollectionEmpty = false;
+      invalidateScrollCollection();
       inspectSignatures = new WeakMap();
       fullSignatures = new WeakMap();
       chromiumColorCache.clear();
@@ -5596,7 +5620,7 @@
       palettePaintRules.clear();
       paletteLabelRules.clear();
       sampledElements = new WeakSet();
-      scrollCollectionEmpty = false;
+      invalidateScrollCollection();
       inspectSignatures = new WeakMap();
       fullSignatures = new WeakMap();
       paintVisibleSurfaces(false, true, true);
@@ -5646,8 +5670,9 @@
             schedule(target);
             continue;
           }
-          if (scrollCollectionEmpty && Array.prototype.some.call(record.addedNodes, node => node.nodeType === Node.ELEMENT_NODE)) {
-            scrollCollectionEmpty = false;
+          if ((scrollCollectionEmpty || scrollCandidates) &&
+              Array.prototype.some.call(record.addedNodes, node => node.nodeType === Node.ELEMENT_NODE)) {
+            invalidateScrollCollection();
           }
           forgetOverlayInk(target);
           if (target?.closest('style') || target === document.head) {
@@ -5671,6 +5696,8 @@
           if (record.removedNodes.length) removed = true;
         }
         if (!removed) return;
+        // Release detached candidates even if there is no subsequent scroll.
+        scrollCandidates = undefined;
         for (const element of marked) {
           if (!element.isConnected) clearColorRule(element);
         }
@@ -5679,7 +5706,7 @@
           if (root.host.isConnected) continue;
           root.adoptedStyleSheets = root.adoptedStyleSheets.filter(style => style !== sheet && style !== transitionSheet);
           shadowRoots.delete(root);
-          scrollCollectionEmpty = false;
+          invalidateScrollCollection();
           removedShadow = true;
         }
         if (removedShadow) {

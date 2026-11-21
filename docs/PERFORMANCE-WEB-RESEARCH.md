@@ -146,6 +146,28 @@ The next performance checks, in priority order:
 2. **Repeated reads within a carousel sample.** Measure repeated pseudo-style and backdrop reads before persistent paint reuse. A per-sample cache has a smaller invalidation surface. Verify it across author transitions, generated images, side-only borders, inherited paint, and shadow trees. Score it on paired click-to-first-motion timing with first-frame paint and geometry as controls.
 3. **Scroll while the page is still changing.** Add a fixed workload with image decoding, inserted cards, and a nested scroller. Compare browser task time and the slowest frame intervals. The settled-scroll benchmark establishes a CPU saving and provides a baseline for this more demanding case.
 
+#### Repeated computed-style lookups within one carousel inspection
+
+On four physical carousel clicks in a public Amazon.es session, each themed click performed 254–288 repeated own-element style lookups and 22–28 repeated own pseudo-element lookups within an inspection. Together the calls to obtain the style objects took 0.1–0.5 ms per click. The timers exclude subsequent CSS property reads. Classification took 37.6–73.8 ms in the same windows. A cache of style objects has little measured time to recover, so these reads retain their current behavior. Repeat with `node --experimental-websocket tools/research/carousel-click-trace.mjs --live --compare-source --measure-style-reads`. The report ends in `1795256081679`.
+
+#### Scrolling while a catalogue inserts cards and decodes images
+
+The synthetic route uses the fixed 300-card catalogue. Each physical 800 px gesture crosses four insertion thresholds and decodes 32 new local images. The window gesture starts after visible theme paint is ready while background sampling can still run. The nested scroller follows within the same page. Both gestures record frame intervals, task time, newly inserted notice paint at the first sample, and a fixed independent control.
+
+In the initial four-per-policy comparison, median browser task time for the window gesture was about 68 ms with darkening disabled and 624 ms with Simulated Native. Nested-scroll medians were about 61 and 144 ms. Frame p95 was about 8.5 ms across configurations. The separate attribution run measured 98–137 ms in viewport collection and 337–342 ms in idle sampling during the window gesture. The latter includes time inside local inspection, so the nested phase totals overlap. The baseline and attribution reports end in `1795256222598` and `1795256274179`.
+
+Clean Simulated Native window-scroll frames now retain the unsampled elements in each observed tree. They still evaluate current geometry, including offscreen and hidden elements. Insertions, forgotten samples, shadow observation changes and renderer resets discard the list. Newly encountered shadow trees are fully collected until the renderer observes them. A proven empty collection discards the list and keeps the existing empty-collection shortcut.
+
+| Four adjacent pairs per run | Window task time, current → retained | Task time through queue drain, current → retained |
+| --- | ---: | ---: |
+| Prototype, current first | 588 → 540 ms | 741 → 694 ms |
+| Prototype, retained first | 610 → 546 ms | 768 → 691 ms |
+| Integrated collector, retained first | 628 → 593 ms | 782 → 735 ms |
+
+The integrated comparison saved work in three of four adjacent pairs. Window frame p95 stayed at 8.5 ms, nested timings varied, and all first-frame notice and settled control samples matched. Each run includes two extra current-collector trials to observe baseline variation. This is a CPU saving on a local loading workload. Scroll smoothness and live-page gains remain open. The comparison reports end in `1795256431972`, `1795256492372` and `1795256645957`. Re-run the integrated comparison with `node --experimental-websocket tools/research/scroll-during-load.mjs --compare-collector --reverse`.
+
+On the final renderer, two additional window gestures counted 1,392 initial idle inspections each, alongside 191–239 inspections of already sampled elements. That means roughly 85–88% of idle inspections began with an unsampled element. Prioritize reducing the cost of initial classification on this workload. The counts describe sampled membership at classifier entry. A mutation can forget membership and require fresh classification. The report ends in `1795257374929`. Reproduce with `--attribute --count-inspections`.
+
 ### 3. Determine which stylesheet edits really require a global resample
 
 #### First-wheel attribution and skipped image signatures

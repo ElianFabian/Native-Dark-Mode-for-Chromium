@@ -17,6 +17,7 @@ const anchor = '  requestPreset();';
 assert.equal(source.split(anchor).length, 2);
 const instrumented = source.replace(anchor, `  globalThis.__ndmScrollState = () => ({
     preset: preset ?? null, empty: scrollCollectionEmpty,
+    retained: Boolean(scrollCandidates),
     unsampled: [document, ...shadowRoots].flatMap(root => [...root.querySelectorAll('*')].filter(element =>
       (element instanceof HTMLElement || element instanceof SVGSVGElement) && !element.matches(excluded) &&
       !sampledElements.has(element)).map(element => element.nodeName)),
@@ -24,6 +25,14 @@ const instrumented = source.replace(anchor, `  globalThis.__ndmScrollState = () 
       idleBatch !== undefined || viewportFrame !== undefined || chromiumRefreshTimer !== undefined ||
       deferredRefreshTimer !== undefined || horizontalScrollTimer !== undefined)
   });
+  globalThis.__ndmRetainFarCard = () => {
+    const far = document.getElementById('scroll-far-card');
+    if (!far || !forgetSample(far)) throw Error('Expected a previously sampled far card');
+    // Establish the nonempty cache before scrolling, in the same task as
+    // forgetting the sample so idle collection cannot race the control.
+    const visible = collectVisibleSurfaces(true, true, undefined, new Set(), true);
+    return {retained: scrollCandidates?.get(document)?.has(far), collected: visible.has(far)};
+  };
 ${anchor}`);
 await writeFile(renderer, instrumented);
 const expected = await expectedRendererIdentity();
@@ -86,6 +95,7 @@ function createScenario() {
     addFar() {
       return frame(() => {
         far = card();
+        far.id = 'scroll-far-card';
         tail.append(far);
         return () => ({paint: sample(far), y: far.getBoundingClientRect().top});
       });
@@ -95,6 +105,10 @@ function createScenario() {
         far.scrollIntoView({block: 'center'});
         return () => ({paint: sample(far), y: far.getBoundingClientRect().top});
       });
+    },
+    removeFar() {
+      far.remove();
+      far = undefined;
     },
     restore() {
       return frame(() => {
@@ -159,6 +173,20 @@ try {
   assert.ok(reveal.y >= 0 && reveal.y < 760);
   assert.deepEqual(reveal.paint, themed.light);
   assert.deepEqual(await action('restore()'), themed.light);
+  await settle('chromium');
+  const seedRetainedFar = async () => (await browser.inRendererWorld(page,
+    function () { return __ndmRetainFarCard(); }))[0].result;
+  const retained = report.states.retainedOffscreen = await seedRetainedFar();
+  assert.deepEqual(retained, {retained:true, collected:false}, 'An unsampled far card must be retained without altering visible paint');
+  const retainedReveal = report.states.retainedReveal = await action('revealFar()');
+  assert.deepEqual(retainedReveal.paint, themed.light);
+  assert.equal((await state()).unsampled.length, 0, 'The retained card must become sampled when scrolling into view');
+  assert.deepEqual(await action('restore()'), themed.light);
+  await settle('chromium');
+  assert.deepEqual(await seedRetainedFar(), {retained:true, collected:false});
+  assert.equal((await state()).retained, true);
+  await action('removeFar()');
+  assert.equal((await state()).retained, false, 'Removing the retained card must release its cached membership');
   await settle('chromium');
   await proveEmpty();
   assert.deepEqual(await action('removeShadow()'), themed.light);

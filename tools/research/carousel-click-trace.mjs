@@ -10,6 +10,7 @@ import {startServer} from '../../scripts/dev/diagnostics/server.mjs';
 
 const live = process.argv.includes('--live');
 const detail = process.argv.includes('--detail');
+const measureStyleReads = process.argv.includes('--measure-style-reads');
 const probeMotion = process.argv.includes('--probe-motion');
 const deferFirst = process.argv.includes('--defer-first');
 assert.ok(!deferFirst || probeMotion, '--defer-first requires --probe-motion.');
@@ -120,11 +121,23 @@ if (detail) {
       }
     }`);
   }
-  wrappers.push(`function getComputedStyle(...args) {
-    if (!ndmClickTrace) return globalThis.getComputedStyle(...args);
+}
+if (detail || measureStyleReads) {
+  wrappers.push(`function getComputedStyle(element, pseudo) {
+    if (!ndmClickTrace) return globalThis.getComputedStyle(element, pseudo);
+    const own = ${measureStyleReads} && element === ndmInspecting;
+    const key = pseudo || 'element';
+    const duplicate = own && ndmStyleReads.has(key);
     const start = performance.now();
-    try { return globalThis.getComputedStyle(...args); }
-    finally { (ndmDetails.getComputedStyle ??= []).push([start,performance.now()]); }
+    const style = globalThis.getComputedStyle(element, pseudo);
+    const end = performance.now();
+    if (${detail}) (ndmDetails.getComputedStyle ??= []).push([start,end]);
+    if (own) {
+      ndmStyleReads.add(key);
+      const name = duplicate ? (pseudo ? 'duplicateOwnPseudoStyle' : 'duplicateOwnElementStyle') : 'firstOwnStyle';
+      (ndmDetails[name] ??= []).push([start,end]);
+    }
+    return style;
   }`);
 }
 replace('function inspect(', 'function traced_inspect(');
@@ -185,14 +198,25 @@ wrappers.push('function ndmInspectCohort(...args) {' + colorCohort + '}');
 wrappers.push(`function inspect(...args) {
     if (!ndmClickTrace) return ndmInspectCohort(...args);
     const previous = ndmInspectionKeys;
+    const previousInspecting = ndmInspecting;
+    const previousStyleReads = ndmStyleReads;
     ndmInspectionKeys = new Set();
     ndmCount('inspected');
     ndmCount('inspected-' + ndmOrigin);
     const element = args[0];
+    if (${measureStyleReads}) {
+      ndmInspecting = element;
+      ndmStyleReads = new Set();
+    }
     const id = ndmElementIds.get(element) ?? ++ndmNextElement;
     ndmElementIds.set(element,id);
     ndmVisits.push([performance.now(), id, ndmOrigin]);
-    try { return ndmInspectCohort(...args); } finally { ndmInspectionKeys = previous; }
+    try { return ndmInspectCohort(...args); }
+    finally {
+      ndmInspectionKeys = previous;
+      ndmInspecting = previousInspecting;
+      ndmStyleReads = previousStyleReads;
+    }
   }`);
 replace('    const rootPaint = sheet.cssRules[0]?.style;\n    const localScheme', "    let ndmLocalPhase = ndmStart('scheme-setup');\n    const rootPaint = sheet.cssRules[0]?.style;\n    const localScheme");
 replace('    for (const [element] of previous) element.removeAttribute(marker);',
@@ -228,6 +252,7 @@ replace('  requestPreset();', `
   let ndmClickTrace = false;
   let ndmTraceIndex = 0;
   let ndmInspectionKeys;
+  let ndmInspecting, ndmStyleReads;
   let ndmTraceCounts = {};
   let ndmDetails = {};
   const ndmPriorBacking = new WeakMap();
@@ -404,7 +429,7 @@ async function probeFingerprint() {
 }
 const report = {status: 'running', scope: live ? 'anonymous settled storefront' : probeMotion ?
   'synthetic inline motion and descendant paint' : 'synthetic multicolumn carousel',
-  detail, phases, probeMotion, deferFirst, auditPaint, compareSource, sourceSeals: await sourceHashes(),
+  detail, phases, probeMotion, deferFirst, auditPaint, compareSource, measureStyleReads, sourceSeals: await sourceHashes(),
   probeSha256: await probeFingerprint(), actions: []};
 
 async function connectTrace(browser) {
