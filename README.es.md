@@ -6,7 +6,7 @@
 
 Usa el modo oscuro integrado en Chromium en las webs y secciones que elijas. Guarda una regla una vez y la extensión la aplicará cuando vuelvas.
 
-La **versión 0.13.1** reduce el trabajo repetido al desplazarse por páginas ya muestreadas en Simulated Native y mejora la detección de cambios de estilo que afectan a los bordes. [Notas de la versión en inglés](docs/RELEASE-0.13.1.md)
+La **versión 0.13.2** reduce el trabajo repetido al desplazarse por una página y al actualizar su zona visible en Simulated Native. [Notas de la versión en inglés](docs/RELEASE-0.13.2.md)
 
 Este proyecto se desarrolló con la ayuda de IA mediante OpenAI Codex.
 

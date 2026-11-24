@@ -6,7 +6,7 @@
 
 Use Chromium's built-in dark mode on the websites and sections you choose. Save a rule once and the extension applies it when you return.
 
-**Version 0.13.1** reduces repeated work when scrolling through already sampled pages in Simulated Native and improves detection of stylesheet changes that affect borders. [Release notes](docs/RELEASE-0.13.1.md)
+**Version 0.13.2** reduces repeated work during scrolling and viewport refreshes in Simulated Native. [Release notes](docs/RELEASE-0.13.2.md)
 
 This project was built with AI assistance using OpenAI Codex.
 
